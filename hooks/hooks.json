@@ -1,0 +1,38 @@
+{
+  "description": "maitre-agent : compteur d'agents, notifications, réinjection après résumé",
+  "hooks": {
+    "SubagentStart": [
+      {
+        "matcher": "^(maitre-agent:)?ma-",
+        "hooks": [
+          { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-count.sh\" start || true", "timeout": 5 }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "^(maitre-agent:)?ma-",
+        "hooks": [
+          { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-count.sh\" stop || true", "timeout": 5 },
+          { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/notify.sh\" agent || true", "timeout": 10 }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "permission_prompt|idle_prompt",
+        "hooks": [
+          { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/notify.sh\" blocked || true", "timeout": 10 }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "compact|resume",
+        "hooks": [
+          { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/reinject.sh\" 2>/dev/null || true", "timeout": 10 }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+name: lint
+# Contrôle du skill et du plugin à chaque push et chaque pull request.
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Contrôle (tools/lint-skill.sh)
+        env:
+          # Facultatif : secret du dépôt avec des motifs personnels à refuser (ex. nom1|nom2).
+          LINT_PRIVATE_PATTERNS: ${{ secrets.LINT_PRIVATE_PATTERNS }}
+        run: sh tools/lint-skill.sh

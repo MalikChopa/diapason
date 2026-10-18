@@ -1,0 +1,32 @@
+name: release
+# Un tag v* (ex. v1.1.0) construit les deux zips et crée la release GitHub.
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Contrôle (tools/lint-skill.sh)
+        env:
+          LINT_PRIVATE_PATTERNS: ${{ secrets.LINT_PRIVATE_PATTERNS }}
+        run: sh tools/lint-skill.sh
+      - name: Le tag correspond à la version du plugin
+        run: |
+          v="v$(jq -r .version .claude-plugin/plugin.json)"
+          [ "$v" = "$GITHUB_REF_NAME" ] || { echo "Le tag $GITHUB_REF_NAME ne correspond pas à plugin.json ($v)" >&2; exit 1; }
+      - name: Construire les zips (tools/build-release.sh)
+        run: sh tools/build-release.sh
+      - name: Notes de version (section du CHANGELOG)
+        run: sh tools/changelog-section.sh "$GITHUB_REF_NAME" > "$RUNNER_TEMP/notes.md"
+      - name: Créer la release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/*.zip \
+            --title "maitre-agent $GITHUB_REF_NAME" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --verify-tag

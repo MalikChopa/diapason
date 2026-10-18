@@ -1,0 +1,17 @@
+{
+  "name": "maitre-agent",
+  "owner": { "name": "Chopa" },
+  "description": "Marketplace du plugin maitre-agent et de son mod de bureau",
+  "plugins": [
+    {
+      "name": "maitre-agent",
+      "source": "./",
+      "description": "Méthode maître agent : skill, 5 sous-agents, compteur d'agents, notifications, réinjection après résumé"
+    },
+    {
+      "name": "maitre-agent-bureau",
+      "source": "./bureau",
+      "description": "Mod de bureau : quota et agents en cours dans l'onglet Code de l'app Claude"
+    }
+  ]
+}
