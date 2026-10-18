@@ -5,7 +5,7 @@ Seulement avec l'accord explicite de l'utilisateur : c'est de la configuration p
 ## 0. Choisir une voie
 | Voie | Ce que tu obtiens | Ce qu'elle ne fait pas |
 |---|---|---|
-| A. Plugin (marketplace GitHub) | skill, 5 agents `ma-*`, compteur d'agents, notifications, réinjection après résumé ; mises à jour par version | pas de barre d'état ni de `permissions.ask` (voir §4 et §2) |
+| A. Plugin (marketplace GitHub) | skill (lancé seulement par `/maitre-agent`), 5 agents `ma-*`, compteur d'agents, notifications de fin d'agent, réinjection après résumé ; mises à jour par version | pas de barre d'état ni de `permissions.ask` (voir §4 et §2) |
 | B. Copie du skill | le skill seul dans `~/.claude/skills/` ; tout le reste à la main (§1 à §5) | rien d'automatique |
 | C. Zip de release | `maitre-agent-skill-v<version>.zip` (skill seul, comme B) ou `maitre-agent-plugin-v<version>.zip` (plugin complet) | idem A ou B selon le zip |
 
@@ -14,7 +14,7 @@ Seulement avec l'accord explicite de l'utilisateur : c'est de la configuration p
 - En shell : `claude plugin marketplace add MalikMoussaoui/maitre-agent`, puis `claude plugin install maitre-agent@maitre-agent`. Pour épingler une version : `MalikMoussaoui/maitre-agent#v1.1.0`.
 - App de bureau : + > Plugins > Add plugin, sur les marketplaces déjà configurées. Comment y ajouter une source GitHub n'est pas documenté (non vérifié) : repli, dans `~/.claude/settings.json`, `"extraKnownMarketplaces": { "maitre-agent": { "source": { "source": "github", "repo": "MalikMoussaoui/maitre-agent" } } }`.
 - Pas de plugins dans les sessions cloud.
-- Les hooks du plugin sont actifs dès son chargement (voir §3 pour éviter un doublon).
+- Les hooks du plugin sont actifs dès son chargement, dans toutes les sessions (voir §3 pour éviter un doublon, §5 pour les notifications). Prérequis des hooks et des scripts : macOS ou Linux, et `jq`.
 
 ### Voie B : copie du skill
 - Depuis une copie du dépôt : `cp -R skills/maitre-agent ~/.claude/skills/` (dossier `~/.claude/skills/maitre-agent/` avec `SKILL.md` dedans). Nouvelle session ensuite.
@@ -47,7 +47,7 @@ Un plugin ne peut pas installer de `permissions` : c'est toujours une copie à l
 
 ## 4. Barre d'état (`statusLine`) : à la main, même avec le plugin
 Un plugin ne peut pas fournir `statusLine` (seuls `agent` et `subagentStatusLine` sont pris en compte dans son `settings.json`).
-1. Copie `SKILL_DIR/hooks/statusline.sh` et `SKILL_DIR/hooks/notify.sh` dans `~/.claude/maitre-agent/` (créé si besoin) et rends-les exécutables. Avec le plugin, prends-les dans son dossier `hooks/` (sans chemin stable : le dossier du plugin change à chaque version, d'où la copie).
+1. Copie `SKILL_DIR/hooks/statusline.sh` et `SKILL_DIR/hooks/notify.sh` dans `~/.claude/maitre-agent/` (créé si besoin) et rends-les exécutables. Avec le plugin, le skill est déjà dans son cache : `cp ~/.claude/plugins/cache/maitre-agent/maitre-agent/*/hooks/statusline.sh ~/.claude/plugins/cache/maitre-agent/maitre-agent/*/hooks/notify.sh ~/.claude/maitre-agent/` (chemin **observé sur 2.1.299** après installation, `.../maitre-agent/maitre-agent/<version>/hooks/` ; non documenté, donc à vérifier avec `ls`). Il change à chaque version, d'où la copie : refais-la après une mise à jour.
 2. Ajoute dans `~/.claude/settings.json`, après avoir montré le diff :
 ```json
 "statusLine": {
@@ -56,8 +56,8 @@ Un plugin ne peut pas fournir `statusLine` (seuls `agent` et `subagentStatusLine
   "refreshInterval": 10
 }
 ```
-3. Elle affiche : `🧭 <projet> · <jalon> · <n> agents · 5 h <x> % (reset HH:MM) · 7 j <y> %`. Jalon : première ligne utile de la section « Reprise… » (sinon « État ») de `docs/HANDOFF.md`, 40 caractères. Sans quota dans le JSON reçu (forfait sans limite, avant la première réponse) : `quota ?`.
-4. Le même script écrit `~/.claude/maitre-agent/usage.json` (jamais écrasé par du vide) et envoie une alerte aux seuils 70, 80 et 90 % (une fois par seuil et par remise à zéro). Aucun hook ne reçoit le quota : sans la barre d'état, pas d'alerte.
+3. Elle affiche : `🧭 <projet> · <jalon> · <n> agents · 5 h <x> % (reset HH:MM) · 7 j <y> %`. Jalon : la ligne `Jalon : …` de `docs/HANDOFF.md` (comme le mod de bureau), 40 caractères ; sans cette ligne, rien. Les caractères de contrôle du texte lu sont retirés. Sans quota dans le JSON reçu (forfait sans limite, avant la première réponse) : `quota ?`.
+4. Le même script écrit `~/.claude/maitre-agent/usage.json` (jamais écrasé par du vide) et envoie une alerte aux seuils 70, 80 et 90 % (une fois par seuil et par remise à zéro). Aucun hook ne reçoit le quota : sans la barre d'état, pas d'alerte. **Le skill lit ce fichier** par `SKILL_DIR/hooks/quota.sh` (SKILL §6 : mesure valable si elle a moins de 15 min et si la fenêtre n'est pas terminée). Ce script est dans le dossier du skill, donc une copie du skill (voies B et C) le trouve aussi ; sa source est `tools/quota.sh` du dépôt. Test : `sh ~/.claude/skills/maitre-agent/hooks/quota.sh; echo $?` (0, 70, 80, 90 ; 2 = pas de mesure utilisable).
 5. Sans le plugin, le compteur d'agents a besoin des hooks (§5) ; sinon il reste à `0 agent`.
 6. **App de bureau (onglet Code) : la barre d'état n'est pas affichée** (tickets anthropics/claude-code#41456 et #83534 ; un script témoin déclaré en `statusLine` n'a pas été appelé lors d'un test local du 2026-10-18). Installe à la place le plugin `maitre-agent-bureau` de la même marketplace : `/plugin install maitre-agent-bureau@maitre-agent` (voir le dossier `bureau/` du dépôt). Les hooks (§5) marchent aussi au bureau.
 
@@ -65,16 +65,17 @@ Un plugin ne peut pas fournir `statusLine` (seuls `agent` et `subagentStatusLine
 Le plugin les apporte (`hooks/hooks.json`). Sans plugin, copie `SKILL_DIR/hooks/agent-count.sh` dans `~/.claude/maitre-agent/`, rends-le exécutable, puis fusionne dans `~/.claude/settings.json` (diff montré avant) :
 ```json
 "hooks": {
-  "SubagentStart": [{ "matcher": "^ma-", "hooks": [{ "type": "command", "command": "~/.claude/maitre-agent/agent-count.sh start || true", "timeout": 5 }] }],
-  "SubagentStop": [{ "matcher": "^ma-", "hooks": [
-    { "type": "command", "command": "~/.claude/maitre-agent/agent-count.sh stop || true", "timeout": 5 },
-    { "type": "command", "command": "~/.claude/maitre-agent/notify.sh agent || true", "timeout": 10 } ] }],
+  "SubagentStart": [{ "hooks": [{ "type": "command", "command": "~/.claude/maitre-agent/agent-count.sh start || true", "timeout": 5 }] }],
+  "SubagentStop": [
+    { "hooks": [{ "type": "command", "command": "~/.claude/maitre-agent/agent-count.sh stop || true", "timeout": 5 }] },
+    { "matcher": "^ma-", "hooks": [{ "type": "command", "command": "~/.claude/maitre-agent/notify.sh agent || true", "timeout": 10 }] }],
   "Notification": [{ "matcher": "permission_prompt|idle_prompt", "hooks": [{ "type": "command", "command": "~/.claude/maitre-agent/notify.sh blocked || true", "timeout": 10 }] }]
 }
 ```
-- Notifications : `osascript` sous macOS, `notify-send` sous Linux s'il existe, rien ailleurs. Pour les couper : crée le fichier `~/.claude/maitre-agent/notifications-off` (utile au bureau, où l'app notifie déjà la fin d'une tâche : doublon possible). Pour tester sans rien afficher : `MAITRE_AGENT_DRY_RUN=1`.
+- Le compteur compte **tous** les sous-agents (aussi le repli `general-purpose`) ; seule la notification de fin est limitée aux `ma-*`.
+- Notifications : `osascript` sous macOS, `notify-send` sous Linux s'il existe, rien ailleurs. **Fin d'agent `ma-*` et alertes de quota : actives par défaut. Notification « Claude attend » (hook `Notification`) : désactivée par défaut**, car elle se déclencherait dans toutes les sessions ; pour l'activer, crée `~/.claude/maitre-agent/notifications-on`. Pour tout couper : crée `~/.claude/maitre-agent/notifications-off` (prime sur `-on` ; utile au bureau, où l'app notifie déjà la fin d'une tâche : doublon possible). Pour tester sans rien afficher : `MAITRE_AGENT_DRY_RUN=1`.
 - Aucun de ces scripts ne bloque : timeout court, `|| true`, sortie 0. Ils ont besoin de `jq`.
-- Les compteurs vivent dans `~/.claude/maitre-agent/state/` et sont purgés après 6 h.
+- Les compteurs vivent dans `~/.claude/maitre-agent/state/` et sont purgés après 5 h (la fenêtre de quota), dossiers vides compris.
 
 ## Vérification
 - Frontmatter YAML valide pour chaque agent.

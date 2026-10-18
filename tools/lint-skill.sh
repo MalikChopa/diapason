@@ -31,6 +31,9 @@ l=$(wc -l < "$S/SKILL.md"); t=$(( $(wc -c < "$S/SKILL.md") * 10 / 33 ))
 [ "$l" -lt 500 ] && ok "SKILL.md $l lignes" || ko "SKILL.md $l lignes (>= 500)"
 [ "$t" -lt 5000 ] && ok "SKILL.md ~$t tokens" || ko "SKILL.md ~$t tokens (>= 5000)"
 
+# 2b. Le skill ne se charge que sur commande explicite
+grep -q '^disable-model-invocation: true' "$S/SKILL.md" && ko "SKILL.md : disable-model-invocation casse le lancement par une autre session" || ok "SKILL.md : lancement par l'outil Skill possible"
+
 # 3. Chaque fichier cité existe : briefs/templates/agents/hooks, annexes du skill (commandes.md…),
 #    et tout nom de document du skill cité seul (minuscules, ex. phases.md)
 for r in $(grep -ohE '(briefs|templates|agents|hooks)/[A-Za-z_-]+\.(md|sh)' "$S"/*.md "$S"/briefs/*.md | sort -u); do
@@ -120,10 +123,12 @@ done
 for a in "$ROOT"/agents/*.md; do
   [ -f "$a" ] && [ ! -f "$S/agents/$(basename "$a")" ] && ko "agents/$(basename "$a") sans équivalent dans le skill"
 done
+# la source d'un script du skill est hooks/ (plugin) ou tools/ (quota.sh : outil du dépôt, copié dans le skill)
 for h in "$S"/hooks/*.sh; do
   n=$(basename "$h")
-  [ -f "$ROOT/hooks/$n" ] || { ko "hooks/$n manquant (copie du skill)"; continue; }
-  cmp -s "$h" "$ROOT/hooks/$n" && ok "hooks/$n identique au skill" || ko "hooks/$n différent du skill"
+  src="$ROOT/hooks/$n"; [ -f "$src" ] || src="$ROOT/tools/$n"
+  [ -f "$src" ] || { ko "hooks/$n manquant (copie du skill)"; continue; }
+  cmp -s "$h" "$src" && ok "${src#"$ROOT"/} identique au skill" || ko "${src#"$ROOT"/} différent du skill"
 done
 
 # 8. Workflows GitHub : YAML valide

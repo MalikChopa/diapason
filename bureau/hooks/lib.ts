@@ -105,15 +105,17 @@ export function decideAlerts(
   const alerts: Alert[] = []
   for (const w of windows) {
     if (typeof w.percentUsed !== 'number' || Number.isNaN(w.percentUsed)) continue
+    // Même valeur que celle affichée (69,6 s'affiche « 70 % » : le seuil de 70 % est franchi).
+    const rounded = Math.round(w.percentUsed)
     const old = state[w.kind]
     let known = old?.level ?? 0
     if (old) {
       const a = old.resetsAt ? Date.parse(old.resetsAt) : NaN
       const b = w.resetsAt ? Date.parse(w.resetsAt) : NaN
       const isOtherWindow = !Number.isNaN(a) && !Number.isNaN(b) && Math.abs(a - b) > SAME_WINDOW_MS
-      if (isOtherWindow || w.percentUsed < known) known = 0
+      if (isOtherWindow || rounded < known) known = 0
     }
-    const level = levelOf(w.percentUsed)
+    const level = levelOf(rounded)
     if (level > known) {
       alerts.push({ kind: w.kind, threshold: level, percent: w.percentUsed, resetsAt: w.resetsAt })
       known = level
@@ -177,7 +179,8 @@ export function parseMilestone(handoff: string | undefined): string | undefined 
     const m = /^\s*(?:[-*]\s+)?(?:\*\*)?Jalon(?: actuel)?(?:\*\*)?\s*:(?:\*\*)?\s*(.+?)\s*$/i.exec(raw)
     if (m && m[1]) {
       const v = m[1].replace(/[*_`]+/g, '').trim()
-      if (v.length > 0) return truncate(v, 40)
+      // un gabarit non rempli (« <jalon …> ») n'est pas un jalon
+      if (v.length > 0 && !v.startsWith('<')) return truncate(v, 40)
     }
   }
   return undefined

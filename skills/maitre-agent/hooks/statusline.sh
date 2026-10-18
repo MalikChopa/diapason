@@ -3,11 +3,11 @@
 # Entrée : JSON de la barre d'état sur l'entrée standard. Sortie : une ligne
 #   🧭 <projet> · <jalon> · <n> agents · 5 h <x> % (reset HH:MM) · 7 j <y> %
 # - projet : nom du dossier courant (.workspace.current_dir, sinon .cwd, sinon $PWD)
-# - jalon  : ligne « Jalon : … » de docs/HANDOFF.md si elle existe, sinon première ligne utile, 40 caractères au plus. Règle :
-#            on cherche la section « ## Reprise… » (Reprise immédiate), à défaut « ## État » ;
-#            on prend sa première ligne non vide qui n'est ni un titre (#), ni un tableau (|),
-#            ni une citation (>), ni un commentaire HTML, ni « Dernière visite » ; on retire
-#            la puce ou le numéro de liste, les ** et les accents graves. Rien si pas de HANDOFF.
+# - jalon  : ligne « Jalon : … » de docs/HANDOFF.md (comme le mod de bureau), 40 caractères au plus.
+#            Rien si la ligne manque, est vide ou garde le gabarit « <…> ». Pas de repli sur une autre
+#            ligne : « Reprise immédiate » commence souvent par une phrase fixe qui ne dit rien du jalon.
+#            Ce texte vient d'un fichier du projet (peut-être non fiable) : les caractères de contrôle
+#            (ESC, BEL, C1…) sont retirés avant l'affichage.
 # - n      : nombre de fichiers du compteur de la session (voir agent-count.sh)
 # - quota  : rate_limits.five_hour / seven_day ; « quota ? » si le JSON n'en contient pas.
 # Effets de bord : écrit ~/.claude/maitre-agent/usage.json (jamais écrasé par du vide) et
@@ -42,25 +42,21 @@ EOT
 [ -n "$dir" ] || dir="$PWD"
 proj=$(basename "$dir" 2>/dev/null) || proj="$dir"
 
-# --- Jalon : première ligne utile de docs/HANDOFF.md ---------------------------------------
+# Texte venant du JSON ou d'un fichier du projet : on retire les caractères de contrôle, qui pourraient
+# être des séquences d'échappement du terminal (titre de fenêtre, effacement d'écran, presse-papiers…).
+# tr retire C0 et DEL (octets 0-31 et 127), jq retire les C1 (U+0080 à U+009F).
+clean() { printf '%s' "$1" | tr -d '\000-\037\177' | jq -Rrs 'gsub("[\\x{80}-\\x{9f}]";"")' 2>/dev/null; }
+proj=$(clean "$proj")
+
+# --- Jalon : ligne « Jalon : » de docs/HANDOFF.md ------------------------------------------
 jalon=""
 f="$dir/docs/HANDOFF.md"
 if [ -f "$f" ]; then
   line=$(sed -n 's/^Jalon :[[:space:]]*//p' "$f" 2>/dev/null | head -n 1) || line=""
   case "$line" in "<"*) line="" ;; esac
-  [ -n "$line" ] || for sect in 'Reprise' '(État|Etat)'; do
-    line=$(awk -v sect="$sect" '
-      /^## / { insec = ($0 ~ ("^## " sect)); next }
-      insec {
-        l = $0; sub(/^[ \t]+/, "", l); sub(/[ \t\r]+$/, "", l)
-        if (l == "" || l ~ /^#/ || l ~ /^\|/ || l ~ /^>/ || l ~ /^<!--/ || l ~ /^```/ || l ~ /^Dernière visite/) next
-        print l; exit
-      }' "$f" 2>/dev/null) || line=""
-    [ -n "$line" ] && break
-  done
   if [ -n "$line" ]; then
-    jalon=$(printf '%s' "$line" | sed -e 's/^[-*+][ ]*//' -e 's/^[0-9][0-9]*[.)][ ]*//' -e 's/\*\*//g' -e 's/`//g' \
-      | jq -Rrs 'rtrimstr("\n") | if length > 40 then .[0:39] + "…" else . end' 2>/dev/null) || jalon=""
+    jalon=$(printf '%s' "$line" | sed -e 's/\*\*//g' -e 's/`//g' | tr -d '\000-\037\177' \
+      | jq -Rrs 'gsub("[\\x{80}-\\x{9f}]";"") | if length > 40 then .[0:39] + "…" else . end' 2>/dev/null) || jalon=""
   fi
 fi
 
@@ -71,7 +67,7 @@ case "$sidsafe" in
   "") ;;
   *) case "$sidsafe" in .*) sidsafe="_$sidsafe" ;; esac
      ad="$BASE/state/$sidsafe/agents"
-     [ -d "$ad" ] && n=$(( $(find "$ad" -type f -mmin -360 2>/dev/null | wc -l) + 0 )) ;;
+     [ -d "$ad" ] && n=$(( $(find "$ad" -type f -mmin -300 2>/dev/null | wc -l) + 0 )) ;;
 esac
 if [ "$n" -le 1 ]; then agents="$n agent"; else agents="$n agents"; fi
 
@@ -127,7 +123,10 @@ alerte() { # $1 nom de fenêtre (5h|7j)  $2 pourcentage entier  $3 resets_at  $4
   done
   [ "$top" -gt 0 ] || return 0
   mkdir -p "$ad" 2>/dev/null || return 0
-  for s in 70 80 90; do [ "$s" -le "$top" ] && : > "$ad/$1-$key-$s" 2>/dev/null; done
+  # Verrou atomique : mkdir réussit pour un seul appel. Deux sessions qui franchissent le seuil en même
+  # temps n'envoient qu'une alerte ; l'autre voit le dossier existant et s'arrête.
+  mkdir "$ad/$1-$key-$top" 2>/dev/null || return 0
+  for s in 70 80 90; do [ "$s" -lt "$top" ] && mkdir "$ad/$1-$key-$s" 2>/dev/null; done
   h=$(hhmm "$3"); extra=""; [ -n "$h" ] && extra=" (reset $h)"
   nt=""
   for c in "$SELF_DIR/notify.sh" "$BASE/notify.sh" "$BASE/hooks/notify.sh"; do [ -f "$c" ] && { nt="$c"; break; }; done
@@ -135,8 +134,10 @@ alerte() { # $1 nom de fenêtre (5h|7j)  $2 pourcentage entier  $3 resets_at  $4
 }
 alerte 5h "$p5" "$r5" "5 h"
 alerte 7j "$p7" "$r7" "7 j"
-# Purge des marqueurs d'alerte de plus de 8 jours
-[ -d "$BASE/state/alerts" ] && find "$BASE/state/alerts" -type f -mtime +8 -exec rm -f {} + 2>/dev/null
+# Purge des marqueurs d'alerte de plus de 8 jours (fichiers d'une ancienne version ou dossiers vides)
+[ -d "$BASE/state/alerts" ] && find "$BASE/state/alerts" -mindepth 1 -mtime +8 -delete 2>/dev/null
+# Purge des dossiers d'état vides depuis plus de 5 h (sessions finies)
+[ -d "$BASE/state" ] && find "$BASE/state" -mindepth 1 -type d -empty -mmin +300 ! -path "$BASE/state/alerts" ! -path "$BASE/state/alerts/*" -delete 2>/dev/null
 
 # --- Sortie -----------------------------------------------------------------------------------
 if [ -n "$jalon" ]; then

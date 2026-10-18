@@ -15,3 +15,5 @@ jobs:
           # Facultatif : secret du dépôt avec des motifs personnels à refuser (ex. nom1|nom2).
           LINT_PRIVATE_PATTERNS: ${{ secrets.LINT_PRIVATE_PATTERNS }}
         run: sh tools/lint-skill.sh
+      - name: Tests des hooks (tests/hooks.sh, HOME factice, aucune notification réelle)
+        run: sh tests/hooks.sh

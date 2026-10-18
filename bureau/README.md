@@ -26,6 +26,8 @@ Les tests ne dessinent rien à l'écran : ils remplacent l'affichage par des enr
 - L'API n'a pas d'événement « sous-agent terminé » : le mod écoute la fin du tour du sous-agent (`turn.complete` d'un `agentId`). Un agent relancé par un message donne un nouveau toast.
 - Le nombre d'agents compte ceux qui sont `pending`, `running` ou `waiting` ; un agent `idle` n'est pas compté.
 - `$.ui.notify` passe par le canal de notification du terminal de la personne ; dans l'onglet Code, son effet n'est pas vérifié (le toast, lui, est toujours émis).
-- Le jalon vient d'une ligne `Jalon : ...` seulement ; sans elle, rien n'est affiché.
+- Le jalon vient d'une ligne `Jalon : ...` seulement ; sans elle, ou si elle garde le gabarit non rempli (`<…>`), rien n'est affiché. La barre d'état du terminal fait pareil (même règle depuis la v1.1.1).
+- Les seuils se comparent au pourcentage **arrondi**, celui qu'on voit (69,6 s'affiche « 70 % » et déclenche l'alerte de 70 %) : même règle que le script du terminal depuis la v1.1.1.
+- Le gestionnaire `agent.spawn`, qui conditionne le lancement d'un sous-agent, ne lève jamais d'exception (`try/catch` et `.catch` du moteur, `claude plugin validate --strict` ne signale plus « gating hook without .catch »). Le chemin `.catch` lui-même n'est pas couvert par un test.
 - Les alertes ne se répètent pas dans une même fenêtre ; elles repartent à zéro quand la date de reset change de plus de 30 minutes ou que le pourcentage retombe sous le seuil déjà signalé.
 - Ligne d'état vue en réel dans l'onglet Code le 2026-10-18 (mod chargé à chaud depuis un dossier local), ainsi qu'un toast de fin d'agent ; l'effet de `$.ui.notify` dans l'onglet Code n'est pas vérifié. Les tests automatiques, eux, passent par le moteur, pas par l'écran.

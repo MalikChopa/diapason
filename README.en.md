@@ -15,6 +15,30 @@ English · [Version française](README.md)
 
 > The skill itself, its prompts, scripts and messages are written in French. This page is a full translation of the French README. Some linked documents (`docs/fabrication.md`, `evals/`, `skills/`) are in French.
 
+## In 3 minutes
+
+**Prerequisites:** macOS or Linux (the scripts are `sh`), [`jq`](https://jqlang.org/) (`brew install jq` or `sudo apt install jq`; without it the counter, notifications and status line stay silent), and Claude Code (CLI 2.1.299 tried).
+
+**1. Install** (one command, route A below):
+
+```sh
+claude plugin install maitre-agent --marketplace https://github.com/MalikMoussaoui/maitre-agent
+```
+
+This one-command form is the one described by `claude plugin install --help`; it worked with a local path (CLI 2.1.299, throwaway HOME) but was not tried as-is with the GitHub URL. The two-command form was tried successfully from GitHub (same CLI, throwaway HOME, full HTTPS URL): `claude plugin marketplace add https://github.com/MalikMoussaoui/maitre-agent`, then `claude plugin install maitre-agent@maitre-agent`.
+
+**2. Run it**, with an idea (example):
+
+```text
+/maitre-agent compare three silent mechanical keyboards under 100 EUR and tell me which one to buy
+```
+
+The skill **starts through this command**. Its description tells the model to load it only on an explicit request (see "Command name"). The skill's messages are in French; it answers in the language of your profile.
+
+**3. What it will ask you.** The first time: your profile (autonomy, project folder, language/tone/level, what it must always ask you first), in a single message; answer "défauts" to accept everything. After that: your approval before anything that costs money, installs, publishes, sends, opens an account or deletes; otherwise a single question only if it blocks.
+
+**4. What it costs, in increasing order.** *Small* (a question, a purchase, a small script): 0 to 2 agents, often alone. *Medium*: one design, up to 2 research agents on a Pro plan, milestones one after another. *Large*: several 5-hour windows, announced and to be approved before starting. Measured reference: one research agent is about 209,000 tokens, about 12% of a 5-hour window (a single measurement, Pro plan). The estimated cost is announced before each batch.
+
 ## The pitch
 
 `maitre-agent` is a skill for [Claude Code](https://code.claude.com/docs/en/skills). You give it an idea (a script, a purchase to compare, a piece of research, a text) or a project to resume. The main session becomes the "master agent": it reads your profile, splits the work, hands it to sub-agents running the right model, verifies the facts that matter by itself, watches your quota, and writes a handoff file (`HANDOFF.md`).
@@ -66,12 +90,12 @@ The agents write the big pieces. They never launch other agents. The master agen
 | Delegation by model | Light model for mechanical work, intermediate for research, audit and routine code, most capable for design. The model is always stated explicitly. 5 `ma-*` agents. | used for real |
 | Verification | Decisive facts are verified by the master. Required-proof table, audits capped at 2 rounds, code fixes capped at 3 rounds, "3 failures" protocol. | used for real |
 | Permissions | Approval asked before money, installs, publishing, sending, accounts, deletion. List of prohibitions (see Safeguards). | written; the `permissions.ask` rules must be installed by hand |
-| Quota 70 / 80 / 90% | No more top-model agent at 70%, no new agent at 80%, clean stop at 90%. | used for real (one stop at 90% during the build) |
+| Quota 70 / 80 / 90% | At 70%, no more top-model agent (design moves to the intermediate model, and it says so); at 80%, it proposes and only launches with your explicit approval, cost announced; at 90%, clean stop. Without a usage tool, it reads the `usage.json` written by the status line, through `hooks/quota.sh` (tier 0 / 70 / 80 / 90, or "no measurement"). | stop at 90%: used for real (v1.1.0); `quota.sh`: tested with dummy JSON (`tests/hooks.sh`); the rest: written |
 | Handoff | `HANDOFF.md` with [V] verified / [?] not rechecked tags, an "Agents launched" table, an "Immediate resume" section. Files on disk win if HANDOFF is behind. | used for real (one resume after a cut) |
-| Sub-commands | `aide` (help), `statut`, `reprendre`, `profil`, `nouveau`. | written |
-| Terminal status line | `🧭 <project> · <milestone> · <n> agents · 5 h <x> % (reset HH:MM) · 7 j <y> %`. Also writes the quota to `~/.claude/maitre-agent/usage.json`. | tested with dummy JSON; not seen in a real terminal |
+| Sub-commands | `aide` (help), `statut`, `reprendre`, `profil`, `diagnostic` (or `doctor`: 8 read-only checks of the installation), `nouveau`. | written |
+| Terminal status line | `🧭 <project> · <milestone> · <n> agents · 5 h <x> % (reset HH:MM) · 7 j <y> %`. Also writes the quota to `~/.claude/maitre-agent/usage.json`. | tested with dummy JSON on every push (`tests/hooks.sh`); not seen in a real terminal |
 | Desktop mod | The same idea for the Code tab of the Claude desktop app: status line, quota alerts, agent-finished toast. | tested: 25 of 25 tests; status line and agent-finished toast seen for real |
-| Notifications | System notification when an agent finishes, when the session is blocked, and at 70 / 80 / 90% quota. macOS and Linux. Quota alerts require the status line (terminal) or the mod (desktop). | macOS command tested for real; hooks not tested end to end |
+| Notifications | System notification when a `ma-*` agent finishes and at 70 / 80 / 90% quota (on by default); "Claude is waiting" (permission, idle) **off by default**, turned on with the file `~/.claude/maitre-agent/notifications-on`. `notifications-off` turns everything off. macOS and Linux. Quota alerts require the status line (terminal) or the mod (desktop). | macOS command tested for real; scripts tested with dummy JSON (`tests/hooks.sh`); hooks not tested end to end by Claude Code |
 | Buttons | Questions go through the environment's question tool (2 to 4 options, the recommended one first, marked "(recommandé)"). Without that tool: a numbered list. | written |
 | Chapters | One chapter per phase (framing, research, design, milestones, delivery) if the environment has a chapter tool. Otherwise nothing. | written |
 | "Since your last visit" | On every resume, 3 lines: what changed, what is done, what is expected from you. | written |
@@ -95,9 +119,11 @@ For the desktop app (Code tab), also add the mod, which replaces the status line
 /plugin install maitre-agent-bureau@maitre-agent
 ```
 
-From a shell: `claude plugin marketplace add MalikMoussaoui/maitre-agent`, then `claude plugin install maitre-agent@maitre-agent`. To pin a version: `MalikMoussaoui/maitre-agent#v1.1.0`.
+From a shell: `claude plugin marketplace add https://github.com/MalikMoussaoui/maitre-agent`, then `claude plugin install maitre-agent@maitre-agent` (form tried successfully from GitHub, CLI 2.1.299, throwaway HOME). The short form `MalikMoussaoui/maitre-agent` was not tried (it may go through SSH). To pin a version: `MalikMoussaoui/maitre-agent#v1.1.1`.
 
-You get: the skill, the 5 `ma-*` agents, the agent counter, agent-finished and session-blocked notifications, and re-injection of the state after an automatic summary. Quota alerts are not part of it: they come from the status line (terminal) or the mod (desktop). What a plugin **cannot** install: the terminal status line and the `permissions.ask` rules (see below). No plugins in cloud sessions.
+You get: the skill (started only by `/maitre-agent`), the 5 `ma-*` agents, the agent counter, the agent-finished notification, and re-injection of the state after an automatic summary. **The hooks are active in all your Claude Code sessions**, not only when the skill runs: the re-injection does nothing outside a project that has a `docs/HANDOFF.md`, and the "Claude is waiting" notification is off by default. Quota alerts are not part of it: they come from the status line (terminal) or the mod (desktop). What a plugin **cannot** install: the terminal status line and the `permissions.ask` rules (see below). No plugins in cloud sessions.
+
+Size measured with `claude plugin details` (CLI 2.1.299, 2026-10-19, v1.1.1): about 3.6k tokens when the skill is called, about 257 tokens added permanently to every session (skill and 5 agents; the CLI's estimates). For v1.1.0 the outside review had read 3.4k and 285.
 
 ### Route B: copy the skill
 
@@ -115,28 +141,32 @@ On the [releases page](https://github.com/MalikMoussaoui/maitre-agent/releases),
 
 ```sh
 # the skill alone (same as route B): the zip contains the maitre-agent/ folder
-unzip maitre-agent-skill-v1.1.0.zip -d ~/.claude/skills/
+unzip maitre-agent-skill-v1.1.1.zip -d ~/.claude/skills/
 
 # the full plugin (files at the zip root), to try it out
-unzip maitre-agent-plugin-v1.1.0.zip -d maitre-agent-plugin
+unzip maitre-agent-plugin-v1.1.1.zip -d maitre-agent-plugin
 claude --plugin-dir maitre-agent-plugin
 ```
 
 ### Command name
 - Through the plugin: `/maitre-agent:maitre-agent`. The short name `/maitre-agent` also works as long as no other skill takes it.
 - Through the copied skill (routes B and C): `/maitre-agent`.
+- **Start it with `/maitre-agent`.** The skill can use a good share of a quota window: its description and `when_to_use` limit loading to an explicit request (the command, or a session asking for the method). `disable-model-invocation: true` was ruled out, because it would stop another session from starting it through the Skill tool.
 
 ### Manual configuration (optional, with your approval, and merging)
 
 Both settings go in `~/.claude/settings.json`. **Read the file and merge: never overwrite it.**
 
-**Terminal status line** (does not work in the desktop app, see the limits). Run the commands below from a copy of the repository (`git clone`); with the plugin, these files sit in its cache, hence the copy:
+**Terminal status line** (does not work in the desktop app, see the limits). With the plugin there is no need for `git clone`: the scripts sit in its cache, and you copy them to a stable path (the cache folder changes with every version, so copy again after an update). Path **observed on 2.1.299** after installing from GitHub, not documented: `~/.claude/plugins/cache/maitre-agent/maitre-agent/<version>/hooks/`. Check with `ls`; if several versions are there, replace `*` with the newest:
 
 ```sh
 mkdir -p ~/.claude/maitre-agent
-cp hooks/statusline.sh hooks/notify.sh ~/.claude/maitre-agent/
+cp ~/.claude/plugins/cache/maitre-agent/maitre-agent/*/hooks/statusline.sh ~/.claude/maitre-agent/
+cp ~/.claude/plugins/cache/maitre-agent/maitre-agent/*/hooks/notify.sh ~/.claude/maitre-agent/
 chmod +x ~/.claude/maitre-agent/statusline.sh ~/.claude/maitre-agent/notify.sh
 ```
+
+Without the plugin (routes B and C), take the same files from `hooks/` in a copy of the repository (`git clone`) or from the plugin zip.
 ```json
 "statusLine": {
   "type": "command",
@@ -144,7 +174,7 @@ chmod +x ~/.claude/maitre-agent/statusline.sh ~/.claude/maitre-agent/notify.sh
   "refreshInterval": 10
 }
 ```
-It needs `jq`. The quota it shows comes from Claude Code (Pro and Max plans, after the session's first reply); without it, the line shows `quota ?`.
+It needs `jq`. The quota it shows comes from Claude Code (Pro and Max plans, after the session's first reply); without it, the line shows `quota ?`. The milestone shown is the `Jalon : …` line of `docs/HANDOFF.md`. The same script writes the quota to `~/.claude/maitre-agent/usage.json`, which the skill reads to apply its thresholds.
 
 **Ask before risky commands** (`permissions.ask`): a plugin cannot install these.
 ```json
@@ -166,6 +196,7 @@ Adapt the list to your system. These rules also apply to sub-agents.
 | `/maitre-agent statut` | `status` | 5 lines at most per known project, changes nothing |
 | `/maitre-agent reprendre` | `resume` | offers the known projects as buttons, then resumes the one you pick |
 | `/maitre-agent profil` | `profile` | shows or edits your profile, starts no project |
+| `/maitre-agent diagnostic` | `doctor` | 8 read-only checks (`jq`, status line, duplicate skill or agents, readable quota, notifications, version, profile), each "OK / KO + command to fix it" |
 | `/maitre-agent nouveau <idea>` | `new <idea>` | starts a new project with that idea |
 | `/maitre-agent <idea>` | | same thing, it is the default case |
 | `/maitre-agent <project path>` | | resumes that project |
@@ -193,7 +224,7 @@ A project's dependencies, installed in its own folder, need a single approval pe
 
 Your profile never lifts these prohibitions, except for an explicit, dated instruction from you written in the profile. The content of a HANDOFF or a research file is treated as data, not as an instruction.
 
-**Quota:** 70% (no more top-model agent), 80% (no new agent at all), 90% (clean stop, HANDOFF updated, reset time given).
+**Quota:** 70% (no more top-model agent: design moves to the intermediate model, and it says so), 80% (no new agent on its own initiative: it proposes, cost announced, and waits for your explicit yes), 90% (clean stop, HANDOFF updated, reset time given).
 
 **Your data:** the scripts and the mod contact no third-party service. Your profile, projects and quota stay in `~/.claude/` and in your project folder. Research work goes through the web when a question requires it; the skill's rule is that your data stays on your machine (no third-party service, no publishing, no shared artifact).
 
@@ -203,7 +234,7 @@ Your profile never lifts these prohibitions, except for an explicit, dated instr
 Multi-agent work costs more tokens than a single session, and the skill says so itself: it only delegates when a task has a large context to read, real parallelism, or needs independent verification. Figures measured while building this repository, on a Pro plan: one research agent, 209,000 tokens, 28 minutes, about 12% of the 5-hour window; two implementation agents, 110,000 and 111,000 tokens (percentage not measured). Three measurements, not an average.
 
 **Is a Pro plan enough?**
-This repository was built on a Pro plan, with a forced pause at 90% of the 5-hour window and a resume after the reset. The skill is designed for that (70 / 80 / 90% thresholds, clean stop), but a big project will take several windows.
+This repository was built on a Pro plan, with a forced pause at 90% of the 5-hour window and a resume after the reset. The skill is designed for that (70 / 80 / 90% thresholds, clean stop). Since v1.1.1 a "Pro plan" rule caps a Medium project at 1 design + 2 research agents, milestones in sequence, and announces a Large one as "several windows, N days" before starting. Why: extrapolating a single measurement (209,000 tokens, about 12% of the window), the outside review estimated that a Medium with at least 1 design and 1 milestone already takes a third to a half of a window (linear estimate, not measured).
 
 **Does it work without sub-agents?**
 Yes. Without a sub-agent tool, the skill says so once, then works alone: it keeps verification, permissions and handoff. An audit done by itself is then not independent, and it writes so ("auto-vérifié, non indépendant", self-verified, not independent).
@@ -218,20 +249,21 @@ The language of your profile, for everything the skill writes. File names stay i
 Yes, that is the point of the handoff: only the project's files travel (`CLAUDE.md`, `docs/HANDOFF.md`, `docs/research/`, `docs/briefs/`). The profile used is the one of the person resuming. The skill compares HANDOFF to the disk before relaunching anything.
 
 **How do I turn notifications off?**
-Create the file `~/.claude/maitre-agent/notifications-off`: no more notifications from the scripts (quota alerts included), the status line keeps working. The desktop mod has its own toasts, which this file does not turn off. Useful in the desktop app, which already notifies when a task ends. To test without showing anything: environment variable `MAITRE_AGENT_DRY_RUN=1`. To remove everything: uninstall the plugin.
+By default the "Claude is waiting" notification (permission request, idle) is **off**; the end of a `ma-*` agent and the quota alerts do notify. To turn the first one on, create `~/.claude/maitre-agent/notifications-on`. To turn everything off, create `~/.claude/maitre-agent/notifications-off` (no more notifications from the scripts, quota alerts included; the status line keeps working). The desktop mod has its own toasts, which this file does not turn off. Useful in the desktop app, which already notifies when a task ends. To test without showing anything: environment variable `MAITRE_AGENT_DRY_RUN=1`. To remove everything: uninstall the plugin.
 
 **Are the scripts safe?**
-They never block (short timeout, `|| true`, exit code 0). A search through their code finds no network call (`curl`, `wget`...); they write only to `~/.claude/maitre-agent/`. Read them before installing: `hooks/` is about 250 lines of `sh` in total.
+They never block (short timeout, `|| true`, exit code 0). A search through their code finds no network call (`curl`, `wget`...); they write only to `~/.claude/maitre-agent/`. Read them before installing: `hooks/` is about 250 lines of `sh` in total. The text they display (milestone, agent report, message) is filtered: control characters (terminal escape sequences) are removed.
 
 ## Limits, honestly
 
 - **The terminal status line is not displayed in the desktop app.** A test script declared as `statusLine` was called by none of the 6 following messages (caveat: hot reloading of the project setting is not proven). This matches the public Claude Code issue #41456 (open); #83534 was closed as a duplicate of #41456. Hence the `maitre-agent-bureau` mod, which relies on an early-access API and may break from one version to the next (written for Claude Code 2.1.299).
-- **The plugin's hooks have not been tested end to end by Claude Code.** The commands in `hooks.json` were run one by one with `sh -c` and the `CLAUDE_PLUGIN_ROOT` variable; the plugin zip passes `claude plugin validate --strict`. But Claude Code has not yet triggered them in a real session with the plugin installed.
+- **The plugin's hooks have not been tested end to end by Claude Code.** The scripts are tested with dummy JSON on every push (`tests/hooks.sh`, throwaway HOME, no real notification), and the commands in `hooks.json` were run one by one with `sh -c` and the `CLAUDE_PLUGIN_ROOT` variable; the plugin passes `claude plugin validate --strict`. But Claude Code has not yet triggered them in a real session with the plugin installed. An agent you interrupt may not fire `SubagentStop` (not verified): the counter then ignores its files after 5 hours.
 - **Notifications:** the macOS command was seen working when run outside the sandbox of Claude's commands. Linux (`notify-send`): not tested.
-- **Installation from the GitHub marketplace could not be tried before publication** (`/plugin marketplace add`, `claude plugin install`, `claude --plugin-dir` on the zip): only the plugin's static validation is proven. The desktop mod was loaded from a local folder, not from the marketplace. This limit will be replaced after a real trial.
-- **Short agent names under the plugin** (`ma-chercheur` instead of `maitre-agent:ma-chercheur`): the skill asks for the short name; that it resolves under the plugin is not verified.
-- **The GitHub workflows (`lint.yml`, `release.yml`) had not been run yet** when this README was written.
+- **Installation from the GitHub marketplace: tried, with a caveat.** On 2026-10-19 an outside reviewer installed `maitre-agent` and `maitre-agent-bureau` from GitHub in a throwaway HOME (CLI 2.1.299, full HTTPS URL): "Successfully installed", status enabled. Not tried: the short `owner/repo` form, the desktop app, and behaviour in a real session (no authentication in a throwaway HOME).
+- **Agent names under the plugin.** Under the plugin the agents are called `maitre-agent:ma-chercheur`. Since v1.1.1 the skill asks for "the exact name shown by the sub-agent tool"; that this resolves in a real session has not been tried (a single real trial is still to do). If the `ma-*` agents are missing it falls back to `general-purpose`, and says so.
+- **The GitHub workflows (`lint.yml`, `release.yml`) have been run** and were green on 2026-10-18 (lint and release, release v1.1.0 with its two zips). The v1.1.1 result is only known after its push.
 - **The evaluations are written but not yet run**: see [`evals/`](evals/README.md) (in French; their format is not that of `claude plugin eval`). No result is claimed.
+- **In the terminal the quota comes from the status line.** The `get_usage` tool is not visible to the model in CLI 2.1.299 (it only shows up as an SDK control request); the skill therefore reads `usage.json` through `hooks/quota.sh`, which assumes the status line is installed (and called: not in the desktop app). Without a valid measurement (under 15 minutes old) it asks you for the percentage.
 - **Buttons and chapters depend on the environment.** Without a question tool, the skill asks numbered lists; without a chapter tool, it opens none. The desktop app's chapter tool is not publicly documented.
 - **Multi-agent costs more** than a single session, and nothing guarantees it is faster. For a small job, the skill stays alone.
 - **Only the cases described above are verified.** A line of this README that says neither "tested" nor "used for real" should be read as untested.
@@ -255,12 +287,13 @@ About twenty other repositories were read during the initial research; only thos
 The story, short, funny and checkable:
 
 - **v1.0.0**: research on about twenty GitHub repositories and on the Claude Code docs, a design, **2 audits** and **1 real test** (per the project brief; details not kept), then a home-made lint. The skill reviewed itself before reviewing anyone else.
-- **v1.1.0**, this one, was driven by the skill on its own build, with its own agents: one `ma-chercheur` (sonnet, 209,000 tokens), two `ma-executant` (sonnet) for the plugin and the desktop mod, and a third to write this README. The master agent kept the checks that mattered for itself.
+- **v1.1.0** was driven by the skill on its own build, with its own agents: one `ma-chercheur` (sonnet, 209,000 tokens), two `ma-executant` (sonnet) for the plugin and the desktop mod, and a third to write this README. The master agent kept the checks that mattered for itself.
 - **It stopped exactly when it should.** At 90% of the 5-hour quota, the skill's rule kicked in: clean stop, HANDOFF updated, not one more agent launched. After the reset, the build resumed, HANDOFF up to date.
 - **It also tripped over its own feet, and wrote it down.** The master agent overwrote a local settings file without reading it (the opposite of its own rule). A commit meant to contain a piece of research contained none of it, because of a git exclusion. Both are told in the handoff, not hidden.
 - **The real tests have admitted limits:** the notification arrived, but not when it was fired from the sandbox; the test script showed that the desktop app does not call the status line, which is how the mod was born.
 - **Reviewed by an independent auditor (`ma-auditeur`) on 2026-10-18, corrections applied.**
-- **Not done yet at the time of writing:** running the GitHub workflows, running the evaluations.
+- **v1.1.1** comes from an outside review of the published repository (15 fixes, 5 modifications, 4 additions, reviewer in read-only mode): filtered status line, a quota the skill can finally read, a "Pro plan" rule, a skill started only by command, a `diagnostic` sub-command, hook tests.
+- **Not done yet:** running the evaluations (`evals/`).
 
 The full story, with the agents, their models, measured costs, decisions and mistakes: [`docs/fabrication.md`](docs/fabrication.md) (in French).
 

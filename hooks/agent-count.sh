@@ -2,7 +2,7 @@
 # Méthode maître agent : compteur d'agents en cours.
 # Usage : agent-count.sh start|stop  (JSON du hook SubagentStart / SubagentStop sur l'entrée standard)
 # Un fichier par agent_id dans ~/.claude/maitre-agent/state/<session_id>/agents/ ;
-# les fichiers de plus de 6 h sont purgés. Jamais bloquant : sort toujours avec 0.
+# les fichiers de plus de 5 h (la fenêtre de quota) sont purgés, puis les dossiers vides. Jamais bloquant : sort toujours avec 0.
 mode="$1"
 case "$mode" in start|stop) ;; *) exit 0 ;; esac
 [ -t 0 ] && exit 0
@@ -28,6 +28,7 @@ if [ "$mode" = start ]; then
 else
   rm -f "$dir/$aid" 2>/dev/null || true
 fi
-# Purge des compteurs de plus de 6 h (agent jamais arrêté, session coupée)
-[ -d "$STATE" ] && find "$STATE" -path '*/agents/*' -type f -mmin +360 -exec rm -f {} + 2>/dev/null
+# Purge des compteurs de plus de 5 h (agent interrompu sans SubagentStop, session coupée), puis des dossiers vides
+[ -d "$STATE" ] && find "$STATE" -path '*/agents/*' -type f -mmin +300 -exec rm -f {} + 2>/dev/null
+[ -d "$STATE" ] && find "$STATE" -mindepth 1 -type d -empty -mmin +300 ! -path "$STATE/alerts" ! -path "$STATE/alerts/*" -delete 2>/dev/null
 exit 0

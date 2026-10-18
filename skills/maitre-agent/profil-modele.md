@@ -15,7 +15,7 @@ Emplacement : `~/.claude/maitre-agent/profil.md`, hors du skill, pour qu'une mis
    - les 4 questions essentielles ci-dessous ;
    - les questions bloquantes du projet demandé (2 au maximum) ;
    - « Je l'enregistre dans <chemin> et je le complète au fil de tes corrections. Réponds "défauts" pour tout accepter. »
-   Si `~/.claude/agents/ma-chercheur.md` est absent, ajoute une question : « J'installe les sous-agents et les garde-fous de la méthode ? (voir `installation.md`) ». Défaut : non, tant que l'utilisateur n'a pas dit oui.
+   Si les agents `ma-*` ne figurent ni dans `~/.claude/agents/` ni dans la liste de l'outil de sous-agents (ni sous la forme `maitre-agent:ma-*`, fournie par le plugin), ajoute une question : « J'installe les sous-agents et les garde-fous de la méthode ? (voir `installation.md`) ». Défaut : non, tant que l'utilisateur n'a pas dit oui. S'ils sont fournis par le plugin, ne pose pas la question.
 3. Après la réponse :
    - écris le profil ;
    - marque « (défaut, à confirmer) » toute ligne que l'utilisateur n'a pas choisie explicitement ;
@@ -51,7 +51,7 @@ Créé : <AAAA-MM-JJ> · Mis à jour : <AAAA-MM-JJ> · Mises à jour automatique
 - Pays / devise / unités / fuseau : <…>
 - Dossier de projets : <chemin>
 - Outils Claude : <sous-agents oui/non, questions, usage, dossier, navigateur, Artifact>
-- Forfait / quota : <… ou « pas d'outil d'usage »>
+- Forfait / quota : <forfait (Pro, Max, API…) si connu ; source du quota : outil d'usage, `usage.json` de la barre d'état, ou « pas de mesure »>
 - Machine et outils de dev : <rempli quand un projet en a besoin>
 
 ## Préférences générales (toutes les tâches)

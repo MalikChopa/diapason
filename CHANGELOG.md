@@ -3,6 +3,40 @@
 Toutes les évolutions notables de ce projet sont notées ici.
 Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le projet suit le [versionnement sémantique](https://semver.org/lang/fr/).
 
+## [1.1.1] - 2026-10-19
+
+Corrections et ajouts issus d'une critique extérieure du dépôt publié (15 corrections, 5 modifications, 4 ajouts ; ceux de cette version sont listés ici).
+
+### Corrigé
+- **Barre d'état et notifications** : les caractères de contrôle (séquences d'échappement du terminal : titre de fenêtre, effacement d'écran…) sont retirés du jalon, du nom de projet et des textes de notification (`hooks/statusline.sh`, `hooks/notify.sh`).
+- **Notifications** : un texte qui commence par « - » n'est plus perdu (`--` avant le texte pour `osascript` et `notify-send`) ; les `**` du markdown sont retirés.
+- **Jalon de la barre d'état** : plus de repli sur la première ligne de « Reprise immédiate » (souvent une phrase fixe) ; seule la ligne `Jalon :` compte, comme dans le mod de bureau, et un gabarit non rempli est ignoré des deux côtés.
+- **Mod de bureau** : le gestionnaire `agent.spawn` ne lève plus d'exception (`try/catch` et `.catch` du moteur) ; les seuils d'alerte se comparent au pourcentage arrondi affiché (69,6 % déclenche l'alerte de 70 %, comme dans le terminal).
+- **Compteur d'agents** : il compte tous les sous-agents (aussi le repli `general-purpose`) ; la notification de fin reste limitée aux `ma-*` ; un fichier de compteur est ignoré après 5 h (la fenêtre de quota) au lieu de 6 h ; les dossiers d'état vides sont purgés.
+- **Alertes de quota** : un verrou atomique (`mkdir`) évite les alertes en double quand plusieurs sessions franchissent un seuil en même temps (12 appels simultanés : 2 à 4 alertes avant, 1 après, trois essais sur trois).
+- **Réinjection après résumé** : le contenu du HANDOFF est annoncé comme une donnée, pas comme une instruction.
+- **Build local de la release** : `tools/build-release.sh` n'embarque plus que les fichiers suivis par git (un `.env` ou des notes non suivis ne partent plus dans le zip).
+- **Méthode** : le quota est lu par `hooks/quota.sh` (qui lit `usage.json`) quand aucun outil d'usage n'existe ; à ≥ 70 % la conception et le tour 3 passent sur le modèle intermédiaire, en le disant ; à ≥ 80 % le skill propose le lot, coût annoncé, et n'attend qu'un oui explicite (une demande directe ne suffit pas) ; le rythme n'est calculé que si `resets_at` est connu ; sans mesure, « plus de 3 agents » remplace « 30 % de la fenêtre ».
+- **Méthode** : règle « forfait Pro » (Moyen plafonné à 1 conception + 2 recherches, jalons en séquence ; Gros annoncé « plusieurs fenêtres, N jours » avant de commencer) ; testeur au dernier jalon seulement pour un Moyen ; la première utilisation ne propose plus d'installer des agents déjà fournis par le plugin ; routage précisé (projet = dossier avec `docs/HANDOFF.md` ou `CLAUDE.md`) ; le skill utilise le nom exact des agents affiché par l'outil de sous-agents (avec ou sans préfixe `maitre-agent:`).
+- **Documentation** : workflows verts le 2026-10-18, installation depuis la marketplace GitHub réussie (CLI 2.1.299, HOME factice, URL HTTPS complète), tailles mesurées par `claude plugin details` (v1.1.1 : environ 3,6 k tokens à l'appel du skill, environ 257 permanents ; v1.1.0 : 3,4 k et 285 selon la critique), chemin du cache pour copier `statusline.sh` (observé sur 2.1.299).
+
+### Modifié
+- **Chargement limité aux demandes explicites** : description et `when_to_use` resserrés (commande `/maitre-agent`, ou demande explicite de la méthode). `disable-model-invocation` écarté, car il empêcherait une autre session de lancer le skill par l'outil Skill.
+- **La notification « Claude attend » (hook `Notification`) est désactivée par défaut** ; elle s'active avec le fichier `~/.claude/maitre-agent/notifications-on`. La fin d'agent `ma-*` et les alertes de quota restent actives ; `notifications-off` coupe tout.
+- `evals/05-quota-80.md` : à ≥ 80 %, le comportement attendu est « proposer, coût annoncé, accord explicite » (et non plus « refus même sur demande directe »).
+
+### Ajouté
+- **Sous-commande `diagnostic`** (alias `doctor`) : 8 contrôles en lecture seule (`jq`, barre d'état, skill et agents en double, quota lisible, notifications, version, profil), chacun « OK / KO + commande pour corriger ».
+- **`tools/quota.sh`** (copié dans `skills/maitre-agent/hooks/`) : lit `usage.json`, vérifie l'âge de la mesure (15 min) et la fin de fenêtre, affiche les fenêtres et sort avec le palier (0, 70, 80, 90 ; 2 = pas de mesure).
+- **`tests/hooks.sh`** : tests des scripts avec des JSON factices (HOME factice, aucune notification réelle), appelés par `lint.yml` ; 24 vérifications.
+- Le lint refuse `disable-model-invocation: true` et accepte `tools/` comme source d'un script copié dans le skill.
+
+### Limites connues
+- Les hooks du plugin n'ont toujours pas été déclenchés par Claude Code dans une vraie session ; le comportement de `SubagentStop` sur un agent interrompu n'est pas vérifié.
+- La résolution du nom exact des agents sous plugin dans une vraie session n'a pas été essayée.
+- Le chemin `.catch` du mod de bureau n'est pas couvert par un test.
+- Non repris dans cette version : les évaluations réelles, la première utilisation sans questionnaire.
+
 ## [1.1.0] - 2026-10-18
 
 ### Ajouté

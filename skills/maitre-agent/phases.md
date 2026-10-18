@@ -12,7 +12,7 @@
    - tes hypothèses pour le reste (« je pars du principe que… ») ;
    - le coût estimé (SKILL §6).
 
-   Attends la réponse **seulement** s'il y a une question bloquante, un accord à demander (§5 du skill) ou un lot de plus de 30 % de la fenêtre. Sinon, annonce et lance dans le même tour. « go » ou une réponse qui ne tranche pas = choix par défaut. Si l'environnement a son propre mécanisme pour poser une question en fin de tour (boutons, encadré), utilise-le.
+   Attends la réponse **seulement** s'il y a une question bloquante, un accord à demander (§5 du skill) ou un lot de plus de 30 % de la fenêtre (sans mesure du quota : de 3 agents). Sinon, annonce et lance dans le même tour. « go » ou une réponse qui ne tranche pas = choix par défaut. Si l'environnement a son propre mécanisme pour poser une question en fin de tour (boutons, encadré), utilise-le.
    Lignes « à confirmer » du profil : ne pose que celles qui concernent cette tâche.
 5. **Dossier** : selon la préférence « Dossiers » du profil, un nouveau dossier sous le dossier de projets, jamais à l'intérieur d'un autre projet (sauf demande). Utilise l'outil de changement de dossier s'il existe (il peut être différé : ToolSearch). Sinon, crée le dossier (mkdir, ou l'équivalent de l'OS) et travaille en chemins absolus. Relis toi-même le `CLAUDE.md` du projet. Dans chaque brief, rappelle de lancer les commandes depuis ce dossier.
 6. **Relevé** (si le projet en dépend) : outils et versions utiles. Mets à jour la rubrique « Machine » du profil. Dans le projet, ne note que ce qui sert au projet.
@@ -27,6 +27,11 @@
 | **Gros** | produit complet, jeu complet, multi-plateforme | 6 à 15 recherches, conception + spec + audits, jalons, testeurs | squelette Gros, réparti sur plusieurs sessions |
 
 On peut changer de taille en cours de route : dis-le et note-le.
+
+**Forfait Pro** (ligne « Forfait / quota » du profil ; en cas de doute, demande-le une fois) : une fenêtre de 5 h ne porte pas un Moyen entier (repère mesuré : 3 recherches ≈ 36 % d'une fenêtre, extrapolation d'une seule mesure).
+- **Moyen** plafonné à 1 conception + 2 recherches ; jalons **en séquence**, jamais en parallèle ; un seul lot d'agents à la fois.
+- **Gros** annoncé d'emblée comme « plusieurs fenêtres, N jours », avec l'accord de l'utilisateur **avant de commencer** et un HANDOFF à jour à chaque palier du §6 du skill.
+- Dans le doute entre Moyen et Petit, prends Petit.
 
 ## Squelette
 | Template | Destination | Taille |
@@ -82,7 +87,7 @@ Voir `briefs/recherche.md`. Une recherche par question décisive que tu ne sais 
 - Git selon le profil.
 
 ### Tests (`briefs/testeur.md`)
-- À chaque jalon utilisable, un testeur sur une copie isolée.
+- Un testeur sur une copie isolée : au **dernier** jalon utilisable pour un Moyen, à **chaque** jalon utilisable pour un Gros. Pour les petits jalons, c'est toi qui lances les tests (SKILL §4, « Preuves exigées ») : un testeur par jalon double le coût de l'implémentation.
 - Ses bugs bloquants passent en premier au jalon suivant.
 - Si l'utilisateur veut voir : le moyen le plus rapide (commande, URL locale, simulateur, artifact), en 3 lignes.
 

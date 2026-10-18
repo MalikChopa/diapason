@@ -4,16 +4,23 @@
 #   agent   : fin d'un sous-agent (JSON de SubagentStop sur l'entrée standard) -> « nom : statut »
 #   blocked : hook Notification (permission_prompt, idle_prompt) -> le message reçu
 #   quota   : texte donné en argument (alertes 70 / 80 / 90 % de statusline.sh)
-# Désactivable : fichier ~/.claude/maitre-agent/notifications-off
+# Désactivable : fichier ~/.claude/maitre-agent/notifications-off (coupe tout).
+# « blocked » est désactivé par défaut (il notifierait dans toutes les sessions) : il faut créer
+# le fichier ~/.claude/maitre-agent/notifications-on pour l'activer. « agent » et « quota » restent actifs.
 # Test sans notifier : MAITRE_AGENT_DRY_RUN=1 (affiche au lieu de notifier).
 kind="$1"
 [ "$#" -gt 0 ] && shift
 txt="$*"
 case "$kind" in agent|blocked|quota) ;; *) exit 0 ;; esac
 [ -e "$HOME/.claude/maitre-agent/notifications-off" ] && exit 0
+if [ "$kind" = blocked ] && [ ! -e "$HOME/.claude/maitre-agent/notifications-on" ]; then
+  [ -t 0 ] || cat >/dev/null 2>&1   # on vide l'entrée : le hook n'a rien à dire
+  exit 0
+fi
 
-# 80 caractères au plus (jq compte en caractères, pas en octets)
-cut80() { printf '%s' "$1" | jq -Rrs 'gsub("[\r\n]+";" ") | if length > 80 then .[0:79] + "…" else . end' 2>/dev/null; }
+# Le texte peut venir d'un message libre ou d'un rapport d'agent : on retire les caractères de contrôle
+# (séquences d'échappement), les ** du markdown, et on coupe à 80 caractères (jq compte en caractères).
+cut80() { printf '%s' "$1" | tr '\r\n\t' '   ' | tr -d '\000-\037\177' | jq -Rrs 'gsub("[\\x{80}-\\x{9f}]";" ") | gsub("[*][*]";"") | if length > 80 then .[0:79] + "…" else . end' 2>/dev/null; }
 
 title="Maître agent"
 case "$kind" in
@@ -43,6 +50,8 @@ esac
 [ -n "$txt" ] || exit 0
 if command -v jq >/dev/null 2>&1; then
   c=$(cut80 "$txt"); [ -n "$c" ] && txt="$c"
+else
+  txt=$(printf '%s' "$txt" | tr '\r\n\t' '   ' | tr -d '\000-\037\177')
 fi
 
 if [ "${MAITRE_AGENT_DRY_RUN:-}" = 1 ]; then
@@ -53,11 +62,11 @@ fi
 case "$(uname -s 2>/dev/null)" in
   Darwin)
     command -v osascript >/dev/null 2>&1 && \
-      ( osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' "$txt" "$title" >/dev/null 2>&1 & )
+      ( osascript -e 'on run argv' -e 'display notification (item 1 of argv) with title (item 2 of argv)' -e 'end run' -- "$txt" "$title" >/dev/null 2>&1 & )
     ;;
   Linux)
     command -v notify-send >/dev/null 2>&1 && \
-      ( notify-send "$title" "$txt" >/dev/null 2>&1 & )
+      ( notify-send -- "$title" "$txt" >/dev/null 2>&1 & )
     ;;
 esac
 exit 0

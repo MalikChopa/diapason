@@ -105,6 +105,12 @@ describe('alertes de quota', () => {
     expect(r.alerts.map(a => `${a.kind}:${a.threshold}`)).toEqual(['five_hour:70', 'seven_day:90'])
   })
 
+  test('le seuil se compare à la valeur affichée (69,6 s\'affiche 70 %)', async () => {
+    expect(decideAlerts(undefined, w(69.6)).alerts.map(a => a.threshold)).toEqual([70])
+    expect(decideAlerts(undefined, w(69.4)).alerts).toEqual([])
+    expect(decideAlerts(undefined, w(79.5)).alerts.map(a => a.threshold)).toEqual([80])
+  })
+
   test('texte', async () => {
     expect(alertText({ kind: 'five_hour', threshold: 80, percent: 81.4, resetsAt: at1830(18) })).toBe(
       'Quota 5 h : 80 % atteint (81 %), reset 18:30',
@@ -150,5 +156,10 @@ describe('jalon', () => {
     expect(parseMilestone('# HANDOFF\nrien ici')).toBe(undefined)
     expect(parseMilestone('Jalon :   ')).toBe(undefined)
     expect(parseMilestone(undefined)).toBe(undefined)
+  })
+
+  test('gabarit non rempli : pas de jalon', async () => {
+    expect(parseMilestone('Jalon : <jalon ou étape en cours, en quelques mots> (lu par la barre d\'état)')).toBe(undefined)
+    expect(parseMilestone('Jalon : <x>\nJalon : J3 tests')).toBe('J3 tests')
   })
 })

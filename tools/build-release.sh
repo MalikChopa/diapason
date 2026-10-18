@@ -1,8 +1,8 @@
 #!/bin/sh
 # Construit les deux zips de release dans dist/ :
 #   dist/maitre-agent-skill-v<version>.zip   le dossier skills/maitre-agent seul (le zip contient « maitre-agent/ »)
-#   dist/maitre-agent-plugin-v<version>.zip  le plugin complet (fichiers à la racine du zip), avec bureau/ s'il existe,
-#                                            sans .git, dist, .claude, docs/briefs, docs/journal, docs/research, docs/README_AUDIT_*,
+#   dist/maitre-agent-plugin-v<version>.zip  le plugin complet (fichiers SUIVIS par git, à la racine du zip ; pense à « git add » les nouveaux), avec bureau/ s'il existe,
+#                                            sans .git, dist, .claude, docs/briefs, docs/journal, docs/research, docs/README_AUDIT_*, docs/CRITIQUE_*,
 #                                            ni CLAUDE.md ni docs/HANDOFF.md (fichiers de travail du projet)
 # Usage : sh tools/build-release.sh        (version lue dans .claude-plugin/plugin.json)
 # Ne publie rien : la publication (gh release create) est une autre étape.
@@ -24,13 +24,13 @@ rm -f "$skill_zip" "$plugin_zip"
 # 1. Le skill seul
 (cd skills && zip -q -r -X "$skill_zip" maitre-agent -x '*.DS_Store')
 
-# 2. Le plugin complet : fichiers suivis ou non ignorés par git, moins les exclusions
+# 2. Le plugin complet : fichiers SUIVIS par git seulement (un .env ou des notes non suivis ne partent jamais), moins les exclusions
 if git rev-parse --git-dir >/dev/null 2>&1; then
-  list=$(git ls-files -co --exclude-standard)
+  list=$(git ls-files)
 else
   list=$(find . -type f | sed 's|^\./||')
 fi
-list=$(printf '%s\n' "$list" | grep -vE '^(\.git/|dist/|\.claude/|docs/briefs/|docs/journal/|docs/research/|docs/README_AUDIT_|CLAUDE\.md$|docs/HANDOFF\.md$)|(^|/)\.DS_Store$|(^|/)node_modules/' | sort)
+list=$(printf '%s\n' "$list" | grep -vE '^(\.git/|dist/|\.claude/|docs/briefs/|docs/journal/|docs/research/|docs/README_AUDIT_|docs/CRITIQUE_|CLAUDE\.md$|docs/HANDOFF\.md$)|(^|/)\.DS_Store$|(^|/)node_modules/' | sort)
 printf '%s\n' "$list" | while IFS= read -r f; do [ -f "$f" ] && printf '%s\n' "$f"; done | zip -q -X "$plugin_zip" -@
 
 for z in "$skill_zip" "$plugin_zip"; do

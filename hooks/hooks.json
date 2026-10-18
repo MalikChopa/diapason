@@ -3,7 +3,6 @@
   "hooks": {
     "SubagentStart": [
       {
-        "matcher": "^(maitre-agent:)?ma-",
         "hooks": [
           { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-count.sh\" start || true", "timeout": 5 }
         ]
@@ -11,9 +10,13 @@
     ],
     "SubagentStop": [
       {
+        "hooks": [
+          { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-count.sh\" stop || true", "timeout": 5 }
+        ]
+      },
+      {
         "matcher": "^(maitre-agent:)?ma-",
         "hooks": [
-          { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/agent-count.sh\" stop || true", "timeout": 5 },
           { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/notify.sh\" agent || true", "timeout": 10 }
         ]
       }

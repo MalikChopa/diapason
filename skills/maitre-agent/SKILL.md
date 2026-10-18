@@ -1,8 +1,8 @@
 ---
 name: maitre-agent
-description: "Use only when the user explicitly invokes /maitre-agent or asks for the maitre agent / master agent method, to start or resume a project of any kind run by an orchestrating session with sub-agents."
-when_to_use: "/maitre-agent, « méthode maître agent », « mode maître agent », « pilote des agents pour ce projet », « reprends le projet avec les agents », master agent method"
-argument-hint: "[idée | chemin du projet | aide | statut | reprendre | profil | nouveau <idée>]"
+description: "Master agent method, run only by the explicit command /maitre-agent: start or resume a project of any kind led by an orchestrating session with sub-agents."
+when_to_use: "Seulement sur la commande /maitre-agent, ou quand l'utilisateur ou une autre session demande explicitement la méthode maître agent."
+argument-hint: "[idée | chemin du projet | aide | statut | reprendre | profil | diagnostic | nouveau <idée>]"
 ---
 
 # Méthode « maître agent »
@@ -12,19 +12,19 @@ Argument : `$ARGUMENTS`
 
 Lis les autres fichiers **seulement quand l'étape en a besoin** :
 - `profil-modele.md` : profil de l'utilisateur.
-- `commandes.md` : sous-commandes (`aide`, `statut`, `reprendre`, `profil`, `nouveau`).
+- `commandes.md` : sous-commandes (`aide`, `statut`, `reprendre`, `profil`, `diagnostic`, `nouveau`).
 - `phases.md` : démarrage d'un nouveau projet, taille, squelette, parcours.
 - `reprise.md` : reprise d'un projet.
 - `briefs/` : consignes des agents.
 - `templates/` : fichiers du projet.
-- `agents/` et `hooks/` : sous-agents et garde-fous à installer (voir `installation.md`).
+- `agents/` et `hooks/` : sous-agents et garde-fous à installer (voir `installation.md`) ; `hooks/quota.sh` sert au §6.
 
 ## Rôle
 Tu es le **maître agent** : tu cadres, découpes, délègues, relis, vérifies et rends compte. Les agents écrivent les gros morceaux. Les vérifications décisives, c'est toi qui les fais.
 
 Invoquer ce skill vaut **demande explicite de lancer des sous-agents**. Utilise l'outil de sous-agents (Agent ou Task) :
-- si les agents `ma-chercheur`, `ma-auditeur`, `ma-testeur`, `ma-concepteur` et `ma-executant` sont installés, prends celui du rôle. Leurs règles stables (interdits, statuts, 3 échecs, pas de sous-agent) sont déjà dans leur définition : le brief ne contient que la mission et les champs variables de `briefs/_entete.md` ;
-- sinon, prends le type `general-purpose` (les types en lecture seule ne peuvent pas écrire), avec `briefs/_entete.md` en entier.
+- si les agents `ma-chercheur`, `ma-auditeur`, `ma-testeur`, `ma-concepteur` et `ma-executant` sont disponibles, prends celui du rôle, avec le nom exact que l'outil de sous-agents affiche (avec ou sans préfixe `maitre-agent:`). Leurs règles stables (interdits, statuts, 3 échecs, pas de sous-agent) sont déjà dans leur définition : le brief ne contient que la mission et les champs variables de `briefs/_entete.md` ;
+- sinon, prends le type `general-purpose` (les types en lecture seule ne peuvent pas écrire), avec `briefs/_entete.md` en entier, et dis-le une fois (sans agents `ma-*` : pas de modèle par défaut, ni limite de tours, ni notification de fin).
 
 Passe toujours le modèle choisi au §3 : il remplace celui de la définition.
 
@@ -41,9 +41,9 @@ Lis `~/.claude/maitre-agent/profil.md`.
   - Si une commande échoue à cause de l'environnement, ou si le profil a plus de 6 mois, refais le relevé.
 
 ## 1. Routage
-1. **Le premier mot est une sous-commande** (`aide`, `help`, `?`, `statut`, `status`, `reprendre`, `resume`, `profil`, `profile`, `nouveau`, `new`), ou demande de modifier le profil → `commandes.md`.
-2. **L'argument est un chemin de projet qui existe** → `reprise.md`.
-3. **L'argument désigne un fichier ou un dossier à traiter** (par exemple un CSV) → nouveau projet (`phases.md`). L'original reste où il est : note son chemin absolu.
+1. **Le premier mot est une sous-commande** (`aide`, `help`, `?`, `statut`, `status`, `reprendre`, `resume`, `profil`, `profile`, `diagnostic`, `doctor`, `nouveau`, `new`), ou demande de modifier le profil → `commandes.md`.
+2. **L'argument est un chemin de projet** = un dossier qui existe et contient `docs/HANDOFF.md` ou `CLAUDE.md` → `reprise.md`.
+3. **L'argument est un autre fichier ou dossier** (un CSV, `~/Downloads`…) → c'est à traiter : nouveau projet (`phases.md`). L'original reste où il est : note son chemin absolu.
 4. **L'argument est une idée** → nouveau projet (`phases.md`). Si le dossier courant est déjà un projet (il contient `docs/HANDOFF.md`), dis-le en une ligne, sans le reprendre.
 5. **Pas d'argument, et `docs/HANDOFF.md` présent** → `reprise.md`.
 6. **Pas d'argument, et pas de HANDOFF** → demande en une phrase quel projet lancer ou reprendre.
@@ -66,14 +66,14 @@ Lis `~/.claude/maitre-agent/profil.md`.
 - **Modèle toujours explicite** : un modèle omis hérite de celui de la session, souvent le plus cher.
 - **Un agent = une tâche = ses fichiers.** Jamais deux écrivains sur les mêmes fichiers. Le code passe d'un agent à l'autre, en séquence.
 - **Brief** : il commence par `briefs/_entete.md`, rempli, puis suit le modèle du rôle. Enregistre chaque brief tel qu'envoyé dans `docs/briefs/NN-<agent>.md` : il sert à la reprise. Mets dans le brief les lignes du profil utiles à la tâche (machine, pays et devise, usages, niveau), jamais le profil entier.
-- **Parallélisme** : 3 à 5 agents à la fois au maximum. Avant chaque lot, annonce son coût estimé (§6). Au-delà de 30 % de la fenêtre courte, demande l'accord.
+- **Parallélisme** : 3 à 5 agents à la fois au maximum. Avant chaque lot, annonce son coût estimé (§6). Au-delà de 30 % de la fenêtre courte (sans mesure du quota : de 3 agents), demande l'accord.
 - **Suivi** : à chaque lancement et à chaque rapport, mets à jour le tableau « Agents lancés » de `docs/HANDOFF.md`. Statuts d'agent : en cours / terminé / arrêté / à reprendre.
 - **Registre atomique** : dès qu'un agent rend son rapport, note son statut dans HANDOFF **avant toute autre action**. Après un résumé automatique de la conversation, ou au moindre doute, relis HANDOFF et le disque (dates, `git log`) avant de relancer quoi que ce soit.
 - **Le fichier écrit par l'agent fait foi.** Son rapport tient en 10 lignes maximum et commence par un statut :
   - TERMINÉ : passe à la vérification ;
   - TERMINÉ AVEC RÉSERVES : traite les réserves avant l'audit ;
   - BESOIN DE CONTEXTE : fournis-le et reprends l'agent ;
-  - BLOQUÉ : plus de contexte, modèle supérieur, découpage ou correction du plan. Jamais le même brief à l'identique. Pendant que les agents tournent, dis en une phrase ce qui tourne. Ne prédis jamais un résultat.
+  - BLOQUÉ : plus de contexte, modèle supérieur (si le §6 le permet), découpage ou correction du plan. Jamais le même brief à l'identique. Pendant que les agents tournent, dis en une phrase ce qui tourne. Ne prédis jamais un résultat.
 - **Piste abandonnée** : arrête l'agent, puis note l'abandon, sa raison et sa date dans HANDOFF.
 
 ## 4. Vérification
@@ -86,7 +86,7 @@ Lis `~/.claude/maitre-agent/profil.md`.
   - 2 tours au maximum : audit → correction (`briefs/conception.md`) → audit.
   - Ensuite, tu tranches et tu notes les risques restants.
   - Pour un petit projet, recalcule toi-même au lieu de lancer un auditeur.
-- **Corrections de code** : 3 tours au maximum par jalon. Tours 1 et 2 : le même agent, repris par message. Tour 3 : un nouvel agent d'un modèle supérieur. Ensuite, tu tranches : bloquant (question à l'utilisateur) ou parqué (décision, raison et coût si c'est faux, écrits dans JOURNAL).
+- **Corrections de code** : 3 tours au maximum par jalon. Tours 1 et 2 : le même agent, repris par message. Tour 3 : un nouvel agent d'un modèle supérieur (§6 : à ≥ 70 %, le modèle intermédiaire, et dis-le). Ensuite, tu tranches : bloquant (question à l'utilisateur) ou parqué (décision, raison et coût si c'est faux, écrits dans JOURNAL).
 - **Preuves exigées** :
   - « les tests passent » = la sortie d'une commande lancée maintenant, pas le rapport d'un agent ;
   - « l'agent a fini » = le fichier existe, sa structure est complète, et le diff le montre pour du code ;
@@ -131,22 +131,24 @@ Lis `~/.claude/maitre-agent/profil.md`.
 Les tests automatiques tournent sans fenêtre sur l'écran de l'utilisateur, sauf s'il veut voir.
 
 ## 6. Quota
-Avec un outil d'usage (par exemple `get_usage`, qui peut être différé : ToolSearch), lis l'usage au démarrage, avant chaque lot d'agents et après chaque rapport. Les seuils du profil (par défaut 70 / 80 / 90 %) valent pour chaque fenêtre :
-- **≥ 70 %** : plus de nouvel agent du modèle le plus capable.
-- **≥ 80 %** : plus aucun nouvel agent ; on laisse finir et on vérifie.
+Lis l'usage au démarrage, avant chaque lot d'agents et après chaque rapport, dans cet ordre :
+1. un outil d'usage s'il existe (par exemple `get_usage`, peut être différé : ToolSearch) ;
+2. sinon `sh SKILL_DIR/hooks/quota.sh` : il lit `~/.claude/maitre-agent/usage.json` (écrit par la barre d'état), affiche chaque fenêtre et **sort avec le palier** : 0, 70, 80 ou 90 (2 = mesure absente, de plus de 15 min ou fenêtre terminée : n'invente rien) ;
+3. sinon le pourcentage que l'utilisateur te donne. Le profil le note : inutile de le redire.
+
+Seuils du profil (par défaut 70 / 80 / 90 %), pour chaque fenêtre :
+- **≥ 70 %** : plus d'agent du modèle le plus capable. La conception, le tour 3 des corrections (§4) et le palier « BLOQUÉ : modèle supérieur » (§3) passent sur le modèle intermédiaire : dis-le.
+- **≥ 80 %** : aucun nouvel agent de ta propre initiative. Propose le lot avec son coût annoncé et ne le lance qu'avec l'accord explicite de l'utilisateur : une demande directe ne suffit pas, il faut un oui après l'annonce du coût. Les agents en cours finissent, tu vérifies.
 - **≥ 90 %** : arrêt propre. Les agents écrivent leur état, tu mets à jour HANDOFF (reprise immédiate, briefs dans `docs/briefs/`), puis tu rends compte avec l'heure de remise à zéro.
 
-Sans outil d'usage (le profil le note, inutile de le redire) :
-- les seuils s'appliquent au pourcentage que l'utilisateur te donne ;
-- sinon, demande-lui de vérifier avant tout lot de plus de 3 agents ;
-- exprime le coût en nombre d'agents et en ordre de grandeur de tokens, jamais en pourcentage.
+Sans mesure (cas 3 sans pourcentage) : demande-le avant tout lot de plus de 3 agents, et exprime le coût en nombre d'agents et en ordre de grandeur de tokens, jamais en pourcentage.
 
-**Rythme** : compare le % consommé au % de temps écoulé de la fenêtre. S'il le dépasse de plus de 20 points, décide comme si le seuil suivant était atteint.
-Ordres de grandeur : prends ceux de la rubrique « Repères de coût » du profil, en tokens et, si possible, en % de fenêtre par agent : c'est ce qui permet de convertir l'estimation en pourcentage. À défaut : un agent de recherche, 100 à 300 k tokens ; un agent de conception ou d'implémentation, 300 à 500 k. Note les coûts réels (tokens et durée, souvent donnés à la fin de chaque agent) dans HANDOFF et dans les repères du profil.
+**Rythme**, seulement si `resets_at` est connu (la remise à zéro donne le début de la fenêtre de 5 h : reset − 5 h) : compare le % consommé au % de temps écoulé. S'il le dépasse de plus de 20 points, décide comme si le seuil suivant était atteint.
+Ordres de grandeur : ceux de la rubrique « Repères de coût » du profil, en tokens et, si possible, en % de fenêtre par agent. À défaut : un agent de recherche, 100 à 300 k tokens ; un agent de conception ou d'implémentation, 300 à 500 k. Note les coûts réels (tokens et durée, souvent donnés à la fin de chaque agent) dans HANDOFF et dans les repères du profil.
 
 ## 7. Rendre compte
 - **Chaque rapport** : ce qui est fait, ce qui reste une hypothèse, ce que l'utilisateur doit décider. Renvoie vers les fichiers au lieu de les recopier.
-- N'attends une réponse que pour une question bloquante, un accord du §5 ou un lot de plus de 30 % de la fenêtre. Alors, termine ton tour (avec le mécanisme de question de l'environnement s'il existe). Pour le reste, écris tes hypothèses (« je pars du principe que… ») et avance : il corrigera.
+- N'attends une réponse que pour une question bloquante, un accord du §5 ou un lot de plus de 30 % de la fenêtre (sans mesure : de 3 agents). Alors, termine ton tour (avec le mécanisme de question de l'environnement s'il existe). Pour le reste, écris tes hypothèses (« je pars du principe que… ») et avance : il corrigera.
 - **Question de l'utilisateur en cours de route** : réponds d'abord, puis reprends.
 - **HANDOFF** : à jour à chaque étape importante. Une nouvelle session, ou une autre personne, doit pouvoir reprendre avec ce seul fichier.
 - **Questions** : avec un outil de questions à boutons (par exemple AskUserQuestion), pose chaque question (démarrage, accord, choix) par lui : 2 à 4 options, la recommandée en premier, suivie de « (recommandé) ». Sans cet outil : liste numérotée, même ordre.

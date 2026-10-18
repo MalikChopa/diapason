@@ -108,6 +108,14 @@ test('agent.spawn : le compteur monte', async ($, on) => {
   expect(seen.status.at(-1)).toBe('🧭 projet-factice · 1 agent · quota ?')
 })
 
+test('agent.spawn : sans agentId ni type, le lancement passe quand même', async ($, on) => {
+  const seen = backdrop(on, { agents: [] })
+  on('agent.spawn', () => ({ model: 'sonnet' }))
+  const r = await $.agent.spawn({ tool_use_id: 't2', prompt: 'x', description: 'x' } as never)
+  expect((r as { model?: string }).model).toBe('sonnet')
+  expect(seen.status.length).toBe(0) // rien à compter, rien d'affiché, aucune exception
+})
+
 test('fin d\'un sous-agent ma-* : toast avec le statut', async ($, on) => {
   const seen = backdrop(on, { agents: [info('n1', 'maitre-agent:ma-executant')] })
   on('turn.complete', () => ({ text: '' }))

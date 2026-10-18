@@ -132,11 +132,21 @@ export const register: Register = on => {
   // Un sous-agent démarre : on retient son type et on recompte.
   on('agent.spawn', async ($, e, next) => {
     const result = await next(e)
-    if (result.agentId !== undefined) {
-      spawnedTypes.set(result.agentId, e.subagentType)
-      await refresh($, { includeAgent: result.agentId })
+    // Ce gestionnaire conditionne le lancement d'un sous-agent : jamais d'exception ici.
+    try {
+      const id = result?.agentId
+      if (id !== undefined) {
+        if (typeof e.subagentType === 'string') spawnedTypes.set(id, e.subagentType)
+        await refresh($, { includeAgent: id })
+      }
+    } catch {
+      // jamais bloquant : le compteur sera corrigé au prochain rafraîchissement
     }
     return result
+  }).catch(($, e, next) => {
+    // Filet du moteur (forme documentée : `.catch` sur l'enregistrement) : si le gestionnaire lève quand même,
+    // le lancement du sous-agent continue sans nous.
+    return next(e)
   })
 
   // Fin d'un tour de sous-agent (pas d'événement « agent.end » dans l'API) : toast pour les ma-*.
