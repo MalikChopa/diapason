@@ -487,9 +487,9 @@ rm -f "$BASE/usage.json"
 # statusline.sh : alertes 7 j par palier, une fois par palier et par remise ; même palier que quota.sh hebdo
 printf '# Profil\n\n## Projets connus\n- x : y\n' > "$BASE/profil.md"; rm -rf "$BASE/state/alerts"
 h7() { # $1 pourcentage  $2 secondes avant la remise -> texte de l'alerte (stderr de la barre)
-  printf '%s\n' '{"session_id":"h7","cwd":"'"$T"'/p2","rate_limits":{"seven_day":{"used_percentage":'"$1"',"resets_at":'"$(( $(date +%s) + $2 ))"'}}}' | st 2>&1 >/dev/null
+  printf '%s\n' '{"session_id":"h7","cwd":"'"$T"'/p2","rate_limits":{"seven_day":{"used_percentage":'"$1"',"resets_at":'"$(( H7NOW + $2 ))"'}}}' | st 2>&1 >/dev/null
 }
-RS=381600
+RS=381600; H7NOW=$(date +%s)   # remise figée : deux appels à cheval sur une seconde gardent la même remise
 out=$(h7 69 $RS); check "statusline : 7 j à 69 % (écart +32) -> alerte palier 1 sur 3" "$(printf '%s' "$out" | grep -c 'palier 1 sur 3, écart +3[23] points')" 1
 out=$(h7 69 $RS); check "statusline : même palier, même remise -> pas de seconde alerte" "$out" ""
 out=$(h7 50 $RS); check "statusline : le pourcentage baisse -> pas d'alerte" "$out" ""
