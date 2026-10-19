@@ -429,9 +429,9 @@ check "garde-fiche.sh : la copie du plugin et celle du skill sont identiques" "$
 # --- v1.3 économies : quota hebdomadaire (variante C), clés seuils-hebdo / plafonds-hebdo, réinjection bornée -------
 mkdir -p "$T/p4"; printf '# Profil\n\n## Projets connus\n- x : y\n' > "$BASE/profil.md"; rm -f "$T/p4/CLAUDE.md"
 HN=1800000000   # « maintenant » fixe pour quota.sh hebdo
-qh() { (cd "$T/p4" && QUOTA_NOW=$HN sh "$ROOT/tools/quota.sh" hebdo "$@"); }
+qh() { (cd "$T/p4" && TZ=UTC QUOTA_NOW=$HN sh "$ROOT/tools/quota.sh" hebdo "$@"); }
 qh69=$(qh 69 $((HN + 381600))); rc=$?
-check "quota.sh hebdo : 69 % avec 4 j 10 h restants -> palier 1, écart +32, projection 187 %" "$rc|$qh69" "1|7j 69 % reset mar 19:00 écart +32 proj 187 %, palier 1"
+check "quota.sh hebdo : 69 % avec 4 j 10 h restants -> palier 1, écart +32, projection 187 %" "$rc|$qh69" "1|7j 69 % reset mar 18:00 écart +32 proj 187 %, palier 1"
 out=$(qh 80 $((HN + 21600))); rc=$?
 check "quota.sh hebdo : 80 % à 6 h de la remise -> palier 0 (plafonds seuls)" "$rc|$(printf '%s' "$out" | grep -c 'plafonds seuls : remise dans moins de 12 h), palier 0$')" "0|1"
 out=$(qh 40 $((HN + 544320))); rc=$?
