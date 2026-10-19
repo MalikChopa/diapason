@@ -1,22 +1,22 @@
-# <Question> : recommandation
-Date : <AAAA-MM-JJ> · Confiance : <haute / moyenne / faible>
+# <Question>: recommendation
+Date: <YYYY-MM-DD> · Confidence: <high / medium / low>
 
-## Réponse
-**<Choix n°1>** : <prix, date, vendeur, pays>. Pourquoi : <3 raisons>.
+## Answer
+**<Choice no. 1>**: <price, date, seller, country>. Why: <3 reasons>.
 
 ## Alternatives
-| Option | Prix (date, vendeur) | Pour | Contre |
+| Option | Price (date, seller) | Pros | Cons |
 |---|---|---|---|
 | <…> | <…> | <…> | <…> |
 
-## Vérifié par le maître agent
-- <fait : vérifié (moyen) / non vérifié>
+## Verified by the master agent
+- <fact: verified (means) / unverified>
 
-## Risques et points à surveiller
+## Risks and points to watch
 - <…>
 
-## Prochaines actions (à faire par l'utilisateur, ou avec son accord)
+## Next actions (to be done by the user, or with their approval)
 1. <…>
 
 ## Sources
-<liste ou renvoi vers docs/research/>
+<list or pointer to docs/research/>

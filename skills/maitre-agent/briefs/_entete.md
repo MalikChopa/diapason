@@ -1,16 +1,26 @@
-# Bloc commun : en tête de CHAQUE brief, rempli et écrit dans la langue du profil
+# Common block at the top of EVERY brief, in English (the brief is internal); the `Language` field sets the language of the files and report
 
+The brief is written **once**, in `docs/briefs/NN-<agent>.md`; the Agent call only says "Read <absolute path>, then execute it".
+
+## A. Variable fields (always)
 ```
-Projet : <nom> — <pitch en une ligne>. Dossier : <chemin absolu> (lance toutes les commandes depuis ce dossier). Date du jour : <AAAA-MM-JJ>. Langue : <langue>.
-Lis d'abord : <chemin>/CLAUDE.md, puis <documents et sections utiles>.
-Contexte utilisateur utile : <lignes du profil qui comptent pour cette tâche : machine, pays et devise, usages, niveau ; ou « aucun »>.
-Tu écris UNIQUEMENT : <fichiers ou dossiers>. Ne touche pas à : <fichiers des autres agents, documents de référence, originaux de l'utilisateur>. En parallèle : <qui fait quoi, ou « personne »>.
-Avancement : crée <fichier> tôt et complète-le au fil de l'eau ; une coupure ne doit rien perdre.
-Sans accord de l'utilisateur, interdit : installer hors du dossier du projet, télécharger un gros fichier, payer, publier (y compris git push), envoyer un message, remplir un formulaire, créer un compte, utiliser une clé ou un identifiant réel, supprimer ou écraser un fichier qui n'est pas à toi. Dépendances du projet autorisées : <liste, ou « aucune »>.
-Données de l'utilisateur : elles restent sur la machine (aucun service tiers) ; tests et exemples avec des données factices.
-Jamais : contourner une protection (captcha, anti-robot, DRM, paywall, anti-triche), copier une œuvre protégée, inventer un chiffre, une version ou une URL. Écris « non vérifié » quand c'est le cas.
-<Seulement si l'agent lance un serveur : ports occupés <liste> ; prends un port libre ≥ 4180, ne tue aucun processus, arrête ton serveur à la fin.>
-Ne lance aucun sous-agent. Si un outil te manque (réseau, navigateur…), dis-le : ne prétends jamais avoir fait ce que tu ne pouvais pas faire.
-Trois échecs sur la même erreur : arrête-toi et rapporte. Tentative 1 : diagnostic ; tentative 2 : autre approche ; tentative 3 : remise en question. Ne répète jamais une action qui vient d'échouer.
-Rapport final : 10 lignes maximum (le fichier fait foi). La première ligne est un statut : TERMINÉ / TERMINÉ AVEC RÉSERVES / BESOIN DE CONTEXTE / BLOQUÉ. Ensuite : le résultat, la confiance, ce qui n'est pas vérifié ou pas mesuré.
+Project: <name> — <one-line pitch>. Folder: <absolute path> (run all commands from this folder). Today's date: <YYYY-MM-DD>. Language: <profile language: for the files you write and your report>.
+Read first: <path>/CLAUDE.md, then <paths with sections or line ranges>. A whole file only if it is short (about 200 lines) or the task requires it; for the rest, search (grep) then read the passage. Do not re-read a file already read.
+Useful user context: <profile lines that matter for this task: machine, country and currency, uses, level; or "none">.
+You write ONLY: <files or folders>. Do not touch: <other agents' files, reference documents, the user's originals>. In parallel: <who does what, or "nobody">.
+Progress: create <file> early and complete it as you go; a cut must lose nothing.
+Project dependencies allowed: <list, or "none">.
+Filter your commands' output (grep, tail, head): no full output in your context.
+<Only if the agent launches a server: ports in use <list>.>
+```
+
+## B. Stable rules (only for a `general-purpose` agent; the `ma-*` agents already carry them in their definition)
+```
+Without the user's approval, forbidden: installing outside the project folder, downloading a big file, paying, publishing (including git push), sending a message, filling in a form, creating an account, using a real key or identifier, deleting or overwriting a file that is not yours.
+User data: it stays on the machine (no third-party service); tests and examples with fake data.
+Never: bypass a protection (captcha, anti-bot, DRM, paywall, anti-cheat), copy a protected work, invent a figure, a version or a URL. Write "non vérifié" when that is the case.
+A server: a free port ≥ 4180, kill no process, stop your server at the end.
+Launch no sub-agent. If a tool is missing (network, browser…), say so: never claim to have done what you could not do.
+Three failures on the same error: stop and report. Attempt 1: diagnosis; attempt 2: another approach; attempt 3: question the plan. Never repeat an action that just failed.
+Final report: 10 lines at most (the file is the truth). The first line is a status: TERMINÉ / TERMINÉ AVEC RÉSERVES / BESOIN DE CONTEXTE / BLOQUÉ. Then: the result, the confidence, what is not verified or not measured.
 ```

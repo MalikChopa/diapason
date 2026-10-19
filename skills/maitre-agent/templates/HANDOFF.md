@@ -1,45 +1,47 @@
-# Passation : <Nom du projet> (<AAAA-MM-JJ>)
+# Handoff: <Project name> (<YYYY-MM-DD>)
 
-Dernière visite : <AAAA-MM-JJ HH:MM> (mise à jour à chaque reprise)
-Jalon : <jalon ou étape en cours, en quelques mots> (lu par la barre d'état)
+Dernière visite : <YYYY-MM-DD HH:MM> (updated at each resume)
+Jalon : <current milestone or step, in a few words> (read by the status bar)
+Sheet: <draft / validated on YYYY-MM-DD> · Mock-up: <path of the approved mock-up / not yet / no interface>
 
-Ordre de lecture : `CLAUDE.md`, ce fichier, `docs/research/INDEX.md`, puis <document de synthèse>.
+Reading order: `CLAUDE.md`, this file, `docs/research/INDEX.md`, then <synthesis document>.
 
-## Reprendre
-- Avec le skill : `/maitre-agent <chemin absolu du projet>`.
-- Sans le skill : « Tu es le maître agent de ce projet. Lis CLAUDE.md puis docs/HANDOFF.md. Tu pilotes, tu délègues chaque tâche à un agent du modèle adapté, tu vérifies toi-même avant de dire que c'est fini, et tu rends compte court. Commence par "Reprise immédiate". »
+## Resuming
+- With the skill: `/maitre-agent <absolute project path>`.
+- Without the skill: "You are the master agent of this project. Read CLAUDE.md then docs/HANDOFF.md. You steer, you delegate each task to an agent of the right model, you verify yourself before saying it is finished, and you report briefly. Start with 'Reprise immédiate'."
 
-Git : <SHA du dernier commit / pas de git>. Longueur visée : moins de 250 lignes ; l'ancienne passation est archivée dans `docs/handoffs/AAAA-MM-JJ.md` au lieu d'être écrasée.
+Git: <SHA of the last commit / no git>. Ceiling: **8 KB** (bytes, not lines: `wc -c`). At each milestone, move finished agent rows and done sections to `docs/HANDOFF-archive.md` (created on demand, never read at resume unless needed); "Failed leads and known traps" is never archived.
 
-## Demandes de l'utilisateur (mot pour mot)
-- <citation exacte, date>
+## User requests (word for word)
+- <exact quote, date>
 
-## État ([V] = vérifié maintenant, avec la commande ; [?] = non revérifié)
-- Fait : <[V]/[?] …>
-- Vérifié par le maître agent : <…>
-- Non vérifié ou hypothèses : <…>
-- Installé, acheté, publié : <rien / liste>
+## State ([V] = verified now, with the command; [?] = not re-verified)
+- Done: <[V]/[?] …>
+- Verified by the master agent: <…>
+- Unverified or assumptions: <…>
+- Installed, bought, published: <nothing / list>
 
 ## Agents lancés
-| Agent | Tâche | Modèle | Fichier de travail | Statut | Brief | Coût (tokens · durée · % fenêtre) |
+| Agent | Task | Modèle | Work file | Statut | Brief | Coût (tokens · durée · % fenêtre) |
 |---|---|---|---|---|---|---|
-| <nom court> | <tâche> | <modèle> | <fichier> | en cours / terminé / arrêté / à reprendre | `docs/briefs/NN-<agent>.md` | <180 k · 9 min · 6 %, ou non mesuré> |
+| <short name> | <task> | <model> | <file> | en cours / terminé / arrêté / à reprendre | `docs/briefs/NN-<agent>.md` | <180 k · 9 min · 6 %, or non mesuré> |
 
-## Pistes échouées et pièges connus (ne jamais couper cette section)
-- <ce qui a été essayé, pourquoi ça a échoué>
+## Failed leads and known traps (never cut this section)
+- <what was tried, why it failed>
 
-## Décisions et pistes abandonnées
-- <AAAA-MM-JJ> : <décision ou abandon, avec la raison>
+## Decisions and abandoned leads
+- <YYYY-MM-DD>: <decision or abandonment, with the reason>
 
-## Reprise immédiate (dans l'ordre)
-1. Lire le quota et appliquer les seuils.
-2. <prochaine tâche : agent, modèle, brief prêt dans docs/briefs/>
+## Reprise immédiate (in order)
+1. Read the quota and apply the thresholds.
+2. <next task: agent, model, brief ready in docs/briefs/>
+(The re-injection hook after a summary replays only the "en cours" and "à reprendre" rows and this section: keep the immediate resume short.)
 
-## En attente de l'utilisateur
-- <question : argent, installation, publication, compte>
+## Waiting on the user
+- <question: money, installation, publication, account>
 
-## Coûts mesurés
-- <agents, tokens, part du quota, durée>
+## Measured costs
+- <agents, tokens, share of quota, duration>
 
-## Ce qui ne se transmet pas
-L'historique de conversation, les agents en cours, la mémoire personnelle, les liens d'artifacts privés et les comptes externes : seuls les fichiers du projet comptent.
+## What does not carry over
+Conversation history, running agents, personal memory, private artifact links and external accounts: only the project files count.

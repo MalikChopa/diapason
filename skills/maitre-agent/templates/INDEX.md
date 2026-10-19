@@ -1,16 +1,16 @@
-# Recherches : <Nom du projet>
+# Researches: <Project name>
 
-À lire après `../../CLAUDE.md`. Pour ajouter un sujet : suivre `_BRIEF.md`, créer `NN-sujet.md`, demander au maître agent de l'indexer.
-Dernière mise à jour : <AAAA-MM-JJ>.
+Read after `../../CLAUDE.md`. To add a topic: follow `_BRIEF.md`, create `NN-topic.md`, ask the master agent to index it.
+Last updated: <YYYY-MM-DD>.
 
-Statuts : en cours → terminé (à auditer) → vérifié (par qui).
+Statuses: en cours → terminé (à auditer) → vérifié (by whom).
 
-| Fichier | Sujet | Statut |
+| File | Topic | Status |
 |---|---|---|
-| `01-<sujet>.md` | <description> | en cours |
+| `01-<topic>.md` | <description> | en cours |
 
-## Vérifications du maître agent
-- <fait décisif> : vérifié (<moyen, date>) / non vérifié (<raison>).
+## Master agent's verifications
+- <decisive fact>: verified (<means, date>) / unverified (<reason>).
 
-## Synthèse
-Voir `../<RECOMMANDATION.md | PLAN.md | ARCHITECTURE.md>`.
+## Synthesis
+See `../<RECOMMANDATION.md | PLAN.md | ARCHITECTURE.md>`.

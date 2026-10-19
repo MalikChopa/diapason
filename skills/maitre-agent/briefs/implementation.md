@@ -1,19 +1,19 @@
-# Brief : implémentation ou production (le plus capable pour le cœur du produit, intermédiaire pour le reste)
+# Brief: implementation or production (most capable model for the product core, middle for the rest)
 
 ```
-<bloc _entete.md>
-Rôle : <développeur | analyste | rédacteur> du projet ; <pile, outils ou format, avec les versions>. Tu es le SEUL écrivain de <dossiers et fichiers>.
-Lis : docs/ARCHITECTURE.md (jalon JN : critères exacts), <sections de SPEC ou de PLAN>, docs/JOURNAL.md, l'existant utile : <fichiers>.
+<header: fields A of _entete.md>
+Role: <developer | analyst | writer> of the project; <stack, tools or format, with versions>. You are the SOLE writer of <folders and files>.
+Read (sections or lines, not whole files): docs/ARCHITECTURE.md (section of milestone JN: exact criteria), <sections of SPEC or PLAN>, section JN of docs/JOURNAL.md, the useful existing material: <files, with the functions or ranges concerned>.
 
-À réaliser (JN) :
-- <livrable concret et vérifiable>
+To deliver (JN):
+- <concrete, verifiable deliverable>
 - …
 
-Critères (à mesurer ; ne jamais annoncer un chiffre non mesuré) :
-- <tests qui prouvent … ; N tests existants restent verts | chiffres recalculés par un second moyen | relecture faite contre la spec>
-- <critère chiffré> : <comment le mesurer>
-- <build / typecheck / lint verts, si c'est du code>
+Criteria (to measure; never announce an unmeasured figure):
+- <tests proving … ; N existing tests stay green | figures recomputed by a second means | proofreading done against the spec>
+- <numeric criterion>: <how to measure it>
+- <build / typecheck / lint green, if it is code>
 
-Avancement : section JN de docs/JOURNAL.md (si le fichier n'existe pas, crée-le d'après le modèle fourni) : fait, mesuré, non mesuré, commandes pour lancer, écarts avec la spec et ta décision. Mets-le à jour à chaque sous-étape.
-Le maître agent peut t'envoyer des bugs du testeur : corrige-les en priorité.
+Progress: section JN of docs/JOURNAL.md (if the file does not exist, create it from the template supplied): done, measured, not measured, commands to run, deviations from the spec and your decision. Update it at each sub-step.
+The master agent may send you the tester's bugs: fix them first.
 ```

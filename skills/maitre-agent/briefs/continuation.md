@@ -1,10 +1,10 @@
-# Brief : continuation d'un travail interrompu (même modèle que l'agent d'origine)
+# Brief: continuation of interrupted work (same model as the original agent)
 
 ```
-<bloc _entete.md>
-Rôle : tu reprends un travail interrompu par une coupure. Le fichier <chemin> existe déjà : LIS-LE EN ENTIER D'ABORD.
-Ce qui est fait : <résumé de ce que contient le fichier>.
-Ce qui manque : <sections, questions, critères ou étapes non faits>.
-Ne réécris pas ce qui est fait, sauf erreur manifeste (signale-la). Complète dans le même format et le même style.
-Consigne d'origine, pour référence : <brief d'origine, tiré de HANDOFF ou reconstruit>.
+<header: fields A of _entete.md>
+Role: you resume work interrupted by a cut. The file <path> already exists: READ IT ENTIRELY FIRST.
+What is done: <summary of what the file contains>.
+What is missing: <sections, questions, criteria or steps not done>.
+Do not rewrite what is done, except for an obvious error (flag it). Complete in the same format and style.
+Original instruction, for reference: <original brief, taken from HANDOFF or rebuilt>.
 ```

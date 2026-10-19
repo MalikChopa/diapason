@@ -41,5 +41,23 @@ Le maître agent a fait lui-même les petites tâches (sous-commandes, boutons, 
 ### Ce qui n'est pas encore démontré
 Les hooks du plugin n'ont pas été exécutés de bout en bout par Claude Code ; les workflows GitHub n'ont pas encore tourné ; les cinq évaluations de `evals/` sont écrites mais pas lancées ; l'installation depuis la marketplace n'a pas pu être essayée avant la publication. Le README a été relu par un auditeur indépendant (`ma-auditeur`) le 2026-10-18, corrections appliquées. Le README liste ces limites : un dépôt qui se vante d'être honnête doit l'être.
 
+## v1.3.0 : le skill devient accompagnant (2026-10-19)
+
+Le déclencheur : sur un vrai projet, la session avait choisi seule de faire une page web et avait codé sans poser de question. Le chantier a donc ajouté un atelier de cadrage à boutons, une fiche à valider, une maquette avant le code, des points d'étape et un hook qui refuse d'écrire du code tant que la fiche n'est pas validée (détail dans `CHANGELOG.md` et dans le README, section « Comment il travaille avec toi »).
+
+Trois agents `ma-executant` (sonnet), pilotés par le maître agent :
+
+| Agent | Tâche | Coût mesuré |
+|---|---|---|
+| 09 | autonomie `accompagnant`, atelier de cadrage, fiche, maquette, points d'étape, préréglages selon le forfait | 197 k tokens, 14 min |
+| 10 | relevé des outils, échelle de maquette, hook `garde-fiche.sh`, fiche complète, carte du parcours, matrice et 4 evals | 156 k tokens, 12 min |
+| 11 | README FR/EN, CHANGELOG, versions | non mesuré |
+
+Ce qui est mesuré : les tests des scripts passent de 76 à 200 vérifications (sous `sh` et `dash`, 0 échec) ; une contre-épreuve, avec un garde-fou qui laisse tout passer, fait échouer 32 vérifications, donc les tests voient bien le blocage. Ce qui ne l'est pas : le skill n'a pas encore tourné sur ce nouveau parcours en vraie session, le hook n'a pas été appelé par Claude Code lui-même, et les evals 06 à 10 sont écrites mais pas jouées. `SKILL.md` frôle sa limite de taille (16 443 octets pour 16 500, `wc -c` du 2026-10-19) : tout détail nouveau doit aller dans les fichiers lus à la demande.
+
+Lots de sobriété et d'anglais, après la v1.3.0 (2026-10-19) : lot 12 (pas de sous-agents d'agents, connecteurs proposés à la coupe, briefs lus par sections, maquette par le maître : 68 k tokens en 3 min, une mesure, gain non mesuré) ; lot 13 (texte interne du skill en anglais : `SKILL.md` ≈ 8 800 → ≈ 6 200 tokens réels, −30 %, une mesure).
+
+Lots 15 à 17, après le second essai réel (2026-10-19) : audit des gaspillages de tokens (lot 15, ma-auditeur, 99 k tokens, 6 min) ; recherche sur le quota hebdomadaire (lot 16, ma-chercheur, 69 k tokens, 5 min ; la variante C est retenue) ; corrections de l'audit, quota hebdomadaire, diagnostic et connecteurs (lot 17, ma-executant, 201 k tokens, 67 min ; 327 vérifications sous `sh` et `dash`, 0 échec).
+
 ## La leçon qui revient partout
 Séparer celui qui fait de celui qui vérifie, écrire l'état dans un fichier plutôt que dans sa tête, et ne rien annoncer qu'on n'a pas vu : ce sont les trois règles du skill, et ce sont celles qui ont rattrapé ses propres erreurs.

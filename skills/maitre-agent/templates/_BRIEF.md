@@ -1,32 +1,32 @@
-# Consignes de recherche (à lire avant d'écrire ici)
+# Research instructions (read before writing here)
 
-Contexte : `../../CLAUDE.md`.
+Context: `../../CLAUDE.md`.
 
-## Règles
-1. Un sujet = un fichier `NN-sujet.md`. Ne modifie pas `INDEX.md`.
-2. Langue : <langue du projet> ; termes techniques dans la langue d'usage.
-3. Chaque affirmation importante a une source avec URL et date. Sources à privilégier : <documentation officielle, notes de version, dépôts, études, presse spécialisée, bases de données du domaine…>. Forums, réseaux sociaux et vidéos = signal faible, à marquer comme tel, sauf quand le sujet est l'expérience d'usage : alors ce sont des sources utiles, à croiser.
-4. Date : indique celle de chaque source ; signale ce qui a plus de <12 mois si le domaine change vite / 3 ans sinon>.
-5. Paraphrase. Au plus une citation de moins de 15 mots par source, entre guillemets.
-6. Marque « non vérifié » ce que tu n'as pas pu confirmer. N'invente ni chiffre, ni version, ni URL.
-7. Ne contourne aucune protection (captcha, paywall, anti-robot) : si une page est bloquée, dis-le et cherche une autre source.
-8. <Règles propres au domaine : ex. achat = prix avec date, vendeur et pays, méfiance envers l'affiliation ; santé ou droit = sources officielles, pas de conseil personnalisé>
+## Rules
+1. One topic = one file `NN-topic.md`. Do not modify `INDEX.md`.
+2. Language: <project language>; technical terms in the language of use.
+3. Every important claim has a source with URL and date. Sources to favour: <official documentation, release notes, repos, studies, specialist press, the domain's databases…>. Forums, social networks and videos = weak signal, to mark as such, except when the topic is the experience of use: then they are useful sources, to cross-check.
+4. Date: give each source's date; flag what is older than <12 months if the domain changes fast / 3 years otherwise>.
+5. Paraphrase. At most one quotation of under 15 words per source, in quotation marks.
+6. Mark "non vérifié" what you could not confirm. Invent no figure, version or URL.
+7. Bypass no protection (captcha, paywall, anti-bot): if a page is blocked, say so and look for another source.
+8. <Domain-specific rules: e.g. purchase = price with date, seller and country, distrust of affiliation; health or law = official sources, no personalised advice>
 
-## Structure obligatoire
+## Required structure
 ```
-# Titre
-Date de recherche : AAAA-MM-JJ · Confiance globale : haute / moyenne / faible
+# Title
+Research date: YYYY-MM-DD · Overall confidence: high / medium / low
 
-## Résumé (5 à 10 lignes)
-## Points clés (faits, chacun avec sa source)
-## Détails
-## Application au projet (décisions, valeurs de départ, verdict)
-## Risques et points ouverts
-## Sources (liste numérotée : titre, site, URL, date, type)
+## Summary (5 to 10 lines)
+## Key points (facts, each with its source)
+## Details
+## Application to the project (decisions, starting values, verdict)
+## Risks and open points
+## Sources (numbered list: title, site, URL, date, type)
 ```
 
-## Taille
-<1 500 à 3 000> mots. Dense, sans remplissage.
+## Size
+<1,500 to 3,000> words. Dense, no padding.
 
-## Périmètre
-N'écris que ton fichier. N'installe rien, ne télécharge rien, ne remplis aucun formulaire.
+## Scope
+Write only your file. Install nothing, download nothing, fill in no form.

@@ -12,10 +12,14 @@
 # - quota  : rate_limits.five_hour / seven_day ; « quota ? » si le JSON n'en contient pas.
 # Réglages (voir skills/maitre-agent/reglages.md) : lignes « - clé : valeur » de la rubrique « ## Réglages » du
 # profil, surchargées par « ## Réglages du projet » du CLAUDE.md du dossier courant. Lus ici : `barre` (éléments
-# et ordre : projet jalon agents quota, et cout si le JSON donne cost.total_cost_usd) et `seuils` (3 entiers).
-# Absents ou illisibles : barre « projet jalon agents quota », seuils 70 80 90.
+# et ordre : projet jalon agents quota, et cout si le JSON donne cost.total_cost_usd), `seuils` (3 entiers,
+# fenêtre de 5 h seulement), `seuils-hebdo` et `plafonds-hebdo` (3 entiers chacun, fenêtre de 7 j).
+# Absents ou illisibles : barre « projet jalon agents quota », seuils 70 80 90, seuils-hebdo 20 40 60,
+# plafonds-hebdo 85 92 97.
 # Effets de bord : écrit ~/.claude/maitre-agent/usage.json (jamais écrasé par du vide) et
-# lance les alertes de quota (seuils du réglage, 70 / 80 / 90 % par défaut) une seule fois par seuil et par resets_at.
+# lance les alertes de quota une seule fois par seuil et par resets_at : fenêtre de 5 h aux seuils du réglage
+# (70 / 80 / 90 % par défaut) ; fenêtre de 7 j aux paliers 1 à 3 de la variante C (écart de rythme ou plafond,
+# même calcul que `quota.sh hebdo`, recopié ici car la barre peut être installée seule : un test compare les deux).
 # Jamais bloquant : sort toujours avec 0.
 BASE="$HOME/.claude/maitre-agent"
 SELF_DIR=$(dirname "$0" 2>/dev/null) || SELF_DIR=.
@@ -70,7 +74,11 @@ ok_seuils() { set -- $1; [ "$#" -eq 3 ] || return 1; for x in "$1" "$2" "$3"; do
   [ "$1" -ge 10 ] && [ "$1" -lt "$2" ] && [ "$2" -lt "$3" ] && [ "$3" -le 99 ]; }
 ok_barre() { b=" "; for w in $1; do case "$w" in projet|jalon|agents|quota|cout) ;; *) return 1 ;; esac
   case "$b" in *" $w "*) return 1 ;; esac; b="$b$w "; done; [ "$b" != " " ]; }
+ok_trio() { set -- $1; [ "$#" -eq 3 ] || return 1; for x in "$1" "$2" "$3"; do case "$x" in ""|*[!0-9]*) return 1 ;; esac; done
+  [ "$1" -ge 1 ] && [ "$1" -lt "$2" ] && [ "$2" -lt "$3" ] && [ "$3" -le 99 ]; }
 SEUILS=$(setting seuils ok_seuils) || SEUILS="70 80 90"
+SEUILS_H=$(setting seuils-hebdo ok_trio) || SEUILS_H="20 40 60"
+PLAFONDS_H=$(setting plafonds-hebdo ok_trio) || PLAFONDS_H="85 92 97"
 BARRE=$(setting barre ok_barre) || BARRE="projet jalon agents quota"
 
 # Texte venant du JSON ou d'un fichier du projet : on retire les caractères de contrôle, qui pourraient
@@ -164,7 +172,49 @@ alerte() { # $1 nom de fenêtre (5h|7j)  $2 pourcentage entier  $3 resets_at  $4
   [ -n "$nt" ] && MAITRE_AGENT_PROJECT_DIR="$dir" sh "$nt" quota "Quota $4 à $2 %$extra : seuil $top % franchi." >&2
 }
 alerte 5h "$p5" "$r5" "5 h"
-alerte 7j "$p7" "$r7" "7 j"
+# Fenêtre de 7 j : palier 0 à 3 = le plus haut du palier d'écart (utilisé % - écoulé % >= seuils-hebdo) et du
+# palier de plafond (utilisé % >= plafonds-hebdo) ; palier 3 aussi si utilisé >= 90 % et projection >= 300 %.
+# Plafonds seuls si la remise est inconnue, passée, à plus de 7 j, à moins de 12 h, ou si moins de 10 % est écoulé.
+palier_h() { # $1 pourcentage entier  $2 resets_at -> PH (0 à 3), PH_ECART (texte, vide si plafonds seuls)
+  set -- "$1" "$2" $SEUILS_H $PLAFONDS_H
+  _u=$1; _r=$2; PH=0; PH_ECART=""
+  [ "$_u" -ge "$6" ] && PH=1
+  [ "$_u" -ge "$7" ] && PH=2
+  [ "$_u" -ge "$8" ] && PH=3
+  case "$_r" in ""|*[!0-9]*) return 0 ;; esac
+  [ "$_r" -gt "$now" ] || return 0
+  _W=604800; _rest=$(( _r - now ))
+  [ "$_rest" -le "$_W" ] && [ "$_rest" -ge 43200 ] || return 0
+  _el=$(( _W - _rest ))
+  [ $(( _el * 10 )) -ge "$_W" ] || return 0
+  _d=$(( _u * _W - _el * 100 )); _ep=0
+  [ "$_d" -ge $(( $3 * _W )) ] && _ep=1
+  [ "$_d" -ge $(( $4 * _W )) ] && _ep=2
+  [ "$_d" -ge $(( $5 * _W )) ] && _ep=3
+  _pj=$(( (_u * _W + _el / 2) / _el ))
+  [ "$_u" -ge 90 ] && [ "$_pj" -ge 300 ] && _ep=3
+  if [ "$_d" -ge 0 ]; then _ec="+$(( (_d + _W / 2) / _W ))"; else _ec="-$(( (_W / 2 - _d) / _W ))"; fi
+  PH_ECART=", écart $_ec points"
+  [ "$_ep" -gt "$PH" ] && PH=$_ep
+  return 0
+}
+alerte_h() { # $1 pourcentage entier  $2 resets_at : une alerte par palier et par remise (le plus haut non encore notifié)
+  [ -n "$1" ] || return 0
+  palier_h "$1" "$2"
+  [ "$PH" -gt 0 ] || return 0
+  key=$(printf '%s' "${2:-0}" | tr -c '0-9' '_')
+  ad="$BASE/state/alerts"; top=0; pp=1
+  while [ "$pp" -le "$PH" ]; do [ -e "$ad/7j-$key-p$pp" ] || top=$pp; pp=$(( pp + 1 )); done
+  [ "$top" -gt 0 ] || return 0
+  mkdir -p "$ad" 2>/dev/null || return 0
+  mkdir "$ad/7j-$key-p$top" 2>/dev/null || return 0
+  pp=1; while [ "$pp" -lt "$top" ]; do mkdir "$ad/7j-$key-p$pp" 2>/dev/null; pp=$(( pp + 1 )); done
+  h=$(hhmm "$2"); extra=""; [ -n "$h" ] && extra=" (remise $h)"
+  nt=""
+  for c in "$SELF_DIR/notify.sh" "$BASE/notify.sh" "$BASE/hooks/notify.sh"; do [ -f "$c" ] && { nt="$c"; break; }; done
+  [ -n "$nt" ] && MAITRE_AGENT_PROJECT_DIR="$dir" sh "$nt" quota "Quota 7 j à $1 %$extra : palier $top sur 3$PH_ECART." >&2
+}
+alerte_h "$p7" "$r7"
 # Purge des marqueurs d'alerte de plus de 8 jours (fichiers d'une ancienne version ou dossiers vides)
 [ -d "$BASE/state/alerts" ] && find "$BASE/state/alerts" -mindepth 1 -mtime +8 -delete 2>/dev/null
 # Purge des dossiers d'état vides depuis plus de 5 h (sessions finies)

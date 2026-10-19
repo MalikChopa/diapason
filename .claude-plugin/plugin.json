@@ -1,7 +1,7 @@
 {
   "name": "maitre-agent",
   "displayName": "Maitre Agent",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Méthode maître agent : la session pilote, délègue à des sous-agents, vérifie elle-même et garde une passation reprenable.",
   "author": { "name": "Chopa" },
   "homepage": "https://github.com/MalikMoussaoui/maitre-agent",

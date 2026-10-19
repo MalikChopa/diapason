@@ -1,25 +1,21 @@
-# Brief : recherche (modèle intermédiaire ; le plus capable si c'est de la conception pure)
+# Brief: research (middle model; most capable if it is pure design)
 
 ```
-<bloc _entete.md>
-Rôle : agent de recherche. Respecte <chemin>/docs/research/_BRIEF.md à la lettre.
-Sujet : écris docs/research/NN-<sujet>.md — « <titre> ».
-Déjà établi (ne le recherche pas) : <faits, versions, décisions connues>.
-Questions, de la plus décisive à la moins décisive :
-1. <question précise>
+<header: fields A of _entete.md>
+Role: research agent. Follow <path>/docs/research/_BRIEF.md to the letter.
+Topic: write docs/research/NN-<topic>.md — "<title>".
+Already established (do not research it): <facts, versions, known decisions>.
+Questions, from most to least decisive:
+1. <precise question>
 2. …
-(5 à 8 questions)
-Sources à privilégier pour ce domaine : <liste>.
-Dans « Application au projet » : des décisions et des valeurs de départ concrètes, avec un verdict.
+(5 to 8 questions)
+Sources to favour for this domain: <list>.
+In the "Application to the project" section of the template: concrete decisions and starting values, with a verdict.
 ```
 
-Règles de méthode (à recopier dans le brief) :
-- Le contexte du projet dit **quoi chercher**, jamais ce qui est vrai. Une conclusion exige une source consultée pendant cette tâche ; sinon, c'est une croyance « non vérifiée ».
-- Après chaque paire de recherches ou de pages lues, écris tes trouvailles dans le fichier.
-- Commence par des requêtes larges et courtes, puis resserre.
-- Ne pas trouver de preuve est un résultat : écris-le, ne comble pas le trou.
-- Fraîcheur selon le type d'affirmation : prix et versions, quelques mois ; fonctionnement d'un logiciel, 12 mois ; historique, sans limite.
+Method rules (source-based conclusions, findings written after each pair of searches, start broad then narrow, "no evidence" is a result): already in the `ma-chercheur` definition and in `_BRIEF.md`: **do not copy them into the brief**. Only for a `general-purpose` agent, add: the project context says **what to look for**, never what is true; a conclusion requires a source consulted during this task.
 
-Bonnes pratiques :
-- Pose des questions **précises et tranchables** (« X supporte-t-il Y sur Z en 2026 ? »), pas un thème vague.
-- Pour un achat : prix avec date, vendeur et pays ; disponibilité ; garantie ; méfiance envers les comparatifs à liens affiliés ; retours d'usage récents.
+Good practice:
+- Freshness by type of claim (put it in the brief if it matters): prices and versions, a few months; how software works, 12 months; history, unlimited.
+- Ask **precise, decidable** questions ("does X support Y on Z in 2026?"), not a vague theme.
+- For a purchase: price with date, seller and country; availability; warranty; distrust of comparisons with affiliate links; recent usage feedback.

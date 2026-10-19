@@ -1,21 +1,21 @@
-# <Titre du plan>
-Date : <AAAA-MM-JJ> · Budget : <montant, devise> · Confiance : <haute / moyenne / faible>
+# <Plan title>
+Date: <YYYY-MM-DD> · Budget: <amount, currency> · Confidence: <high / medium / low>
 
-## Résumé
-<5 lignes : ce qu'on fait, quand, pour combien>
+## Summary
+<5 lines: what we do, when, for how much>
 
-## Étapes
-| Date ou ordre | Étape | Coût (date du prix, source) | Lien |
+## Steps
+| Date or order | Step | Cost (price date, source) | Link |
 |---|---|---|---|
 | <…> | <…> | <…> | <…> |
 
-**Total** : <montant> sur un budget de <montant> (marge : <…>).
+**Total**: <amount> on a budget of <amount> (margin: <…>).
 
-## Points critiques vérifiés par le maître agent
-- <point : vérifié (moyen, date) / non vérifié>
+## Critical points verified by the master agent
+- <point: verified (means, date) / unverified>
 
-## Risques et alternatives
+## Risks and alternatives
 - <…>
 
-## Actions pour l'utilisateur (dans l'ordre, avec les dates limites)
+## Actions for the user (in order, with deadlines)
 1. <…>

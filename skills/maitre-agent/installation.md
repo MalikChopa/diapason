@@ -1,54 +1,54 @@
-# Installation : trois voies, puis réglages facultatifs
+# Installation: three routes, then optional settings
 
-Seulement avec l'accord explicite de l'utilisateur : c'est de la configuration persistante. Lis d'abord les fichiers existants et fusionne, sans jamais écraser.
+Only with the user's explicit approval: this is persistent configuration. Read the existing files first and merge, never overwrite.
 
-## 0. Choisir une voie
-| Voie | Ce que tu obtiens | Ce qu'elle ne fait pas |
+## 0. Choose a route
+| Route | What you get | What it does not do |
 |---|---|---|
-| A. Plugin (marketplace GitHub) | skill (lancé seulement par `/maitre-agent`), 5 agents `ma-*`, compteur d'agents, notifications de fin d'agent, réinjection après résumé ; mises à jour par version | pas de barre d'état ni de `permissions.ask` (voir §4 et §2) |
-| B. Copie du skill | le skill seul dans `~/.claude/skills/` ; tout le reste à la main (§1 à §5) | rien d'automatique |
-| C. Zip de release | `maitre-agent-skill-v<version>.zip` (skill seul, comme B) ou `maitre-agent-plugin-v<version>.zip` (plugin complet) | idem A ou B selon le zip |
+| A. Plugin (GitHub marketplace) | skill (launched only by `/maitre-agent`), 5 `ma-*` agents, agent counter, agent-end notifications, re-injection after a summary, "validated sheet" safeguard (§6); updates by version | no status bar and no `permissions.ask` (see §4 and §2) |
+| B. Skill copy | the skill alone in `~/.claude/skills/`; everything else by hand (§1 to §5) | nothing automatic |
+| C. Release zip | `maitre-agent-skill-v<version>.zip` (skill alone, like B) or `maitre-agent-plugin-v<version>.zip` (full plugin) | same as A or B depending on the zip |
 
-### Voie A : plugin
-- Dans une session : `/plugin marketplace add MalikMoussaoui/maitre-agent`, puis `/plugin install maitre-agent@maitre-agent`. En une fois : `/plugin install maitre-agent --marketplace MalikMoussaoui/maitre-agent` (Claude Code 2.1.275 ou plus).
-- En shell : `claude plugin marketplace add MalikMoussaoui/maitre-agent`, puis `claude plugin install maitre-agent@maitre-agent`. Pour épingler une version : `MalikMoussaoui/maitre-agent#v1.1.0`.
-- App de bureau : + > Plugins > Add plugin, sur les marketplaces déjà configurées. Comment y ajouter une source GitHub n'est pas documenté (non vérifié) : repli, dans `~/.claude/settings.json`, `"extraKnownMarketplaces": { "maitre-agent": { "source": { "source": "github", "repo": "MalikMoussaoui/maitre-agent" } } }`.
-- Pas de plugins dans les sessions cloud.
-- Les hooks du plugin sont actifs dès son chargement, dans toutes les sessions (voir §3 pour éviter un doublon, §5 pour les notifications). Prérequis des hooks et des scripts : macOS ou Linux, et `jq`.
+### Route A: plugin
+- In a session: `/plugin marketplace add MalikMoussaoui/maitre-agent`, then `/plugin install maitre-agent@maitre-agent`. In one go: `/plugin install maitre-agent --marketplace MalikMoussaoui/maitre-agent` (Claude Code 2.1.275 or later).
+- In a shell: `claude plugin marketplace add MalikMoussaoui/maitre-agent`, then `claude plugin install maitre-agent@maitre-agent`. To pin a version: `MalikMoussaoui/maitre-agent#v1.1.0`.
+- Desktop app: + > Plugins > Add plugin, on the marketplaces already configured. How to add a GitHub source there is not documented (non vérifié); fallback, in `~/.claude/settings.json`, `"extraKnownMarketplaces": { "maitre-agent": { "source": { "source": "github", "repo": "MalikMoussaoui/maitre-agent" } } }`.
+- No plugins in cloud sessions.
+- The plugin's hooks are active as soon as it loads, in all sessions (see §3 to avoid a duplicate, §5 for notifications). Prerequisites of the hooks and scripts: macOS or Linux, and `jq`.
 
-### Voie B : copie du skill
-- Depuis une copie du dépôt : `cp -R skills/maitre-agent ~/.claude/skills/` (dossier `~/.claude/skills/maitre-agent/` avec `SKILL.md` dedans). Nouvelle session ensuite.
+### Route B: skill copy
+- From a copy of the repo: `cp -R skills/maitre-agent ~/.claude/skills/` (folder `~/.claude/skills/maitre-agent/` with `SKILL.md` inside). New session afterwards.
 
-### Voie C : zip de release
-- Page des releases du dépôt. Skill seul : `unzip maitre-agent-skill-v<version>.zip -d ~/.claude/skills/` (le zip contient le dossier `maitre-agent/`). Plugin complet (les fichiers sont à la racine du zip) : `unzip maitre-agent-plugin-v<version>.zip -d maitre-agent-plugin`, puis `claude --plugin-dir maitre-agent-plugin` pour l'essayer, ou donne l'URL du zip à `--plugin-url` (disposition attendue du zip : non vérifié).
+### Route C: release zip
+- The repo's releases page. Skill alone: `unzip maitre-agent-skill-v<version>.zip -d ~/.claude/skills/` (the zip contains the `maitre-agent/` folder). Full plugin (files at the zip root): `unzip maitre-agent-plugin-v<version>.zip -d maitre-agent-plugin`, then `claude --plugin-dir maitre-agent-plugin` to try it, or give the zip URL to `--plugin-url` (expected zip layout: non vérifié).
 
-### Nom de la commande
-- Via le plugin : `/maitre-agent:maitre-agent`. Le nom court `/maitre-agent` marche aussi tant qu'aucun autre skill ne le prend.
-- Via la copie du skill (voies B et C) : `/maitre-agent`.
-- Un skill personnel et un skill de plugin de même nom se chargent tous les deux : n'installe pas le skill par les deux voies.
+### Command name
+- Via the plugin: `/maitre-agent:maitre-agent`. The short name `/maitre-agent` also works as long as no other skill takes it.
+- Via the skill copy (routes B and C): `/maitre-agent`.
+- A personal skill and a plugin skill of the same name both load: do not install the skill by both routes.
 
-## 1. Sous-agents (`SKILL_DIR/agents/` → `~/.claude/agents/`), voies B et C seulement
-- `ma-chercheur` (intermédiaire), `ma-auditeur` (intermédiaire, lecture seule sauf son fichier), `ma-testeur` (intermédiaire), `ma-concepteur` (le plus capable), `ma-executant` (hérite du modèle demandé).
-- Points communs : sans l'outil Agent (pas de sous-agents imbriqués), un plafond de tours, et les règles stables de `briefs/_entete.md` dans le corps.
-- Copie-les dans `~/.claude/agents/`. Si un fichier du même nom existe déjà, compare-le et demande avant de le remplacer.
-- Ils sont disponibles dans les nouvelles sessions. Avec le plugin, ils s'appellent `maitre-agent:ma-chercheur`, etc., et sont déjà fournis : ne les copie pas en plus.
-- Un agent de plugin ignore `permissionMode` et `hooks` (doc officielle) : ces agents n'en ont pas.
+## 1. Sub-agents (`SKILL_DIR/agents/` → `~/.claude/agents/`), routes B and C only
+- `ma-chercheur` (middle), `ma-auditeur` (middle, read-only except its file), `ma-testeur` (middle), `ma-concepteur` (most capable), `ma-executant` (inherits the requested model).
+- In common: no Agent tool (no nested sub-agents), a turn ceiling, and the stable rules of `briefs/_entete.md` in the body.
+- Copy them into `~/.claude/agents/`. If a file of the same name already exists, compare it and ask before replacing it.
+- They are available in new sessions. With the plugin, they are called `maitre-agent:ma-chercheur`, etc., and are already supplied: do not copy them as well.
+- A plugin agent ignores `permissionMode` and `hooks` (official doc): these agents have none.
 
-## 2. Demander avant les commandes risquées (`~/.claude/settings.json`, `permissions.ask`)
+## 2. Ask before risky commands (`~/.claude/settings.json`, `permissions.ask`)
 `Bash(git push *)`, `Bash(gh repo create *)`, `Bash(gh pr create *)`, `Bash(gh release create *)`, `Bash(npm publish *)`, `Bash(rm -rf *)`, `Bash(sudo *)`, `Bash(brew install *)`, `Bash(brew uninstall *)`, `Bash(kill *)`, `Bash(pkill *)`, `Bash(killall *)`.
-Adapte la liste à l'OS (par exemple `winget install`, `apt install`). Ces règles valent aussi pour les sous-agents.
-Un plugin ne peut pas installer de `permissions` : c'est toujours une copie à la main, même avec la voie A. Montre le diff avant d'écrire.
+Adapt the list to the OS (e.g. `winget install`, `apt install`). These rules also apply to sub-agents.
+A plugin cannot install `permissions`: it is always a manual copy, even with route A. Show the diff before writing.
 
-## 3. Rappel de reprise (hook `SessionStart`, matcher `compact|resume`)
-- Copie `SKILL_DIR/hooks/reinject.sh` dans `~/.claude/maitre-agent/hooks/` et rends-le exécutable. Commande du hook : `~/.claude/maitre-agent/hooks/reinject.sh 2>/dev/null || true`, timeout 10.
-- Après un résumé automatique ou une reprise, le script réinjecte les sections « Agents lancés » et « Reprise immédiate » de `docs/HANDOFF.md`. Sans HANDOFF, il ne fait rien.
-- **Un seul endroit : dans `settings.json` OU dans le plugin, pas les deux.** Le plugin apporte déjà ce hook ; s'il est aussi dans `settings.json`, il s'exécute deux fois. Avec la voie A, saute ce paragraphe.
-- Script POSIX (macOS, Linux, Git Bash) ; sous Windows sans bash, écris l'équivalent PowerShell.
+## 3. Resume reminder (hook `SessionStart`, matcher `compact|resume`)
+- Copy `SKILL_DIR/hooks/reinject.sh` into `~/.claude/maitre-agent/hooks/` and make it executable. Hook command: `~/.claude/maitre-agent/hooks/reinject.sh 2>/dev/null || true`, timeout 10.
+- After an automatic summary or a resume, the script re-injects the "Agents lancés" and "Reprise immédiate" sections of `docs/HANDOFF.md`. Without HANDOFF, it does nothing.
+- **One place only: in `settings.json` OR in the plugin, not both.** The plugin already brings this hook; if it is also in `settings.json`, it runs twice. With route A, skip this paragraph.
+- POSIX script (macOS, Linux, Git Bash); on Windows without bash, write the PowerShell equivalent.
 
-## 4. Barre d'état (`statusLine`) : à la main, même avec le plugin
-Un plugin ne peut pas fournir `statusLine` (seuls `agent` et `subagentStatusLine` sont pris en compte dans son `settings.json`).
-1. Copie `SKILL_DIR/hooks/statusline.sh` et `SKILL_DIR/hooks/notify.sh` dans `~/.claude/maitre-agent/` (créé si besoin) et rends-les exécutables. Avec le plugin, le skill est déjà dans son cache : `cp ~/.claude/plugins/cache/maitre-agent/maitre-agent/*/hooks/statusline.sh ~/.claude/plugins/cache/maitre-agent/maitre-agent/*/hooks/notify.sh ~/.claude/maitre-agent/` (chemin **observé sur 2.1.299** après installation, `.../maitre-agent/maitre-agent/<version>/hooks/` ; non documenté, donc à vérifier avec `ls`). Il change à chaque version, d'où la copie : refais-la après une mise à jour.
-2. Ajoute dans `~/.claude/settings.json`, après avoir montré le diff :
+## 4. Status bar (`statusLine`): by hand, even with the plugin
+A plugin cannot supply `statusLine` (only `agent` and `subagentStatusLine` are honoured in its `settings.json`).
+1. Copy `SKILL_DIR/hooks/statusline.sh` and `SKILL_DIR/hooks/notify.sh` into `~/.claude/maitre-agent/` (created if needed) and make them executable. With the plugin, the skill is already in its cache: `cp ~/.claude/plugins/cache/maitre-agent/maitre-agent/*/hooks/statusline.sh ~/.claude/plugins/cache/maitre-agent/maitre-agent/*/hooks/notify.sh ~/.claude/maitre-agent/` (path **observed on 2.1.299** after installation, `.../maitre-agent/maitre-agent/<version>/hooks/`; undocumented, so check with `ls`). It changes with each version, hence the copy: redo it after an update.
+2. Add to `~/.claude/settings.json`, after showing the diff:
 ```json
 "statusLine": {
   "type": "command",
@@ -56,14 +56,14 @@ Un plugin ne peut pas fournir `statusLine` (seuls `agent` et `subagentStatusLine
   "refreshInterval": 10
 }
 ```
-3. Elle affiche : `🧭 <projet> · <jalon> · <n> agents · 5 h <x> % (reset HH:MM) · 7 j <y> %`. Jalon : la ligne `Jalon : …` de `docs/HANDOFF.md` (comme le mod de bureau), 40 caractères ; sans cette ligne, rien. Les caractères de contrôle du texte lu sont retirés. Sans quota dans le JSON reçu (forfait sans limite, avant la première réponse) : `quota ?`.
-4. Le même script écrit `~/.claude/maitre-agent/usage.json` (jamais écrasé par du vide) et envoie une alerte aux seuils du réglage `seuils` (70, 80 et 90 % par défaut ; une fois par seuil et par remise à zéro). Aucun hook ne reçoit le quota : sans la barre d'état, pas d'alerte. **Le skill lit ce fichier** par `SKILL_DIR/hooks/quota.sh` (SKILL §6 : mesure valable si elle a moins de 15 min et si la fenêtre n'est pas terminée). Ce script est dans le dossier du skill, donc une copie du skill (voies B et C) le trouve aussi ; sa source est `tools/quota.sh` du dépôt. Test : `sh ~/.claude/skills/maitre-agent/hooks/quota.sh; echo $?` (0, ou le seuil atteint : 70, 80, 90 par défaut ; 2 = pas de mesure utilisable).
-   Réglages (`reglages.md`) : ces scripts lisent eux-mêmes `seuils`, `notifications` et `barre` dans `~/.claude/maitre-agent/profil.md`, puis dans la rubrique « Réglages du projet » du `CLAUDE.md` du dossier courant. Rien à installer de plus ; sans ces lignes, les défauts ci-dessus.
-5. Sans le plugin, le compteur d'agents a besoin des hooks (§5) ; sinon il reste à `0 agent`.
-6. **App de bureau (onglet Code) : la barre d'état n'est pas affichée** (tickets anthropics/claude-code#41456 et #83534 ; un script témoin déclaré en `statusLine` n'a pas été appelé lors d'un test local du 2026-10-18). Installe à la place le plugin `maitre-agent-bureau` de la même marketplace : `/plugin install maitre-agent-bureau@maitre-agent` (voir le dossier `bureau/` du dépôt). Les hooks (§5) marchent aussi au bureau.
+3. It displays: `🧭 <project> · <milestone> · <n> agents · 5 h <x> % (reset HH:MM) · 7 j <y> %`. Milestone: the `Jalon : …` line of `docs/HANDOFF.md` (like the desktop mod), 40 characters; without that line, nothing. Control characters in the text read are removed. Without quota in the JSON received (unlimited plan, before the first reply): `quota ?`.
+4. The same script writes `~/.claude/maitre-agent/usage.json` (never overwritten with an empty one) and sends an alert once per tier and per reset: 5 h window at the `seuils` thresholds (70, 80, 90% by default); weekly window by pace, `seuils-hebdo` gap (20, 40, 60 points) or `plafonds-hebdo` cap (85, 92, 97%), see `reglages.md`. No hook receives the quota: without the status bar, no alert. **The skill reads this file** through `SKILL_DIR/hooks/quota.sh` (SKILL §6: a measure is valid if under 15 min old and the window is not over). This script is in the skill folder, so a skill copy (routes B and C) finds it too; its source is the repo's `tools/quota.sh`. Test: `sh ~/.claude/skills/maitre-agent/hooks/quota.sh; echo $?` (0, or the tier reached; 2 = no usable measure). Weekly figures from a usage tool: `sh ~/.claude/skills/maitre-agent/hooks/quota.sh hebdo <used %> <resetsAt>`.
+   Settings (`reglages.md`): these scripts read `seuils`, `notifications` and `barre` themselves in `~/.claude/maitre-agent/profil.md`, then in the "Réglages du projet" section of the current folder's `CLAUDE.md`. Nothing more to install; without these lines, the defaults above.
+5. Without the plugin, the agent counter needs the hooks (§5); otherwise it stays at `0 agent`.
+6. **Desktop app (Code tab): the status bar is not displayed** (tickets anthropics/claude-code#41456 and #83534; a witness script declared as `statusLine` was not called in a local test on 2026-10-18). Install instead the `maitre-agent-bureau` plugin from the same marketplace: `/plugin install maitre-agent-bureau@maitre-agent` (see the repo's `bureau/` folder). The hooks (§5) also work on the desktop.
 
-## 5. Compteur d'agents et notifications (hooks) : seulement sans le plugin
-Le plugin les apporte (`hooks/hooks.json`). Sans plugin, copie `SKILL_DIR/hooks/agent-count.sh` dans `~/.claude/maitre-agent/`, rends-le exécutable, puis fusionne dans `~/.claude/settings.json` (diff montré avant) :
+## 5. Agent counter and notifications (hooks): only without the plugin
+The plugin brings them (`hooks/hooks.json`). Without the plugin, copy `SKILL_DIR/hooks/agent-count.sh` into `~/.claude/maitre-agent/`, make it executable, then merge into `~/.claude/settings.json` (diff shown first):
 ```json
 "hooks": {
   "SubagentStart": [{ "hooks": [{ "type": "command", "command": "~/.claude/maitre-agent/agent-count.sh start || true", "timeout": 5 }] }],
@@ -73,14 +73,29 @@ Le plugin les apporte (`hooks/hooks.json`). Sans plugin, copie `SKILL_DIR/hooks/
   "Notification": [{ "matcher": "permission_prompt|idle_prompt", "hooks": [{ "type": "command", "command": "~/.claude/maitre-agent/notify.sh blocked || true", "timeout": 10 }] }]
 }
 ```
-- Le compteur compte **tous** les sous-agents (aussi le repli `general-purpose`) ; seule la notification de fin est limitée aux `ma-*`.
-- Notifications : `osascript` sous macOS, `notify-send` sous Linux s'il existe, rien ailleurs. **Fin d'agent `ma-*` et alertes de quota : actives par défaut. Notification « Claude attend » (hook `Notification`) : désactivée par défaut**, car elle se déclencherait dans toutes les sessions ; pour l'activer, crée `~/.claude/maitre-agent/notifications-on` (ou règle `notifications : tout`). Pour tout couper : crée `~/.claude/maitre-agent/notifications-off` (coupe tout, toujours ; ou règle `notifications : rien` ; utile au bureau, où l'app notifie déjà la fin d'une tâche : doublon possible). Pour tester sans rien afficher : `MAITRE_AGENT_DRY_RUN=1`.
-- Aucun de ces scripts ne bloque : timeout court, `|| true`, sortie 0. Ils ont besoin de `jq`.
-- Les compteurs vivent dans `~/.claude/maitre-agent/state/` et sont purgés après 5 h (la fenêtre de quota), dossiers vides compris.
+- The counter counts **all** sub-agents (also the `general-purpose` fallback); only the end notification is limited to `ma-*`.
+- Notifications: `osascript` on macOS, `notify-send` on Linux if present, nothing elsewhere. **`ma-*` agent end and quota alerts: on by default. "Claude is waiting" notification (hook `Notification`): off by default**, as it would fire in all sessions; to enable it, create `~/.claude/maitre-agent/notifications-on` (or set `notifications : tout`). To cut everything: create `~/.claude/maitre-agent/notifications-off` (cuts all, always; or set `notifications : rien`; useful on the desktop, where the app already notifies a task's end: possible duplicate). To test without displaying anything: `MAITRE_AGENT_DRY_RUN=1`.
+- None of these scripts blocks: short timeout, `|| true`, exit 0. They need `jq`.
+- The counters live in `~/.claude/maitre-agent/state/` and are purged after 5 h (the quota window), empty folders included.
 
-## Vérification
-- Frontmatter YAML valide pour chaque agent.
-- JSON valide pour `settings.json`.
-- Test du script de réinjection avec un faux HANDOFF ; test de la barre d'état en lui envoyant un JSON factice : `echo '{"cwd":"."}' | ~/.claude/maitre-agent/statusline.sh`.
-- Plugin : `claude plugin validate <dossier> --strict` (ou `/plugin validate` en session).
-- Note l'installation et sa date dans le profil (« Outils Claude »).
+## 6. "Validated sheet" safeguard (hook `PreToolUse`)
+What it does: if `docs/FICHE.md` exists in the project folder **and** carries a "Status: …" line (FR: "Statut : …"; both languages are read), it refuses to write code (`Write`, `Edit`, `MultiEdit`, `NotebookEdit`) and to launch the implementation agent `ma-executant` as long as the status is not "validated" (FR: "validée"). Once the sheet is validated, it still refuses code writing as long as the "Mock-up approved" line (FR: "Maquette validée") says "not yet" (FR: "pas encore") ("no interface" (FR: "sans interface"), a path or a link = allowed). Still open for writing: `docs/`, `maquette/`, `CLAUDE.md`, `.claude/` and any file outside the project. Without a sheet (projects from before v1.3), it does nothing. The refusal message says what to do (finish the workshop, have the sheet or the mock-up approved).
+- **With the plugin (route A)**: already wired in `hooks/hooks.json`. Nothing to do.
+- **Without the plugin**: copy `SKILL_DIR/hooks/garde-fiche.sh` into `~/.claude/maitre-agent/` (make it executable), then merge into `~/.claude/settings.json` (diff shown first):
+```json
+"hooks": {
+  "PreToolUse": [{ "matcher": "Write|Edit|MultiEdit|NotebookEdit|Agent|Task", "hooks": [{ "type": "command", "command": "~/.claude/maitre-agent/garde-fiche.sh", "timeout": 5 }] }]
+}
+```
+- **No `|| true` at the end of the command**, unlike the other hooks: blocking goes through exit code 2 (official hooks doc, read 2026-10-19: "A hook that blocks by exiting 2 routes the same way as "deny": Claude sees the stderr message as the denial reason"); `|| true` would erase it. One place only: plugin OR `settings.json`, not both.
+- It needs `jq`; without `jq`, it lets everything through.
+- **Limits, honestly**: (1) writes made through `Bash` (`echo > file`, `sed -i`, a script) are not filtered; (2) it reads the sheet's text, it does not know whether the user really answered "Approve": a model that wrote "validated" itself would get past it (the skill forbids it); (3) symbolic links are not followed; (4) the doc says the hooks of a plugin or of `settings.json` also run for sub-agents' tools, but **I did not verify it in a real session**; (5) agents of another type (`general-purpose`…) are not refused at launch, only their writes; (6) the exact input shape of `MultiEdit` and `NotebookEdit` is not verified at the source.
+- To switch it off: remove the `PreToolUse` block from `settings.json`. With the plugin, the doc read does not say how to switch off a single hook (non vérifié): disable the plugin, or use route B.
+- Test (fake data): `mkdir -p /tmp/t/docs && printf 'Status: draft\n' > /tmp/t/docs/FICHE.md && echo '{"tool_name":"Write","cwd":"/tmp/t","tool_input":{"file_path":"/tmp/t/src/a.js"}}' | CLAUDE_PROJECT_DIR=/tmp/t sh ~/.claude/maitre-agent/garde-fiche.sh; echo $?` prints the message then `2`.
+
+## Verification
+- Valid YAML frontmatter for each agent.
+- Valid JSON for `settings.json`.
+- Test of the re-injection script with a fake HANDOFF; test of the status bar by sending it a fake JSON: `echo '{"cwd":"."}' | ~/.claude/maitre-agent/statusline.sh`.
+- Plugin: `claude plugin validate <folder> --strict` (or `/plugin validate` in session).
+- Note the installation and its date in the profile ("Outils Claude").

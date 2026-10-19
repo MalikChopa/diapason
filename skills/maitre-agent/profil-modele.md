@@ -1,92 +1,98 @@
-# Profil de l'utilisateur
+# User profile
 
-Emplacement : `~/.claude/maitre-agent/profil.md`, hors du skill, pour qu'une mise à jour ou un partage du skill ne l'écrase ni ne l'expose. Il vaut pour tous les projets.
+Location: `~/.claude/maitre-agent/profil.md`, outside the skill, so that a skill update or sharing neither overwrites nor exposes it. It applies to all projects.
 
-## Première utilisation (2 allers-retours au maximum)
-1. **Détecte sans rien demander**, en peu de commandes :
-   - langue du message ;
-   - OS et shell ;
-   - pays, devise, unités et fuseau, d'après la locale du système ;
-   - dossier de projets habituel : `~/Developer`, `~/Projects`, `~/code`, `~/dev`, `~/source/repos`, `~/Documents/Projects`, sinon `~/Projects` ;
-   - outils Claude disponibles : sous-agents, outil de questions, outil d'usage, changement de dossier, navigateur, Artifact.
+## First use (2 question calls at most)
+1. **Detect without asking anything**, in few commands:
+   - language of the message;
+   - OS and shell;
+   - country, currency, units and time zone, from the system locale;
+   - usual projects folder: `~/Developer`, `~/Projects`, `~/code`, `~/dev`, `~/source/repos`, `~/Documents/Projects`, else `~/Projects`;
+   - Claude tools available: sub-agents, question tool, usage tool, folder change, browser, Artifact;
+   - plan: field `plan.plan` of the usage tool (`reglages.md`, "Forfait et préréglage").
 
-   Le matériel (processeur, RAM, disque) et les outils de développement ne se relèvent que quand un projet en dépend. On les ajoute alors au profil.
-2. **Un seul message** (outil de questions s'il existe, sinon une liste numérotée), qui contient :
-   - les 4 questions essentielles ci-dessous ;
-   - les questions bloquantes du projet demandé (2 au maximum) ;
-   - une question de plus, à boutons : « Réglages : garder les défauts (recommandé) / économe / intensif / personnaliser ». Si le profil dit « forfait Pro » (ou si l'utilisateur l'a dit), « économe (recommandé) » passe en premier et « garder les défauts » en deuxième ;
-   - « Je l'enregistre dans <chemin> et je le complète au fil de tes corrections. Réponds "défauts" pour tout accepter. »
-   Si les agents `ma-*` ne figurent ni dans `~/.claude/agents/` ni dans la liste de l'outil de sous-agents (ni sous la forme `maitre-agent:ma-*`, fournie par le plugin), ajoute une question : « J'installe les sous-agents et les garde-fous de la méthode ? (voir `installation.md`) ». Défaut : non, tant que l'utilisateur n'a pas dit oui. S'ils sont fournis par le plugin, ne pose pas la question.
-3. Après la réponse :
-   - écris le profil ;
-   - écris la rubrique « Réglages » : `sh SKILL_DIR/hooks/reglages.sh preset <économe → econome | défauts → normal | intensif>` ; « personnaliser » : montre `sh SKILL_DIR/hooks/reglages.sh`, demande quelles clés changer et applique-les avec `set` (détail : `reglages.md`) ;
-   - marque « (défaut, à confirmer) » toute ligne que l'utilisateur n'a pas choisie explicitement ;
-   - montre le profil en 5 lignes ;
-   - **enchaîne sans attendre** avec le projet (`phases.md`).
+   Hardware (processor, RAM, disk) and development tools are surveyed only when a project depends on them. They are then added to the profile.
+2. **First question call** (question tool if there is one, 4 questions at most; otherwise a numbered list):
+   - the 3 first essential questions below;
+   - **Preset**: the one matching the detected plan first, followed by "(recommended)" (FR: "(recommandé)") and a sentence on what it changes, then the others, then "customise". Plan not detected: ask it first (Pro / Max 5x / Max 20x / API);
+   - as text, after the questions: "I will always ask you before: money, installations, heavy downloads, publication, sending, accounts, deletions. Tell me if you want to add to it. I save it in <path> and complete it as you correct me. Answer "defaults" to accept everything." (user-visible text: in the profile language)
 
-   Si l'utilisateur refuse de répondre, prends les défauts et marque-les de la même façon.
+   The requested project's questions are not part of it: they come right after, in tour 1 of `cadrage.md`. If the `ma-*` agents are in neither `~/.claude/agents/` nor the sub-agent tool's list (nor in the form `maitre-agent:ma-*`, supplied by the plugin), add this question to tour 1: "Shall I install the method's sub-agents and safeguards? (see `installation.md`)". Default: no, until the user says yes. If they are supplied by the plugin, do not ask it.
+3. After the answer:
+   - write the profile;
+   - write the "Réglages" section: `sh SKILL_DIR/hooks/reglages.sh preset <économe → econome | normal | intensif>`; "customise": show `sh SKILL_DIR/hooks/reglages.sh`, ask which keys to change and apply them with `set` (detail: `reglages.md`);
+   - if the chosen accompaniment is not `accompagnant`: `sh SKILL_DIR/hooks/reglages.sh set autonomie <value>`;
+   - note the plan in the "Forfait / quota" line;
+   - mark "(défaut, à confirmer)" on every line the user did not explicitly choose;
+   - show the profile in 5 lines;
+   - **continue without waiting** with the project (`phases.md`).
 
-Pour une demande triviale (réponse directe, aucun agent), crée un profil minimal avec ce qui est détecté, et réponds.
+   If the user refuses to answer, take the defaults (the detected plan's preset, else `normal`) and mark them the same way.
 
-### Les 4 questions essentielles (défaut entre crochets)
-1. **Autonomie** : pour les choix techniques, je tranche seul et je note, ou je te propose d'abord ? [je tranche et je note]
-2. **Dossiers** : chaque projet dans un nouveau dossier sous <dossier détecté> ? [oui, nom proposé, sans redemander]
-3. **Langue, ton, niveau** : <langue détectée> ; tutoiement ou vouvoiement (si la langue les distingue) ; court ou détaillé ; débutant, intermédiaire ou expert ? [comme l'utilisateur t'écrit, court, intermédiaire, termes techniques expliqués en quelques mots]
-4. **Toujours me demander avant** : argent, installations, téléchargements lourds, publication, envois, comptes, suppressions. Autre chose ? [cette liste]
+For a trivial request (direct answer, no agent), create a minimal profile with what is detected, and answer.
 
-Les autres préférences prennent leur défaut, en attendant que l'utilisateur les corrige :
-- tests : les agents testent, l'utilisateur regarde s'il veut ;
-- git : local, avec un commit par étape vérifiée ; push sur demande seulement ;
-- seuils de quota : 70 / 80 / 90 % (rubrique « Réglages » : `seuils`) ;
-- modèle le plus capable : permis ;
-- outils possédés : aucun ;
-- limites : aucune.
+### The 4 essential questions (default in brackets; the 4th is announced as text)
+1. **Accompaniment** (setting `autonomie`): you always decide the product form, the features, the main techs and the style, and you see a mock-up before the code. For the rest (technical details), I accompany you: I decide and explain in one line (`accompagnant`); I decide without explaining (`techniques`); I ask you everything (`tout-demander`); I decide everything except the approvals (`tout-sauf-accords`)? [accompagnant]
+2. **Folders**: each project in a new folder under <detected folder>? [yes, name proposed, without asking again]
+3. **Language, tone, level**: <detected language>; informal or formal address (if the language distinguishes them); short or detailed; beginner, intermediate or expert? [as the user writes to you, short, intermediate, technical terms explained in a few words]
+4. **Always ask me before**: money, installations, heavy downloads, publication, sending, accounts, deletions. Anything else? [this list; announced as text rather than asked as a button, see above]
 
-## Modèle de `profil.md`
+The other preferences take their default, until the user corrects them:
+- tests: agents test, the user looks if they want;
+- git: local, with a commit per verified step; push on request only;
+- quota thresholds: 70 / 80 / 90% for the 5 h window, weekly tiers 20 / 40 / 60 points or 85 / 92 / 97% ("Réglages" section: `seuils`, `seuils-hebdo`, `plafonds-hebdo`);
+- most capable model: allowed;
+- tools owned: none;
+- limits: none.
+
+## `profil.md` template
+Write it in the profile language, headings included (the FR names in brackets are those the skill cites); the heading `## Réglages` stays as is (a script reads it).
 ```
 # Profil maître agent
-Créé : <AAAA-MM-JJ> · Mis à jour : <AAAA-MM-JJ> · Mises à jour automatiques : <oui / non>
+Created: <YYYY-MM-DD> · Updated: <YYYY-MM-DD> · Automatic updates: <yes / no>
 
-## Détecté
-- Langue : <…>
-- OS / shell : <…>
-- Pays / devise / unités / fuseau : <…>
-- Dossier de projets : <chemin>
-- Outils Claude : <sous-agents oui/non, questions, usage, dossier, navigateur, Artifact>
-- Forfait / quota : <forfait (Pro, Max, API…) si connu ; source du quota : outil d'usage, `usage.json` de la barre d'état, ou « pas de mesure »>
-- Machine et outils de dev : <rempli quand un projet en a besoin>
+## Detected
+- Language: <…>
+- OS / shell: <…>
+- Country / currency / units / time zone: <…>
+- Projects folder: <path>
+- Claude tools: <sub-agents yes/no, questions, usage, folder, browser, Artifact>
+- Plan / quota (Forfait / quota): <plan (Pro, Max, API…) if known; quota source: usage tool, the status bar's `usage.json`, or "no measure">
+- Machine and dev tools (Machine): <filled when a project needs it>
 
-## Préférences générales (toutes les tâches)
-- Autonomie : <…>
-- Dossiers : <…>
-- Langue, tutoiement, ton, niveau : <…>
-- Toujours demander avant : <liste>
-- Quota : modèle le plus capable <permis / non> ; seuils et autres réglages : rubrique « Réglages » ci-dessous
-- Limites : <…>
+## General preferences (all tasks)
+- Autonomy: <accompagnant / techniques / tout-demander / tout-sauf-accords; the `autonomie` setting is authoritative>
+- Folders: <…>
+- Language, formality, tone, level: <…>
+- Always ask before: <list>
+- Quota: most capable model <allowed / not>; thresholds and other settings: "Réglages" section below
+- Limits: <…>
 
 ## Réglages
-- (écrite par `reglages.sh` à la première utilisation ; clés dans `reglages.md`, par exemple `- seuils : 70 80 90`)
+- (written by `reglages.sh` at first use; keys in `reglages.md`, e.g. `- seuils : 70 80 90`)
 
-## Usages et équipement (pour cadrer les recherches)
-- <ce que l'utilisateur fait, utilise ou possède : jeux, logiciels, matériel, abonnements, outils créatifs>
+## Uses and equipment (Usages et équipement; to frame researches)
+- <what the user does, uses or owns: games, software, hardware, subscriptions, creative tools>
 
-## Préférences pour les projets de code ou créatifs
-- Tests : <…>
-- Git : <…>
-- Outils de création possédés : <…>
+## Preferences for code or creative projects
+- Tests: <…>
+- Git: <…>
+- Creative tools owned: <…>
 
-## Projets connus
-- <nom> : <une ligne> — <chemin> (<date>)
+## Known projects (Projets connus)
+- <name>: <one line> — <path> (<date>)
 
-## Repères de coût (mesurés)
-- <AAAA-MM-JJ> : <type d'agent, modèle> ≈ <k tokens>, <durée>, <% de quelle fenêtre>
+## Cost benchmarks, measured (Repères de coût)
+- <YYYY-MM-DD>: <agent type, model> ≈ <k tokens>, <duration>, <% of which window>
 
-## Habitudes observées
-- <AAAA-MM-JJ> : <correction ou demande de l'utilisateur, à appliquer désormais>
+## Observed habits (Habitudes observées)
+- <YYYY-MM-DD>: <user correction or request, to apply from now on>
 ```
 
-## Entretien du profil
-- L'utilisateur corrige ta façon de travailler (« arrête de me demander X », « teste toujours Y ») : si « Mises à jour automatiques » vaut oui, ajoute une ligne datée dans « Habitudes observées » et dis-le en une phrase. Sinon, propose-le.
-- `/maitre-agent profil` : affiche le profil et applique les modifications demandées.
-- À la fin d'un projet, ajoute les coûts mesurés dans « Repères de coût » (tokens et % de fenêtre par agent), et le projet dans « Projets connus ».
-- Une information apprise pendant une tâche (usage, équipement) et utile ensuite : ajoute-la dans « Usages et équipement », si les mises à jour automatiques sont permises.
+## Keeping the profile (bounded)
+- **Ceilings per section**, so that reading it does not grow with use: "Repères de coût" 8 lines, "Projets connus" 15, "Habitudes observées" 15, "Usages et équipement" 15. Past the ceiling, merge or remove the **oldest** line (costs: keep one median line per agent type plus the latest ones; projects: the most recent, the oldest dropped; habits: no duplicates, a new line that repeats an old one replaces it). Say so in one sentence.
+- **Read only the useful sections** when the task needs a few of them (`grep -n '^## ' <profile>`, then `sed -n '<from>,<to>p'`): a decision or purchase reads the equipment, a resume reads "Projets connus" and "Réglages", `statut` reads "Projets connus" alone. The whole file only for `profil`, the first use and a survey redo.
+- The user corrects your way of working ("stop asking me X", "always test Y"): if "Automatic updates" is yes, add a dated line in "Habitudes observées" and say so in one sentence. Otherwise, propose it.
+- `/maitre-agent profil`: shows the profile and applies the requested changes.
+- At the end of a project, add the measured costs to "Repères de coût" (tokens and % of window per agent), and the project to "Projets connus".
+- Information learned during a task (usage, equipment) and useful afterwards: add it to "Usages et équipement", if automatic updates are allowed.

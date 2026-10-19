@@ -6,7 +6,7 @@
     {
       "name": "maitre-agent",
       "source": "./",
-      "description": "Méthode maître agent : skill, 5 sous-agents, compteur d'agents, notifications, réinjection après résumé"
+      "description": "Méthode maître agent : skill, 5 sous-agents, compteur d'agents, notifications, réinjection après résumé, garde-fou fiche validée"
     },
     {
       "name": "maitre-agent-bureau",

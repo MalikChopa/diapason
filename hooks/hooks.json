@@ -1,6 +1,14 @@
 {
-  "description": "maitre-agent : compteur d'agents, notifications, réinjection après résumé",
+  "description": "maitre-agent : compteur d'agents, notifications, réinjection après résumé, garde-fou fiche validée",
   "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|MultiEdit|NotebookEdit|Agent|Task",
+        "hooks": [
+          { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/garde-fiche.sh\"", "timeout": 5 }
+        ]
+      }
+    ],
     "SubagentStart": [
       {
         "hooks": [

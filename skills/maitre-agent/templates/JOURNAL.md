@@ -1,20 +1,20 @@
-# Journal des jalons : <Nom du projet>
+# Milestone journal: <Project name>
 
-Dernière mise à jour : <AAAA-MM-JJ>.
+Last updated: <YYYY-MM-DD>.
 
-## Lancer
+## Run
 ```
-<commandes exactes pour installer les dépendances du projet, lancer, tester, construire>
+<exact commands to install the project's dependencies, run, test, build>
 ```
 
-## État
-| Jalon | État | Vérifié par le maître agent |
+## State
+| Milestone | State | Verified by the master agent |
 |---|---|---|
-| J0 <titre> | à faire / en cours / fait | <oui (comment) / non> |
+| J0 <title> | to do / in progress / done | <yes (how) / no> |
 
-## J0 : <titre>
-- Fait : <…>
-- Critères mesurés : <critère → valeur mesurée, comment>
-- Non mesuré : <… et pourquoi>
-- Écarts avec la spec et décisions : <…>
-- Bugs connus : <…>
+## J0: <title>
+- Done: <…>
+- Criteria measured: <criterion → measured value, how>
+- Not measured: <… and why>
+- Deviations from the spec and decisions: <…>
+- Known bugs: <…>

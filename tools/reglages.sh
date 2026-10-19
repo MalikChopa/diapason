@@ -17,13 +17,15 @@ PROJ="${MAITRE_AGENT_PROJECT_DIR:-$PWD}"
 CMD="$PROJ/CLAUDE.md"
 T_PROFIL="Réglages"
 T_PROJET="Réglages du projet"
-KEYS="seuils budget-lot autonomie modeles agents-paralleles notifications barre git langue ton rapports prereglage"
+KEYS="seuils seuils-hebdo plafonds-hebdo budget-lot autonomie modeles agents-paralleles notifications barre git langue ton rapports prereglage"
 
 default_of() {
   case "$1" in
     seuils) echo "70 80 90" ;;
+    seuils-hebdo) echo "20 40 60" ;;
+    plafonds-hebdo) echo "85 92 97" ;;
     budget-lot) echo "30 %" ;;
-    autonomie) echo "techniques" ;;
+    autonomie) echo "accompagnant" ;;
     modeles) echo "defaut" ;;
     agents-paralleles) echo "5" ;;
     notifications) echo "agent+quota" ;;
@@ -36,10 +38,12 @@ default_of() {
 }
 expect_of() {
   case "$1" in
-    seuils) echo "3 entiers croissants de 10 à 99, par exemple 70 80 90" ;;
+    seuils) echo "3 entiers croissants de 10 à 99 (fenêtre de 5 h seulement), par exemple 70 80 90" ;;
+    seuils-hebdo) echo "3 entiers croissants de 1 à 99 (écarts en points, fenêtre hebdomadaire), par exemple 20 40 60" ;;
+    plafonds-hebdo) echo "3 entiers croissants de 1 à 99 (pourcentages absolus, fenêtre hebdomadaire), par exemple 85 92 97" ;;
     budget-lot) echo "un pourcentage de 5 à 100, par exemple 30 %" ;;
-    autonomie) echo "techniques | tout-demander | tout-sauf-accords" ;;
-    modeles) echo "defaut | jamais-opus | opus-conception-seulement" ;;
+    autonomie) echo "accompagnant | techniques | tout-demander | tout-sauf-accords" ;;
+    modeles) echo "defaut | jamais-opus | opus-conception-seulement | opus-avec-audits" ;;
     agents-paralleles) echo "un entier de 1 à 5" ;;
     notifications) echo "agent+quota | tout | quota | rien" ;;
     barre) echo "des mots parmi projet jalon agents quota cout, sans doublon" ;;
@@ -60,6 +64,12 @@ norm() {
       [ "$#" -eq 3 ] || return 1
       for _x in "$1" "$2" "$3"; do is_int "$_x" || return 1; done
       [ "$1" -ge 10 ] && [ "$1" -lt "$2" ] && [ "$2" -lt "$3" ] && [ "$3" -le 99 ] || return 1
+      echo "$1 $2 $3" ;;
+    seuils-hebdo|plafonds-hebdo)
+      set -f; set -- $(printf '%s' "$*" | tr ',/' '  '); set +f
+      [ "$#" -eq 3 ] || return 1
+      for _x in "$1" "$2" "$3"; do is_int "$_x" || return 1; done
+      [ "$1" -ge 1 ] && [ "$1" -lt "$2" ] && [ "$2" -lt "$3" ] && [ "$3" -le 99 ] || return 1
       echo "$1 $2 $3" ;;
     budget-lot)
       _n=$(printf '%s' "$*" | tr -d ' %'); is_int "$_n" || return 1
@@ -86,8 +96,8 @@ norm() {
     *)
       _v=$(printf '%s' "$*" | tr -d ' ' | tr 'A-Z' 'a-z')
       case "$_k:$_v" in
-        autonomie:techniques|autonomie:tout-demander|autonomie:tout-sauf-accords) echo "$_v" ;;
-        modeles:defaut|modeles:jamais-opus|modeles:opus-conception-seulement) echo "$_v" ;;
+        autonomie:accompagnant|autonomie:techniques|autonomie:tout-demander|autonomie:tout-sauf-accords) echo "$_v" ;;
+        modeles:defaut|modeles:jamais-opus|modeles:opus-conception-seulement|modeles:opus-avec-audits) echo "$_v" ;;
         modeles:défaut) echo defaut ;;
         notifications:agent+quota|notifications:tout|notifications:quota|notifications:rien) echo "$_v" ;;
         git:commit-local|git:aucun|git:push-branche) echo "$_v" ;;
@@ -210,21 +220,29 @@ case "$cmd" in
     case "$p" in
       econome|économe) p=econome; lines="seuils|60 75 85
 budget-lot|15 %
-modeles|jamais-opus
-agents-paralleles|1
-rapports|court" ;;
-      normal) lines="" ;;
+modeles|opus-conception-seulement
+agents-paralleles|2
+rapports|court
+seuils-hebdo|15 30 45
+plafonds-hebdo|80 90 95" ;;
+      normal) lines="agents-paralleles|4" ;;
       intensif) lines="seuils|80 90 95
 budget-lot|40 %
-agents-paralleles|5" ;;
+modeles|opus-avec-audits
+agents-paralleles|5
+seuils-hebdo|30 50 70
+plafonds-hebdo|90 95 98" ;;
       *) echo "préréglage inconnu : « ${1:-} ». Attendu : econome | normal | intensif"; exit 1 ;;
     esac
     echo "avant :"; show_section "$PROFIL" "$T_PROFIL"
+    # le choix d'autonomie n'est pas un réglage de quota : un préréglage ne l'efface pas
+    keep=$(rg "$PROFIL" "$T_PROFIL" autonomie); keep=$(norm autonomie "$keep" 2>/dev/null)
     drop "$PROFIL" "$T_PROFIL" || { echo "écriture impossible : rien changé"; exit 2; }
     put "$PROFIL" "$T_PROFIL" prereglage "- prereglage : $p" || { echo "écriture impossible"; exit 2; }
     printf '%s\n' "$lines" | while IFS='|' read -r k v; do
       [ -n "$k" ] && put "$PROFIL" "$T_PROFIL" "$k" "- $k : $v"
     done
+    [ -n "$keep" ] && put "$PROFIL" "$T_PROFIL" autonomie "- autonomie : $keep"
     echo "après :"; show_section "$PROFIL" "$T_PROFIL"
     exit 0 ;;
   reset)

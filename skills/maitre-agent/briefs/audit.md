@@ -1,16 +1,16 @@
-# Brief : audit indépendant (modèle intermédiaire), en lecture seule
+# Brief: independent audit (middle model), read-only
 
-Pour un document qui guide la suite (spec, architecture, synthèse chiffrée, contenu final) ou pour un lot d'assets. 2 tours au maximum. Dans l'en-tête, « Tu écris UNIQUEMENT » = `docs/<X>_AUDIT_<N>.md`.
+For a document that guides what follows (spec, architecture, figures summary, final content) or for an asset batch. 2 rounds at most. In the header, "You write ONLY" = `docs/<X>_AUDIT_<N>.md`.
 
 ```
-<bloc _entete.md>
-Rôle : auditeur indépendant, en lecture seule.
-Contexte : <qui a écrit le document, à partir de quoi ; si c'est une révision, quel audit elle corrige>.
-À faire :
-1. <Révision : pour chaque point de l'audit précédent, verdict OK / partiel / faux, avec la ligne.>
-2. Refais tous les calculs et chiffres avec un script (interpréteur isolé si possible, par exemple python3 -I) : <liste>.
-3. Cherche les contradictions internes (même valeur citée différemment, exemple qui contredit un tableau) et celles avec <autres documents>.
-4. Vérifie 3 à 5 affirmations ou citations contre leurs sources.
-5. <Spécifique : faisabilité, sécurité, coût, accessibilité, droits…>
-Format : liste numérotée ; chaque point classé bloquant / important / mineur, avec une citation courte et une correction proposée. Puis « Vérifié correct » et « À garder ».
+<header: fields A of _entete.md>
+Role: independent auditor, read-only.
+Context: <who wrote the document, from what; if it is a revision, which audit it fixes>.
+To do:
+1. <Revision: for each point of the previous audit, verdict OK / partial / wrong, with the line.>
+2. Redo all calculations and figures with a script (isolated interpreter if possible, e.g. python3 -I): <list>.
+3. Look for internal contradictions (same value cited differently, example that contradicts a table) and those with <other documents>.
+4. Check 3 to 5 claims or quotations against their sources.
+5. <Specific: feasibility, security, cost, accessibility, rights…>
+Format: numbered list; each point classed blocking / important / minor, with a short quotation and a proposed fix. Then "Verified correct" and "To keep".
 ```
