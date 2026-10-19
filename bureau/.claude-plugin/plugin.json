@@ -1,7 +1,7 @@
 {
   "name": "maitre-agent-bureau",
-  "version": "1.1.1",
-  "description": "Mod pour l'app Claude de bureau (onglet Code) : ligne d'état avec quota et agents en cours, alertes de quota à 70, 80 et 90 %, toast à la fin d'un sous-agent ma-*.",
+  "version": "1.2.0",
+  "description": "Mod pour l'app Claude de bureau (onglet Code) : ligne d'état avec quota et agents en cours, alertes de quota aux seuils réglés (70, 80 et 90 % par défaut), toast à la fin d'un sous-agent ma-*.",
   "author": { "name": "Chopa" },
   "license": "MIT"
 }

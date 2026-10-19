@@ -90,12 +90,13 @@ The agents write the big pieces. They never launch other agents. The master agen
 | Delegation by model | Light model for mechanical work, intermediate for research, audit and routine code, most capable for design. The model is always stated explicitly. 5 `ma-*` agents. | used for real |
 | Verification | Decisive facts are verified by the master. Required-proof table, audits capped at 2 rounds, code fixes capped at 3 rounds, "3 failures" protocol. | used for real |
 | Permissions | Approval asked before money, installs, publishing, sending, accounts, deletion. List of prohibitions (see Safeguards). | written; the `permissions.ask` rules must be installed by hand |
-| Quota 70 / 80 / 90% | At 70%, no more top-model agent (design moves to the intermediate model, and it says so); at 80%, it proposes and only launches with your explicit approval, cost announced; at 90%, clean stop. Without a usage tool, it reads the `usage.json` written by the status line, through `hooks/quota.sh` (tier 0 / 70 / 80 / 90, or "no measurement"). | stop at 90%: used for real (v1.1.0); `quota.sh`: tested with dummy JSON (`tests/hooks.sh`); the rest: written |
+| Quota 70 / 80 / 90% (adjustable) | Default thresholds; setting `seuils`. At 70%, no more top-model agent (design moves to the intermediate model, and it says so); at 80%, it proposes and only launches with your explicit approval, cost announced; at 90%, clean stop. Without a usage tool, it reads the `usage.json` written by the status line, through `hooks/quota.sh` (tier 0, or the threshold reached, or "no measurement"). | stop at 90%: used for real (v1.1.0); `quota.sh`: tested with dummy JSON (`tests/hooks.sh`); the rest: written |
 | Handoff | `HANDOFF.md` with [V] verified / [?] not rechecked tags, an "Agents launched" table, an "Immediate resume" section. Files on disk win if HANDOFF is behind. | used for real (one resume after a cut) |
-| Sub-commands | `aide` (help), `statut`, `reprendre`, `profil`, `diagnostic` (or `doctor`: 8 read-only checks of the installation), `nouveau`. | written |
+| Sub-commands | `aide` (help), `statut`, `reprendre`, `profil`, `reglages` (or `settings`), `diagnostic` (or `doctor`: 8 read-only checks of the installation), `nouveau`. | written |
+| Settings (v1.2) | A `## Réglages` section of the profile (and `## Réglages du projet` in a project's `CLAUDE.md`) sets quota thresholds, batch size, autonomy, models, parallel agents, notifications, status line, git, language, tone, report length. Three presets: `econome` (thrifty), `normal`, `intensif`. See "Settings" below. | script `tools/reglages.sh` and the scripts that read it: tested with dummy JSON (`tests/hooks.sh`); settings applied by the model: written, never seen in a real session |
 | Terminal status line | `🧭 <project> · <milestone> · <n> agents · 5 h <x> % (reset HH:MM) · 7 j <y> %`. Also writes the quota to `~/.claude/maitre-agent/usage.json`. | tested with dummy JSON on every push (`tests/hooks.sh`); not seen in a real terminal |
-| Desktop mod | The same idea for the Code tab of the Claude desktop app: status line, quota alerts, agent-finished toast. | tested: 25 of 25 tests; status line and agent-finished toast seen for real |
-| Notifications | System notification when a `ma-*` agent finishes and at 70 / 80 / 90% quota (on by default); "Claude is waiting" (permission, idle) **off by default**, turned on with the file `~/.claude/maitre-agent/notifications-on`. `notifications-off` turns everything off. macOS and Linux. Quota alerts require the status line (terminal) or the mod (desktop). | macOS command tested for real; scripts tested with dummy JSON (`tests/hooks.sh`); hooks not tested end to end by Claude Code |
+| Desktop mod | The same idea for the Code tab of the Claude desktop app: status line, quota alerts, agent-finished toast. | tested: 38 of 38 tests (including the `seuils` and `notifications` settings); status line and agent-finished toast seen for real (v1.1.x) |
+| Notifications | System notification when a `ma-*` agent finishes and at the quota thresholds (70 / 80 / 90% by default), on by default; "Claude is waiting" (permission, idle) **off by default**. The `notifications` setting (`agent+quota`, `tout`, `quota`, `rien`) chooses; without it, the file `~/.claude/maitre-agent/notifications-on` turns "Claude is waiting" on and `notifications-off` turns everything off. macOS and Linux. Quota alerts require the status line (terminal) or the mod (desktop). | macOS command tested for real; scripts tested with dummy JSON (`tests/hooks.sh`); hooks not tested end to end by Claude Code |
 | Buttons | Questions go through the environment's question tool (2 to 4 options, the recommended one first, marked "(recommandé)"). Without that tool: a numbered list. | written |
 | Chapters | One chapter per phase (framing, research, design, milestones, delivery) if the environment has a chapter tool. Otherwise nothing. | written |
 | "Since your last visit" | On every resume, 3 lines: what changed, what is done, what is expected from you. | written |
@@ -123,7 +124,7 @@ From a shell: `claude plugin marketplace add https://github.com/MalikMoussaoui/m
 
 You get: the skill (started only by `/maitre-agent`), the 5 `ma-*` agents, the agent counter, the agent-finished notification, and re-injection of the state after an automatic summary. **The hooks are active in all your Claude Code sessions**, not only when the skill runs: the re-injection does nothing outside a project that has a `docs/HANDOFF.md`, and the "Claude is waiting" notification is off by default. Quota alerts are not part of it: they come from the status line (terminal) or the mod (desktop). What a plugin **cannot** install: the terminal status line and the `permissions.ask` rules (see below). No plugins in cloud sessions.
 
-Size measured with `claude plugin details` (CLI 2.1.299, 2026-10-19, v1.1.1): about 3.6k tokens when the skill is called, about 257 tokens added permanently to every session (skill and 5 agents; the CLI's estimates). For v1.1.0 the outside review had read 3.4k and 285.
+Size measured with `claude plugin details` (CLI 2.1.299, 2026-10-19, the CLI's estimates): **v1.2.0** about 3.7k tokens when the skill is called, about 252 tokens added permanently to every session (skill and 5 agents). **v1.1.1**, measured again the same day on the repository before the v1.2.0 changes: about 3.6k and about 267 (an earlier measurement had given 257). The detail of the settings lives in `skills/maitre-agent/reglages.md`, read only by the `reglages` command or when a setting is used: it costs nothing to anyone who sets nothing.
 
 ### Route B: copy the skill
 
@@ -196,12 +197,42 @@ Adapt the list to your system. These rules also apply to sub-agents.
 | `/maitre-agent statut` | `status` | 5 lines at most per known project, changes nothing |
 | `/maitre-agent reprendre` | `resume` | offers the known projects as buttons, then resumes the one you pick |
 | `/maitre-agent profil` | `profile` | shows or edits your profile, starts no project |
+| `/maitre-agent reglages` | `settings` | no argument: the settings table (current value, default, source). `reglages <key> <value>` changes one, `reglages econome` (or `normal`, `intensif`) applies a preset, `reglages reset` goes back to the defaults |
 | `/maitre-agent diagnostic` | `doctor` | 8 read-only checks (`jq`, status line, duplicate skill or agents, readable quota, notifications, version, profile), each "OK / KO + command to fix it" |
 | `/maitre-agent nouveau <idea>` | `new <idea>` | starts a new project with that idea |
 | `/maitre-agent <idea>` | | same thing, it is the default case |
 | `/maitre-agent <project path>` | | resumes that project |
 
 With the plugin, use `/maitre-agent:maitre-agent` if the short name is taken. Details: [`skills/maitre-agent/commandes.md`](skills/maitre-agent/commandes.md) (in French).
+
+## Settings
+
+One place: the `## Réglages` section of your profile (`~/.claude/maitre-agent/profil.md`), as `- <key> : <value>` lines. A `## Réglages du projet` section in a project's `CLAUDE.md` overrides the profile for that project, key by key. Section missing, unknown key or invalid value: the default. **Anyone who sets nothing sees no change in behaviour.** The detail of the keys (`skills/maitre-agent/reglages.md`) is read only by the `reglages` command or when a setting is used, and the calculations (thresholds, tiers, reading the profile) are done by scripts, not by the model. Measured extra cost for anyone who does not use it: about 0.1k tokens when the skill is called (3.6k to 3.7k, rounded measurement); the permanent cost goes down (see "Size measured").
+
+| Key | Values | Default | Effect |
+|---|---|---|---|
+| `seuils` | 3 increasing integers (10 to 99) | `70 80 90` | quota tiers: no more top-model agent, explicit approval, clean stop; also the alerts |
+| `budget-lot` | 5 to 100% | `30 %` | batch size above which it asks for your approval |
+| `autonomie` | `techniques`, `tout-demander`, `tout-sauf-accords` | `techniques` | what it decides alone |
+| `modeles` | `defaut`, `jamais-opus`, `opus-conception-seulement` | `defaut` | which models it may pick |
+| `agents-paralleles` | 1 to 5 | `5` | agents at the same time |
+| `notifications` | `agent+quota`, `tout`, `quota`, `rien` | `agent+quota` | which notifications |
+| `barre` | `projet` `jalon` `agents` `quota` (`cout` optional), in the order you want | `projet jalon agents quota` | the terminal status line |
+| `git` | `commit-local`, `aucun`, `push-branche` | `commit-local` | `push-branche` pushes a working branch (never the main one) without asking again; a standing, dated approval |
+| `langue`, `ton` | `profil`, a language code; `tutoiement`, `vouvoiement`, `neutre` | `profil` | how it writes |
+| `rapports` | `court`, `detaille` | `detaille` | length of agent reports and answers |
+
+Presets: **`econome`** (thresholds 60 75 85, `budget-lot` 15%, `jamais-opus`, one agent at a time, short reports; also: short briefs, research only for the decisive questions, a tester at the last milestone only), **`normal`** (the defaults), **`intensif`** (thresholds 80 90 95, `budget-lot` 40%, 5 agents). On first launch a button question offers "keep the defaults (recommended) / thrifty / intensive / customize"; if your profile says "Pro plan", `econome` comes first. The real saving of `econome` is **not measured**: at the end of a project the skill gives you a table of agents / model / tokens / duration / share of quota and a "for next time" line (one suggested setting).
+
+```text
+/maitre-agent reglages                       # the table
+/maitre-agent reglages econome               # the thrifty preset
+/maitre-agent reglages seuils 60 75 85       # a single setting
+/maitre-agent reglages barre quota projet    # status line: quota then project
+/maitre-agent reglages reset                 # back to the defaults
+```
+
+The status line, `quota.sh` and `notify.sh` read `seuils`, `notifications` and `barre` themselves; the desktop mod reads `seuils` and `notifications` (not `barre`: its line stays fixed). Detail and limits: [`skills/maitre-agent/reglages.md`](skills/maitre-agent/reglages.md) (in French).
 
 ## Safeguards
 
@@ -249,10 +280,10 @@ The language of your profile, for everything the skill writes. File names stay i
 Yes, that is the point of the handoff: only the project's files travel (`CLAUDE.md`, `docs/HANDOFF.md`, `docs/research/`, `docs/briefs/`). The profile used is the one of the person resuming. The skill compares HANDOFF to the disk before relaunching anything.
 
 **How do I turn notifications off?**
-By default the "Claude is waiting" notification (permission request, idle) is **off**; the end of a `ma-*` agent and the quota alerts do notify. To turn the first one on, create `~/.claude/maitre-agent/notifications-on`. To turn everything off, create `~/.claude/maitre-agent/notifications-off` (no more notifications from the scripts, quota alerts included; the status line keeps working). The desktop mod has its own toasts, which this file does not turn off. Useful in the desktop app, which already notifies when a task ends. To test without showing anything: environment variable `MAITRE_AGENT_DRY_RUN=1`. To remove everything: uninstall the plugin.
+The `notifications` setting (`/maitre-agent reglages notifications rien`) turns them all off, or keeps only the quota (`quota`). Without it, the files below decide. By default the "Claude is waiting" notification (permission request, idle) is **off**; the end of a `ma-*` agent and the quota alerts do notify. To turn the first one on, create `~/.claude/maitre-agent/notifications-on`. To turn everything off, create `~/.claude/maitre-agent/notifications-off` (no more notifications from the scripts, quota alerts included; the status line keeps working). The desktop mod has its own toasts, which this file does not turn off. Useful in the desktop app, which already notifies when a task ends. To test without showing anything: environment variable `MAITRE_AGENT_DRY_RUN=1`. To remove everything: uninstall the plugin.
 
 **Are the scripts safe?**
-They never block (short timeout, `|| true`, exit code 0). A search through their code finds no network call (`curl`, `wget`...); they write only to `~/.claude/maitre-agent/`. Read them before installing: `hooks/` is about 250 lines of `sh` in total. The text they display (milestone, agent report, message) is filtered: control characters (terminal escape sequences) are removed.
+They never block (short timeout, `|| true`, exit code 0). A search through their code finds no network call (`curl`, `wget`...); they write only to `~/.claude/maitre-agent/`. Read them before installing: `hooks/` is about 330 lines of `sh` in total. `tools/reglages.sh` (240 lines), on the other hand, writes the "Réglages" section of the profile (or of the project's `CLAUDE.md` with `--projet`) when you run the `reglages` command. The text they display (milestone, agent report, message) is filtered: control characters (terminal escape sequences) are removed.
 
 ## Limits, honestly
 
@@ -265,6 +296,7 @@ They never block (short timeout, `|| true`, exit code 0). A search through their
 - **The evaluations are written but not yet run**: see [`evals/`](evals/README.md) (in French; their format is not that of `claude plugin eval`). No result is claimed.
 - **In the terminal the quota comes from the status line.** The `get_usage` tool is not visible to the model in CLI 2.1.299 (it only shows up as an SDK control request); the skill therefore reads `usage.json` through `hooks/quota.sh`, which assumes the status line is installed (and called: not in the desktop app). Without a valid measurement (under 15 minutes old) it asks you for the percentage.
 - **Buttons and chapters depend on the environment.** Without a question tool, the skill asks numbered lists; without a chapter tool, it opens none. The desktop app's chapter tool is not publicly documented.
+- **Settings are tested on the scripts and the mod, not on the model.** That the model applies every key (models, autonomy, reports, `econome`) has not been seen in a real session; the saving of `econome` is not measured.
 - **Multi-agent costs more** than a single session, and nothing guarantees it is faster. For a small job, the skill stays alone.
 - **Only the cases described above are verified.** A line of this README that says neither "tested" nor "used for real" should be read as untested.
 
@@ -293,6 +325,7 @@ The story, short, funny and checkable:
 - **The real tests have admitted limits:** the notification arrived, but not when it was fired from the sandbox; the test script showed that the desktop app does not call the status line, which is how the mod was born.
 - **Reviewed by an independent auditor (`ma-auditeur`) on 2026-10-18, corrections applied.**
 - **v1.1.1** comes from an outside review of the published repository (15 fixes, 5 modifications, 4 additions, reviewer in read-only mode): filtered status line, a quota the skill can finally read, a "Pro plan" rule, a skill started only by command, a `diagnostic` sub-command, hook tests.
+- **v1.2.0** (customizable settings) was requested by the user and written by a `ma-executant` agent.
 - **Not done yet:** running the evaluations (`evals/`).
 
 The full story, with the agents, their models, measured costs, decisions and mistakes: [`docs/fabrication.md`](docs/fabrication.md) (in French).

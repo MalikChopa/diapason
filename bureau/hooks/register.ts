@@ -1,8 +1,9 @@
 // maitre-agent-bureau : ce que la barre d'état du terminal ne peut pas afficher
 // dans l'onglet Code de l'app Claude de bureau.
 //   1. ligne d'état (quota, agents en cours, jalon),
-//   2. alertes de quota à 70, 80 et 90 %,
+//   2. alertes de quota aux seuils du réglage `seuils` (70, 80 et 90 % par défaut),
 //   3. toast à la fin d'un sous-agent ma-*.
+// Les réglages `seuils` et `notifications` viennent du profil et du CLAUDE.md du projet (voir loadSettings).
 // Rien ne sort de la machine : tout passe par `$` (affichage, session, fichier local, store du mod).
 import type { EngineInterface, Register } from 'claude-code'
 
@@ -14,9 +15,12 @@ import {
   isMaAgent,
   parseMilestone,
   projectName,
+  resolveSettings,
+  wantsAgentDone,
+  wantsQuotaAlerts,
   windowLabel,
 } from './lib'
-import type { AlertState, Window } from './lib'
+import type { AlertState, Settings, Window } from './lib'
 
 type Api = EngineInterface
 
@@ -79,6 +83,29 @@ async function refresh($: Api, options: RefreshOptions = {}): Promise<void> {
   }
 }
 
+/**
+ * Réglages `seuils` et `notifications` : CLAUDE.md du projet (dossier de la session) puis profil
+ * (`~/.claude/maitre-agent/profil.md`). Fichier absent, illisible ou valeur invalide : les défauts. Ne lève jamais.
+ */
+async function loadSettings($: Api): Promise<Settings> {
+  const readOr = async (path: string): Promise<string | undefined> => {
+    try {
+      return await $.fs.read(path)
+    } catch {
+      return undefined
+    }
+  }
+  let home: string | undefined
+  try {
+    home = (await $.env.get('HOME')) ?? (await $.env.get('USERPROFILE'))
+  } catch {
+    home = undefined
+  }
+  const project = await readOr('CLAUDE.md')
+  const profile = home ? await readOr(`${home}/.claude/maitre-agent/profil.md`) : undefined
+  return resolveSettings(project, profile)
+}
+
 /** Toast, et notification système si le canal existe. Ne lève jamais. */
 async function say($: Api, text: string, title: string): Promise<void> {
   try {
@@ -97,9 +124,15 @@ async function say($: Api, text: string, title: string): Promise<void> {
 async function checkQuota($: Api, windows: readonly Window[]): Promise<void> {
   try {
     if (windows.length === 0) return
+    const settings = await loadSettings($)
     const stored = (await $.store.get(ALERTS_KEY)) as AlertState | undefined
-    const { alerts, state } = decideAlerts(stored && typeof stored === 'object' ? stored : undefined, windows)
+    const { alerts, state } = decideAlerts(
+      stored && typeof stored === 'object' ? stored : undefined,
+      windows,
+      settings.thresholds,
+    )
     if (JSON.stringify(state) !== JSON.stringify(stored ?? {})) await $.store.set(ALERTS_KEY, state)
+    if (!wantsQuotaAlerts(settings.notifications)) return
     for (const a of alerts) await say($, alertText(a), `Quota ${windowLabel(a.kind)}`)
   } catch {
     // jamais bloquant
@@ -162,7 +195,7 @@ export const register: Register = on => {
         type = undefined
       }
       type = type ?? spawnedTypes.get(id)
-      if (isMaAgent(type)) {
+      if (isMaAgent(type) && wantsAgentDone((await loadSettings($)).notifications)) {
         await say($, agentDoneText(type as string, e.answer, e.reason), 'Agent terminé')
       }
     } catch {

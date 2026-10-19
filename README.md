@@ -88,12 +88,13 @@ Colonne « Statut » : **utilisé en réel** = servi pendant la fabrication de c
 | Délégation par modèle | Léger pour le mécanique, intermédiaire pour la recherche, l'audit et le code courant, le plus capable pour la conception. Le modèle est toujours donné explicitement. 5 agents `ma-*`. | utilisé en réel |
 | Vérification | Les faits décisifs sont vérifiés par le maître. Tableau de preuves exigées, audits bornés à 2 tours, corrections de code bornées à 3 tours, protocole des 3 échecs. | utilisé en réel |
 | Permissions | Accord demandé avant argent, installation, publication, envoi, compte, suppression. Liste d'interdits (voir Garde-fous). | écrit ; les règles `permissions.ask` sont à installer à la main |
-| Quota 70 / 80 / 90 % | À 70 %, plus d'agent du modèle le plus capable (la conception passe sur l'intermédiaire, et il le dit) ; à 80 %, il propose et ne lance qu'avec ton accord explicite, coût annoncé ; à 90 %, arrêt propre. Sans outil d'usage, il lit `usage.json` écrit par la barre d'état, grâce à `hooks/quota.sh` (palier 0 / 70 / 80 / 90, ou « pas de mesure »). | arrêt à 90 % : utilisé en réel (v1.1.0) ; `quota.sh` : testé avec des JSON factices (`tests/hooks.sh`) ; le reste : écrit |
+| Quota 70 / 80 / 90 % (réglable) | Seuils par défaut ; réglage `seuils`. À 70 %, plus d'agent du modèle le plus capable (la conception passe sur l'intermédiaire, et il le dit) ; à 80 %, il propose et ne lance qu'avec ton accord explicite, coût annoncé ; à 90 %, arrêt propre. Sans outil d'usage, il lit `usage.json` écrit par la barre d'état, grâce à `hooks/quota.sh` (palier 0, ou le seuil atteint, ou « pas de mesure »). | arrêt à 90 % : utilisé en réel (v1.1.0) ; `quota.sh` : testé avec des JSON factices (`tests/hooks.sh`) ; le reste : écrit |
 | Passation | `HANDOFF.md` avec balises [V] vérifié / [?] non revérifié, tableau « Agents lancés », « Reprise immédiate ». Les fichiers sur le disque font foi si le HANDOFF est en retard. | utilisé en réel (une reprise après coupure) |
-| Sous-commandes | `aide`, `statut`, `reprendre`, `profil`, `diagnostic` (ou `doctor` : 8 contrôles en lecture seule de l'installation), `nouveau`. | écrit |
+| Sous-commandes | `aide`, `statut`, `reprendre`, `profil`, `reglages` (ou `settings`), `diagnostic` (ou `doctor` : 8 contrôles en lecture seule de l'installation), `nouveau`. | écrit |
+| Réglages (v1.2) | Une rubrique `## Réglages` du profil (et `## Réglages du projet` dans le `CLAUDE.md`) règle seuils de quota, taille de lot, autonomie, modèles, agents en parallèle, notifications, barre d'état, git, langue, ton, rapports. Trois préréglages : `econome`, `normal`, `intensif`. Voir « Réglages » plus bas. | script `tools/reglages.sh` et lecture par les scripts : testés avec des JSON factices (`tests/hooks.sh`) ; application des réglages par le modèle : écrit, jamais vu en réel |
 | Barre d'état du terminal | `🧭 <projet> · <jalon> · <n> agents · 5 h <x> % (reset HH:MM) · 7 j <y> %`. Écrit aussi le quota dans `~/.claude/maitre-agent/usage.json`. | testé avec des JSON factices à chaque push (`tests/hooks.sh`) ; pas vu dans un vrai terminal |
-| Mod de bureau | La même idée pour l'onglet Code de l'app Claude de bureau : ligne d'état, alertes de quota, toast de fin d'agent. | testé : 25 tests sur 25 ; ligne d'état et toast de fin d'agent vus en réel |
-| Notifications | Notification système quand un agent `ma-*` finit et à 70 / 80 / 90 % de quota (actives par défaut) ; « Claude attend » (permission, attente) **désactivée par défaut**, à activer avec le fichier `~/.claude/maitre-agent/notifications-on`. `notifications-off` coupe tout. macOS et Linux. Les alertes de quota exigent la barre d'état (terminal) ou le mod (bureau). | commande macOS testée en réel ; scripts testés avec des JSON factices (`tests/hooks.sh`) ; hooks non testés de bout en bout par Claude Code |
+| Mod de bureau | La même idée pour l'onglet Code de l'app Claude de bureau : ligne d'état, alertes de quota, toast de fin d'agent. | testé : 38 tests sur 38 (dont les réglages `seuils` et `notifications`) ; ligne d'état et toast de fin d'agent vus en réel (v1.1.x) |
+| Notifications | Notification système quand un agent `ma-*` finit et aux seuils de quota (70 / 80 / 90 % par défaut), actives par défaut ; « Claude attend » (permission, attente) **désactivée par défaut**. Le réglage `notifications` (`agent+quota`, `tout`, `quota`, `rien`) choisit ; sans lui, le fichier `~/.claude/maitre-agent/notifications-on` active « Claude attend » et `notifications-off` coupe tout. macOS et Linux. Les alertes de quota exigent la barre d'état (terminal) ou le mod (bureau). | commande macOS testée en réel ; scripts testés avec des JSON factices (`tests/hooks.sh`) ; hooks non testés de bout en bout par Claude Code |
 | Boutons | Les questions passent par l'outil de questions de l'environnement (2 à 4 options, la recommandée en premier, marquée « (recommandé) »). Sans cet outil : liste numérotée. | écrit |
 | Chapitres | Un chapitre par phase (cadrage, recherche, conception, jalons, livraison) si l'environnement a un outil de chapitres. Sinon, rien. | écrit |
 | « Depuis ta dernière visite » | À chaque reprise, 3 lignes : ce qui a changé, ce qui est fini, ce qu'on attend de toi. | écrit |
@@ -121,7 +122,7 @@ En shell : `claude plugin marketplace add https://github.com/MalikMoussaoui/mait
 
 Ce que tu obtiens : le skill (lancé seulement par `/maitre-agent`), les 5 agents `ma-*`, le compteur d'agents, la notification de fin d'agent, et la réinjection de l'état après un résumé automatique. **Les hooks sont actifs dans toutes tes sessions Claude Code**, pas seulement quand le skill tourne : la réinjection ne fait rien hors d'un projet qui a un `docs/HANDOFF.md`, et la notification « Claude attend » est désactivée par défaut. Les alertes de quota n'en font pas partie : elles viennent de la barre d'état (terminal) ou du mod (bureau). Ce que le plugin **ne peut pas** installer : la barre d'état du terminal et les règles `permissions.ask` (voir plus bas). Pas de plugins dans les sessions cloud.
 
-Taille mesurée avec `claude plugin details` (CLI 2.1.299, 2026-10-19, v1.1.1) : environ 3,6 k tokens quand le skill est appelé, environ 257 tokens ajoutés en permanence à chaque session (skill et 5 agents ; estimations de la CLI). Pour la v1.1.0, la critique extérieure avait relevé 3,4 k et 285.
+Taille mesurée avec `claude plugin details` (CLI 2.1.299, 2026-10-19, estimations de la CLI) : **v1.2.0** environ 3,7 k tokens quand le skill est appelé, environ 252 tokens ajoutés en permanence à chaque session (skill et 5 agents). **v1.1.1**, remesurée le même jour sur le dépôt avant les changements de la v1.2.0 : environ 3,6 k et environ 267 (une mesure antérieure avait donné 257). Le détail des réglages est dans `skills/maitre-agent/reglages.md`, lu seulement par la commande `reglages` ou quand un réglage est utilisé : il ne coûte rien à qui ne règle rien.
 
 ### Voie B : copie du skill
 
@@ -194,12 +195,42 @@ Adapte la liste à ton système. Ces règles valent aussi pour les sous-agents.
 | `/maitre-agent statut` | `status` | 5 lignes au plus par projet connu, sans rien modifier |
 | `/maitre-agent reprendre` | `resume` | te propose les projets connus en boutons, puis reprend celui que tu choisis |
 | `/maitre-agent profil` | `profile` | affiche ou modifie ton profil, sans lancer de projet |
+| `/maitre-agent reglages` | `settings` | sans argument : le tableau des réglages (valeur actuelle, défaut, source). `reglages <clé> <valeur>` en change un, `reglages econome` (ou `normal`, `intensif`) applique un préréglage, `reglages reset` revient aux défauts |
 | `/maitre-agent diagnostic` | `doctor` | 8 contrôles en lecture seule (`jq`, barre d'état, skill ou agents en double, quota lisible, notifications, version, profil), chacun « OK / KO + commande pour corriger » |
 | `/maitre-agent nouveau <idée>` | `new <idée>` | démarre un nouveau projet avec cette idée |
 | `/maitre-agent <idée>` | | idem, c'est le cas par défaut |
 | `/maitre-agent <chemin du projet>` | | reprend ce projet |
 
 Avec le plugin, remplace `/maitre-agent` par `/maitre-agent:maitre-agent` si le nom court est pris. Détail : [`skills/maitre-agent/commandes.md`](skills/maitre-agent/commandes.md).
+
+## Réglages
+
+Un seul endroit : la rubrique `## Réglages` de ton profil (`~/.claude/maitre-agent/profil.md`), en lignes `- <clé> : <valeur>`. Une rubrique `## Réglages du projet` dans le `CLAUDE.md` d'un projet surcharge le profil pour ce projet, clé par clé. Rubrique absente, clé inconnue ou valeur invalide : la valeur par défaut. **Qui ne règle rien ne voit aucun changement de comportement.** Le détail des clés (`skills/maitre-agent/reglages.md`) n'est lu que par la commande `reglages` ou quand un réglage est utilisé, et les calculs (seuils, paliers, lecture du profil) sont faits par des scripts, pas par le modèle. Surcoût mesuré pour qui ne s'en sert pas : environ 0,1 k tokens à l'appel du skill (3,6 k à 3,7 k, mesure arrondie) ; le coût permanent baisse (voir « Taille mesurée »).
+
+| Clé | Valeurs | Défaut | Effet |
+|---|---|---|---|
+| `seuils` | 3 entiers croissants (10 à 99) | `70 80 90` | paliers du quota : plus d'agent du modèle le plus capable, accord explicite, arrêt propre ; aussi les alertes |
+| `budget-lot` | 5 à 100 % | `30 %` | taille de lot au-delà de laquelle il demande ton accord |
+| `autonomie` | `techniques`, `tout-demander`, `tout-sauf-accords` | `techniques` | ce qu'il tranche seul |
+| `modeles` | `defaut`, `jamais-opus`, `opus-conception-seulement` | `defaut` | quels modèles il peut choisir |
+| `agents-paralleles` | 1 à 5 | `5` | agents en même temps |
+| `notifications` | `agent+quota`, `tout`, `quota`, `rien` | `agent+quota` | quelles notifications |
+| `barre` | `projet` `jalon` `agents` `quota` (`cout` en option), dans l'ordre voulu | `projet jalon agents quota` | la barre d'état du terminal |
+| `git` | `commit-local`, `aucun`, `push-branche` | `commit-local` | `push-branche` pousse une branche de travail (jamais la principale) sans redemander ; accord permanent, daté |
+| `langue`, `ton` | `profil`, un code de langue ; `tutoiement`, `vouvoiement`, `neutre` | `profil` | comment il écrit |
+| `rapports` | `court`, `detaille` | `detaille` | longueur des rapports d'agents et des réponses |
+
+Préréglages : **`econome`** (seuils 60 75 85, `budget-lot` 15 %, `jamais-opus`, un agent à la fois, rapports courts ; en plus : briefs courts, recherche seulement pour les questions décisives, testeur au dernier jalon seulement), **`normal`** (les défauts), **`intensif`** (seuils 80 90 95, `budget-lot` 40 %, 5 agents). Au premier lancement, une question à boutons propose « garder les défauts (recommandé) / économe / intensif / personnaliser » ; si ton profil dit « forfait Pro », `économe` passe en premier. L'économie réelle d'`econome` n'est **pas mesurée** : à la fin d'un projet, le skill te donne un tableau agents / modèle / tokens / durée / part du quota et une ligne « pour la prochaine fois » (un réglage conseillé).
+
+```text
+/maitre-agent reglages                       # le tableau
+/maitre-agent reglages econome               # le préréglage économe
+/maitre-agent reglages seuils 60 75 85       # un seul réglage
+/maitre-agent reglages barre quota projet    # barre d'état : quota puis projet
+/maitre-agent reglages reset                 # retour aux défauts
+```
+
+La barre d'état, `quota.sh` et `notify.sh` lisent `seuils`, `notifications` et `barre` eux-mêmes ; le mod de bureau lit `seuils` et `notifications` (pas `barre` : sa ligne reste fixe). Détail et limites : [`skills/maitre-agent/reglages.md`](skills/maitre-agent/reglages.md).
 
 ## Garde-fous
 
@@ -247,10 +278,10 @@ Celle de ton profil, pour tout ce que le skill écrit. Les noms de fichiers rest
 Oui, c'est le but de la passation : seuls les fichiers du projet se transmettent (`CLAUDE.md`, `docs/HANDOFF.md`, `docs/research/`, `docs/briefs/`). Le profil utilisé est celui de la personne qui reprend. Le skill compare le HANDOFF au disque avant de relancer quoi que ce soit.
 
 **Comment couper les notifications ?**
-Par défaut, la notification « Claude attend » (demande d'autorisation, attente) est **éteinte** ; la fin d'un agent `ma-*` et les alertes de quota notifient. Pour activer la première : crée `~/.claude/maitre-agent/notifications-on`. Pour tout couper : crée `~/.claude/maitre-agent/notifications-off` (plus aucune notification des scripts, alertes de quota comprises ; la barre d'état continue). Le mod de bureau a ses propres toasts, que ce fichier ne coupe pas. Utile dans l'app de bureau, qui notifie déjà la fin d'une tâche. Pour tester sans rien afficher : variable `MAITRE_AGENT_DRY_RUN=1`. Pour tout retirer : désinstalle le plugin.
+Le réglage `notifications` (`/maitre-agent reglages notifications rien`) les coupe toutes, ou garde seulement le quota (`quota`). Sans ce réglage, les fichiers ci-dessous décident. Par défaut, la notification « Claude attend » (demande d'autorisation, attente) est **éteinte** ; la fin d'un agent `ma-*` et les alertes de quota notifient. Pour activer la première : crée `~/.claude/maitre-agent/notifications-on`. Pour tout couper : crée `~/.claude/maitre-agent/notifications-off` (plus aucune notification des scripts, alertes de quota comprises ; la barre d'état continue). Le mod de bureau a ses propres toasts, que ce fichier ne coupe pas. Utile dans l'app de bureau, qui notifie déjà la fin d'une tâche. Pour tester sans rien afficher : variable `MAITRE_AGENT_DRY_RUN=1`. Pour tout retirer : désinstalle le plugin.
 
 **Les scripts sont-ils sûrs ?**
-Ils ne bloquent jamais (délai court, `|| true`, code de sortie 0). Une recherche dans leur code n'y trouve aucun appel réseau (`curl`, `wget`…) ; ils n'écrivent que dans `~/.claude/maitre-agent/`. Lis-les avant de les installer : `hooks/` fait environ 250 lignes de `sh` en tout. Le texte qu'ils affichent (jalon, rapport d'agent, message) est filtré : les caractères de contrôle (séquences d'échappement du terminal) sont retirés.
+Ils ne bloquent jamais (délai court, `|| true`, code de sortie 0). Une recherche dans leur code n'y trouve aucun appel réseau (`curl`, `wget`…) ; ils n'écrivent que dans `~/.claude/maitre-agent/`. Lis-les avant de les installer : `hooks/` fait environ 330 lignes de `sh` en tout. `tools/reglages.sh` (240 lignes) écrit, lui, la rubrique « Réglages » du profil (ou du `CLAUDE.md` du projet avec `--projet`) quand tu lances la commande `reglages`. Le texte qu'ils affichent (jalon, rapport d'agent, message) est filtré : les caractères de contrôle (séquences d'échappement du terminal) sont retirés.
 
 ## Limites, honnêtement
 
@@ -263,6 +294,7 @@ Ils ne bloquent jamais (délai court, `|| true`, code de sortie 0). Une recherch
 - **Les évaluations sont écrites mais pas encore lancées** : voir [`evals/`](evals/README.md) (leur format n'est pas celui de `claude plugin eval`). Aucun résultat n'est annoncé.
 - **Le quota en terminal vient de la barre d'état.** L'outil `get_usage` n'est pas visible du modèle dans la CLI 2.1.299 (il n'apparaît que comme requête de contrôle du SDK) ; le skill lit donc `usage.json` par `hooks/quota.sh`, ce qui suppose la barre d'état installée (et appelée : pas dans l'app de bureau). Sans mesure valable (moins de 15 min), il te demande le pourcentage.
 - **Boutons et chapitres dépendent de l'environnement.** Sans outil de questions, le skill pose des listes numérotées ; sans outil de chapitres, il n'en ouvre pas. L'outil de chapitres de l'app de bureau n'est pas documenté publiquement.
+- **Les réglages sont testés côté scripts et mod, pas côté modèle.** Que le modèle applique bien chaque clé (modèles, autonomie, rapports, `econome`) n'a pas été vu en vraie session ; l'économie d'`econome` n'est pas mesurée.
 - **Le multi-agent coûte plus cher** qu'une session seule, et rien ne garantit qu'il soit plus rapide. Pour un petit travail, le skill reste seul.
 - **Seuls les cas décrits plus haut sont vérifiés.** Une ligne de ce README qui n'indique ni « testé » ni « utilisé en réel » doit se lire comme non testée.
 
@@ -291,6 +323,7 @@ Le récit, court, drôle et vérifiable :
 - **Les tests réels ont des limites assumées :** la notification est arrivée, mais pas quand elle était lancée depuis le bac à sable ; le test témoin a montré que l'app de bureau n'appelle pas la barre d'état, ce qui a fait naître le mod.
 - **Relu par un auditeur indépendant (`ma-auditeur`) le 2026-10-18, corrections appliquées.**
 - **La v1.1.1** vient d'une critique extérieure du dépôt publié (15 corrections, 5 modifications, 4 ajouts, relecteur en lecture seule) : barre d'état filtrée, quota enfin lisible par le skill, règle « forfait Pro », skill lancé seulement par commande, sous-commande `diagnostic`, tests des hooks.
+- **La v1.2.0** (réglages personnalisables) a été demandée par l'utilisateur et écrite par un agent `ma-executant`.
 - **Pas encore fait :** le lancement des évaluations (`evals/`).
 
 L'histoire complète, avec les agents, leurs modèles, leurs coûts mesurés, les décisions et les erreurs : [`docs/fabrication.md`](docs/fabrication.md).

@@ -10,8 +10,12 @@
 #            (ESC, BEL, C1…) sont retirés avant l'affichage.
 # - n      : nombre de fichiers du compteur de la session (voir agent-count.sh)
 # - quota  : rate_limits.five_hour / seven_day ; « quota ? » si le JSON n'en contient pas.
+# Réglages (voir skills/maitre-agent/reglages.md) : lignes « - clé : valeur » de la rubrique « ## Réglages » du
+# profil, surchargées par « ## Réglages du projet » du CLAUDE.md du dossier courant. Lus ici : `barre` (éléments
+# et ordre : projet jalon agents quota, et cout si le JSON donne cost.total_cost_usd) et `seuils` (3 entiers).
+# Absents ou illisibles : barre « projet jalon agents quota », seuils 70 80 90.
 # Effets de bord : écrit ~/.claude/maitre-agent/usage.json (jamais écrasé par du vide) et
-# lance les alertes 70 / 80 / 90 % une seule fois par seuil et par resets_at.
+# lance les alertes de quota (seuils du réglage, 70 / 80 / 90 % par défaut) une seule fois par seuil et par resets_at.
 # Jamais bloquant : sort toujours avec 0.
 BASE="$HOME/.claude/maitre-agent"
 SELF_DIR=$(dirname "$0" 2>/dev/null) || SELF_DIR=.
@@ -34,13 +38,40 @@ fields=$(printf '%s' "$in" | jq -r '
     (.rate_limits.seven_day.used_percentage | pct),
     (.rate_limits.seven_day.used_percentage | raw),
     (.rate_limits.seven_day.resets_at | raw),
+    (.cost.total_cost_usd | raw),
     (.workspace.current_dir // .cwd // "" | tostring)
   ] | join("|")' 2>/dev/null) || fields=""
-IFS="$SEP" read -r sid p5 p5raw r5 p7 p7raw r7 dir <<EOT
+IFS="$SEP" read -r sid p5 p5raw r5 p7 p7raw r7 costraw dir <<EOT
 $fields
 EOT
 [ -n "$dir" ] || dir="$PWD"
 proj=$(basename "$dir" 2>/dev/null) || proj="$dir"
+
+# --- Réglages : projet (CLAUDE.md du dossier courant) puis profil ; première valeur valide, sinon défaut --
+PROJ="$dir"
+rg() { # $1 fichier  $2 titre de la rubrique  $3 clé -> valeur (sans commentaire entre parenthèses)
+  [ -f "$1" ] || return 0
+  awk -v t="$2" -v k="$3" '
+    /^#+[ \t]/ { if ($0 ~ /^##[ \t]/) { s = $0; sub(/^##[ \t]+/, "", s); sub(/[ \t\r]+$/, "", s); on = (s == t) } else if ($0 ~ /^#[ \t]/) on = 0; next }
+    on && /^[ \t]*[-*][ \t]+/ { l = $0; sub(/^[ \t]*[-*][ \t]+/, "", l); i = index(l, ":")
+      if (i > 1) { n = substr(l, 1, i - 1); gsub(/[ \t*`]+/, "", n)
+        if (tolower(n) == k) { v = substr(l, i + 1); sub(/^[ \t*`]+/, "", v); sub(/[ \t\r*`]+$/, "", v); sub(/[ \t]*\(.*\)$/, "", v); print v; exit } } }' "$1" 2>/dev/null
+}
+setting() { # $1 clé  $2 fonction de contrôle -> première valeur valide (projet puis profil) ; « , » et « / » valent un espace
+  _k="$1"; _f="$2"
+  for _s in "$PROJ/CLAUDE.md|Réglages du projet" "$BASE/profil.md|Réglages"; do
+    _v=$(rg "${_s%%|*}" "${_s#*|}" "$_k" | tr ',/' '  ')
+    set -f; set -- $_v; set +f; _v="$*"
+    if [ -n "$_v" ] && "$_f" "$_v"; then printf '%s' "$_v"; return 0; fi
+  done
+  return 1
+}
+ok_seuils() { set -- $1; [ "$#" -eq 3 ] || return 1; for x in "$1" "$2" "$3"; do case "$x" in ""|*[!0-9]*) return 1 ;; esac; done
+  [ "$1" -ge 10 ] && [ "$1" -lt "$2" ] && [ "$2" -lt "$3" ] && [ "$3" -le 99 ]; }
+ok_barre() { b=" "; for w in $1; do case "$w" in projet|jalon|agents|quota|cout) ;; *) return 1 ;; esac
+  case "$b" in *" $w "*) return 1 ;; esac; b="$b$w "; done; [ "$b" != " " ]; }
+SEUILS=$(setting seuils ok_seuils) || SEUILS="70 80 90"
+BARRE=$(setting barre ok_barre) || BARRE="projet jalon agents quota"
 
 # Texte venant du JSON ou d'un fichier du projet : on retire les caractères de contrôle, qui pourraient
 # être des séquences d'échappement du terminal (titre de fenêtre, effacement d'écran, presse-papiers…).
@@ -111,14 +142,14 @@ if [ -n "$p5raw" ] || [ -n "$p7raw" ]; then
   fi
 fi
 
-# --- Alertes 70 / 80 / 90 % : une fois par seuil et par resets_at ----------------------------
+# --- Alertes de quota (seuils du réglage, 70 / 80 / 90 % par défaut) : une fois par seuil et par resets_at ----------------------------
 # Si plusieurs seuils sont franchis d'un coup, une seule alerte (le plus haut) et les plus bas sont marqués faits.
 alerte() { # $1 nom de fenêtre (5h|7j)  $2 pourcentage entier  $3 resets_at  $4 libellé
   [ -n "$2" ] || return 0
   key=$(printf '%s' "${3:-0}" | tr -c '0-9' '_')
   ad="$BASE/state/alerts"
   top=0
-  for s in 70 80 90; do
+  for s in $SEUILS; do
     if [ "$2" -ge "$s" ] 2>/dev/null && [ ! -e "$ad/$1-$key-$s" ]; then top=$s; fi
   done
   [ "$top" -gt 0 ] || return 0
@@ -126,11 +157,11 @@ alerte() { # $1 nom de fenêtre (5h|7j)  $2 pourcentage entier  $3 resets_at  $4
   # Verrou atomique : mkdir réussit pour un seul appel. Deux sessions qui franchissent le seuil en même
   # temps n'envoient qu'une alerte ; l'autre voit le dossier existant et s'arrête.
   mkdir "$ad/$1-$key-$top" 2>/dev/null || return 0
-  for s in 70 80 90; do [ "$s" -lt "$top" ] && mkdir "$ad/$1-$key-$s" 2>/dev/null; done
+  for s in $SEUILS; do [ "$s" -lt "$top" ] && mkdir "$ad/$1-$key-$s" 2>/dev/null; done
   h=$(hhmm "$3"); extra=""; [ -n "$h" ] && extra=" (reset $h)"
   nt=""
   for c in "$SELF_DIR/notify.sh" "$BASE/notify.sh" "$BASE/hooks/notify.sh"; do [ -f "$c" ] && { nt="$c"; break; }; done
-  [ -n "$nt" ] && sh "$nt" quota "Quota $4 à $2 %$extra : seuil $top % franchi." >&2
+  [ -n "$nt" ] && MAITRE_AGENT_PROJECT_DIR="$dir" sh "$nt" quota "Quota $4 à $2 %$extra : seuil $top % franchi." >&2
 }
 alerte 5h "$p5" "$r5" "5 h"
 alerte 7j "$p7" "$r7" "7 j"
@@ -139,10 +170,22 @@ alerte 7j "$p7" "$r7" "7 j"
 # Purge des dossiers d'état vides depuis plus de 5 h (sessions finies)
 [ -d "$BASE/state" ] && find "$BASE/state" -mindepth 1 -type d -empty -mmin +300 ! -path "$BASE/state/alerts" ! -path "$BASE/state/alerts/*" -delete 2>/dev/null
 
-# --- Sortie -----------------------------------------------------------------------------------
-if [ -n "$jalon" ]; then
-  printf '🧭 %s · %s · %s · %s\n' "$proj" "$jalon" "$agents" "$quota"
-else
-  printf '🧭 %s · %s · %s\n' "$proj" "$agents" "$quota"
-fi
+# --- Coût de la session (seulement si le JSON le donne et si `cout` est dans la barre) ---------------
+cost=""
+case "$costraw" in ""|*[!0-9.]*) ;; *) cost=$(LC_ALL=C awk -v c="$costraw" 'BEGIN { printf "coût %.2f $", c }' 2>/dev/null) ;; esac
+
+# --- Sortie : les éléments de `barre`, dans l'ordre voulu, séparés par « · » -------------------------
+out=""
+for w in $BARRE; do
+  case "$w" in
+    projet) piece="$proj" ;;
+    jalon) piece="$jalon" ;;
+    agents) piece="$agents" ;;
+    quota) piece="$quota" ;;
+    cout) piece="$cost" ;;
+    *) piece="" ;;
+  esac
+  [ -n "$piece" ] && out="${out:+$out · }$piece"
+done
+printf '🧭 %s\n' "$out"
 exit 0

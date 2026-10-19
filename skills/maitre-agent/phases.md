@@ -12,7 +12,7 @@
    - tes hypothèses pour le reste (« je pars du principe que… ») ;
    - le coût estimé (SKILL §6).
 
-   Attends la réponse **seulement** s'il y a une question bloquante, un accord à demander (§5 du skill) ou un lot de plus de 30 % de la fenêtre (sans mesure du quota : de 3 agents). Sinon, annonce et lance dans le même tour. « go » ou une réponse qui ne tranche pas = choix par défaut. Si l'environnement a son propre mécanisme pour poser une question en fin de tour (boutons, encadré), utilise-le.
+   Attends la réponse **seulement** s'il y a une question bloquante, un accord à demander (§5 du skill) ou un lot au-delà du `budget-lot` (SKILL §3). Sinon, annonce et lance dans le même tour. « go » ou une réponse qui ne tranche pas = choix par défaut. Si l'environnement a son propre mécanisme pour poser une question en fin de tour (boutons, encadré), utilise-le.
    Lignes « à confirmer » du profil : ne pose que celles qui concernent cette tâche.
 5. **Dossier** : selon la préférence « Dossiers » du profil, un nouveau dossier sous le dossier de projets, jamais à l'intérieur d'un autre projet (sauf demande). Utilise l'outil de changement de dossier s'il existe (il peut être différé : ToolSearch). Sinon, crée le dossier (mkdir, ou l'équivalent de l'OS) et travaille en chemins absolus. Relis toi-même le `CLAUDE.md` du projet. Dans chaque brief, rappelle de lancer les commandes depuis ce dossier.
 6. **Relevé** (si le projet en dépend) : outils et versions utiles. Mets à jour la rubrique « Machine » du profil. Dans le projet, ne note que ce qui sert au projet.
@@ -29,7 +29,7 @@
 On peut changer de taille en cours de route : dis-le et note-le.
 
 **Forfait Pro** (ligne « Forfait / quota » du profil ; en cas de doute, demande-le une fois) : une fenêtre de 5 h ne porte pas un Moyen entier (repère mesuré : 3 recherches ≈ 36 % d'une fenêtre, extrapolation d'une seule mesure).
-- **Moyen** plafonné à 1 conception + 2 recherches ; jalons **en séquence**, jamais en parallèle ; un seul lot d'agents à la fois.
+- **Moyen** plafonné à 1 conception + 2 recherches ; jalons **en séquence**, jamais en parallèle ; un seul lot d'agents à la fois. Une ligne `agents-paralleles` écrite dans les réglages lève ce plafond (`reglages.md`).
 - **Gros** annoncé d'emblée comme « plusieurs fenêtres, N jours », avec l'accord de l'utilisateur **avant de commencer** et un HANDOFF à jour à chaque palier du §6 du skill.
 - Dans le doute entre Moyen et Petit, prends Petit.
 
@@ -113,3 +113,8 @@ Voir `briefs/recherche.md`. Une recherche par question décisive que tu ne sais 
 - Recherche dédiée : plateformes, signature, prix, démarches, obligations légales.
 - Avant toute publication, vérifie que le nom est libre (marque) et que les licences sont en règle.
 - Publier, envoyer, payer : seulement avec l'accord explicite de l'utilisateur.
+
+### Récap de fin de projet (dès qu'un agent a tourné, avec ou sans livraison)
+1. Complète la colonne « Coût » du tableau « Agents lancés » de `docs/HANDOFF.md` avec ce que tu as noté (jamais un chiffre inventé : « non mesuré »).
+2. Lance `sh SKILL_DIR/hooks/recap.sh` (dans le dossier du projet) et donne son tableau tel quel : agent, modèle, tokens, durée, part du quota. Ajoute en dessous une ligne « Pour la prochaine fois : » avec **un seul** réglage conseillé (règle dans `reglages.md`, section « Pour la prochaine fois »), formulé en commande : `/maitre-agent reglages <clé> <valeur>`.
+3. Reporte les coûts mesurés dans « Repères de coût » du profil (`profil-modele.md`).

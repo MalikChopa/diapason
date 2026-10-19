@@ -19,9 +19,13 @@ const info = (id: string, type: string, status: AgentInfo['status'] = 'running')
 })
 
 /** Pose le fond : enregistre statuts, toasts et notifications ; données factices. */
-function backdrop(on: On, data: { agents?: AgentInfo[]; handoff?: string; notifyOk?: boolean } = {}) {
+function backdrop(
+  on: On,
+  data: { agents?: AgentInfo[]; handoff?: string; notifyOk?: boolean; profile?: string; claude?: string; home?: string } = {},
+) {
   const seen = { status: [] as (string | undefined)[], toasts: [] as string[], notices: [] as string[] }
   mock.store(on)
+  mock.env(on, data.home === undefined ? { HOME: '/tmp/faux-home' } : { HOME: data.home })
   on('ui.status', (_$, e) => {
     seen.status.push(e.text)
     return { value: undefined }
@@ -42,9 +46,17 @@ function backdrop(on: On, data: { agents?: AgentInfo[]; handoff?: string; notify
   on('session.cwd', () => ({ value: '/tmp/demo/projet-factice' }))
   on('session.usage', () => ({ value: { startedAt: 0, context: CONTEXT, rateLimits: [] } }))
   on('agent.list', () => ({ value: data.agents ?? [] }))
-  on('fs.read', () =>
-    data.handoff === undefined ? { deny: 'ENOENT : fichier absent' } : { value: data.handoff },
-  )
+  // Les fichiers lus : le HANDOFF du projet, son CLAUDE.md et le profil (chemin absolu sous HOME).
+  on('fs.read', (_$, e) => {
+    const content = e.path.endsWith('HANDOFF.md')
+      ? data.handoff
+      : e.path.endsWith('CLAUDE.md')
+        ? data.claude
+        : e.path === '/tmp/faux-home/.claude/maitre-agent/profil.md'
+          ? data.profile
+          : undefined
+    return content === undefined ? { deny: 'ENOENT : fichier absent' } : { value: content }
+  })
   // Événements du moteur que le test lève lui-même : le fond répond comme le moteur (écho).
   on('session.measure', (_$, e) => ({ changed: e.changed }))
   return seen
@@ -138,4 +150,57 @@ test('fin d\'un sous-agent hors ma-* ou du fil principal : pas de toast', async 
   await $.turn.complete({ ...base, turnId: 'u2', agentId: 'n2' })
   await $.turn.complete({ ...base, turnId: 'u3' })
   expect(seen.toasts).toEqual([])
+})
+
+const PROFIL = '# Profil\n\n## Réglages\n- seuils : 60 75 85\n- notifications : agent+quota\n'
+
+test('réglage seuils du profil : alertes à 60 / 75 / 85', async ($, on) => {
+  const seen = backdrop(on, { profile: PROFIL })
+  for (const p of [50, 60, 61, 70, 75, 80, 85, 99]) {
+    await $.session.measure({ context: CONTEXT, rateLimits: limits(p), changed: ['rateLimits'] })
+  }
+  expect(seen.toasts).toEqual([
+    'Quota 5 h : 60 % atteint (60 %), reset 18:30',
+    'Quota 5 h : 75 % atteint (75 %), reset 18:30',
+    'Quota 5 h : 85 % atteint (85 %), reset 18:30',
+  ])
+})
+
+test('réglages du projet : le CLAUDE.md surcharge le profil', async ($, on) => {
+  const seen = backdrop(on, { profile: PROFIL, claude: '# P\n## Réglages du projet\n- seuils : 50 65 80\n' })
+  for (const p of [49, 50, 64, 65]) {
+    await $.session.measure({ context: CONTEXT, rateLimits: limits(p), changed: ['rateLimits'] })
+  }
+  expect(seen.toasts.length).toBe(2)
+  expect(seen.toasts[0]).toContain('50 % atteint')
+  expect(seen.toasts[1]).toContain('65 % atteint')
+})
+
+test('réglage notifications rien : aucun toast ni notification de quota, la ligne d\'état reste', async ($, on) => {
+  const seen = backdrop(on, { profile: '## Réglages\n- notifications : rien\n' })
+  await $.session.measure({ context: CONTEXT, rateLimits: limits(95), changed: ['rateLimits'] })
+  expect(seen.toasts).toEqual([])
+  expect(seen.notices).toEqual([])
+  expect(seen.status.length).toBe(1)
+})
+
+test('réglage notifications quota : pas de toast de fin d\'agent', async ($, on) => {
+  const seen = backdrop(on, {
+    agents: [info('n1', 'ma-executant')],
+    profile: '## Réglages\n- notifications : quota\n',
+  })
+  on('turn.complete', () => ({ text: '' }))
+  await $.turn.complete({ answer: 'TERMINÉ', durationMs: 1, isAborted: false, turnId: 'u1', agentId: 'n1', reason: 'answer' })
+  expect(seen.toasts).toEqual([])
+  await $.session.measure({ context: CONTEXT, rateLimits: limits(75), changed: ['rateLimits'] })
+  expect(seen.toasts.length).toBe(1) // les alertes de quota restent actives
+})
+
+test('profil absent, valeur invalide ou HOME inconnu : les défauts 70 / 80 / 90', async ($, on) => {
+  const seen = backdrop(on, { profile: '## Réglages\n- seuils : 90 80 70\n- notifications : peut-etre\n' })
+  await $.session.measure({ context: CONTEXT, rateLimits: limits(65), changed: ['rateLimits'] })
+  expect(seen.toasts).toEqual([])
+  await $.session.measure({ context: CONTEXT, rateLimits: limits(71), changed: ['rateLimits'] })
+  expect(seen.toasts.length).toBe(1)
+  expect(seen.toasts[0]).toContain('70 % atteint')
 })

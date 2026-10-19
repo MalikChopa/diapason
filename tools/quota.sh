@@ -1,12 +1,15 @@
 #!/bin/sh
 # Méthode maître agent : lit le quota dans ~/.claude/maitre-agent/usage.json (écrit par la barre d'état
 # ou par une copie de ce fichier) et conclut le palier, pour que le modèle n'ait pas à calculer.
-# Usage : sh quota.sh [seuil1 seuil2 seuil3]        (défaut : 70 80 90, ceux du profil)
+# Usage : sh quota.sh [seuil1 seuil2 seuil3]
+#   Sans argument, les seuils sont ceux du réglage `seuils` (ligne « - seuils : 60 75 85 » de la rubrique
+#   « ## Réglages » du profil, surchargée par « ## Réglages du projet » du CLAUDE.md du dossier courant ou de
+#   MAITRE_AGENT_PROJECT_DIR) ; absent ou invalide : 70 80 90. Voir skills/maitre-agent/reglages.md.
 # Sortie : une ligne par fenêtre utilisable, par exemple
 #   5h 62 % reset 14:20, mesuré il y a 3 min, palier 0
 # Code de sortie :
 #   0               tous les paliers à 0 (sous le premier seuil)
-#   70 / 80 / 90    le plus haut palier atteint par une fenêtre (les seuils donnés en argument sinon)
+#   seuil atteint   le plus haut seuil atteint par une fenêtre (70, 80 ou 90 par défaut ; 1er, 2e ou 3e seuil réglé)
 #   2               aucune mesure utilisable : fichier absent, jq absent, mesure de plus de 15 min,
 #                   ou fenêtre déjà terminée (resets_at dans le passé). Le modèle ne doit alors
 #                   inventer aucun pourcentage : il demande à l'utilisateur.
@@ -14,6 +17,27 @@
 #   QUOTA_FILE (autre fichier que ~/.claude/maitre-agent/usage.json).
 # Lecture seule : ne modifie rien, aucun appel réseau.
 f="${QUOTA_FILE:-$HOME/.claude/maitre-agent/usage.json}"
+BASE="$HOME/.claude/maitre-agent"
+PROJ="${MAITRE_AGENT_PROJECT_DIR:-$PWD}"
+rg() { # $1 fichier  $2 titre de la rubrique  $3 clé -> valeur (sans commentaire entre parenthèses)
+  [ -f "$1" ] || return 0
+  awk -v t="$2" -v k="$3" '
+    /^#+[ \t]/ { if ($0 ~ /^##[ \t]/) { s = $0; sub(/^##[ \t]+/, "", s); sub(/[ \t\r]+$/, "", s); on = (s == t) } else if ($0 ~ /^#[ \t]/) on = 0; next }
+    on && /^[ \t]*[-*][ \t]+/ { l = $0; sub(/^[ \t]*[-*][ \t]+/, "", l); i = index(l, ":")
+      if (i > 1) { n = substr(l, 1, i - 1); gsub(/[ \t*`]+/, "", n)
+        if (tolower(n) == k) { v = substr(l, i + 1); sub(/^[ \t*`]+/, "", v); sub(/[ \t\r*`]+$/, "", v); sub(/[ \t]*\(.*\)$/, "", v); print v; exit } } }' "$1" 2>/dev/null
+}
+ok_seuils() { set -- $1; [ "$#" -eq 3 ] || return 1; for x in "$1" "$2" "$3"; do case "$x" in ""|*[!0-9]*) return 1 ;; esac; done
+  [ "$1" -ge 10 ] && [ "$1" -lt "$2" ] && [ "$2" -lt "$3" ] && [ "$3" -le 99 ]; }
+if [ "$#" -eq 0 ]; then
+  set -- 70 80 90
+  for _s in "$PROJ/CLAUDE.md|Réglages du projet" "$BASE/profil.md|Réglages"; do
+    _v=$(rg "${_s%%|*}" "${_s#*|}" seuils | tr ',/' '  ')
+    set -f; set -- $_v; set +f
+    if ok_seuils "$*"; then break; fi
+    set -- 70 80 90
+  done
+fi
 s1="${1:-70}"; s2="${2:-80}"; s3="${3:-90}"
 for n in "$s1" "$s2" "$s3"; do
   case "$n" in ""|*[!0-9]*) echo "usage : quota.sh [seuil1 seuil2 seuil3] (entiers)" >&2; exit 2 ;; esac

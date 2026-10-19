@@ -3,6 +3,33 @@
 Toutes les évolutions notables de ce projet sont notées ici.
 Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le projet suit le [versionnement sémantique](https://semver.org/lang/fr/).
 
+## [1.2.0] - 2026-10-19
+
+Réglages personnalisables, demandés par l'utilisateur. Rien ne change pour qui ne règle rien.
+
+### Ajouté
+- **Rubrique `## Réglages` du profil** (lignes `- <clé> : <valeur>`) et **`## Réglages du projet`** du `CLAUDE.md` d'un projet, qui surcharge le profil pour ce projet. Clés : `seuils`, `budget-lot`, `autonomie`, `modeles`, `agents-paralleles`, `notifications`, `barre`, `git`, `langue`, `ton`, `rapports`, plus `prereglage`. Absente, illisible ou invalide : le défaut d'avant. Détail dans `skills/maitre-agent/reglages.md`, lu seulement par la commande ou quand un réglage est utilisé.
+- **Sous-commande `reglages`** (alias `settings`) : tableau valeur actuelle / défaut, `reglages <clé> <valeur>` (avec « avant » et « après »), `reglages econome|normal|intensif`, `reglages reset`. La vérification et l'écriture sont faites par le script `tools/reglages.sh` (copié dans `skills/maitre-agent/hooks/`), pas par le modèle.
+- **Préréglages** : `econome` (seuils 60 75 85, `budget-lot` 15 %, `jamais-opus`, un agent à la fois, rapports courts ; en plus briefs courts, recherche seulement pour les questions décisives, testeur au dernier jalon seulement), `normal` (les défauts), `intensif` (seuils 80 90 95, `budget-lot` 40 %, 5 agents). L'économie réelle d'`econome` n'est pas mesurée.
+- **Premier lancement** : une question à boutons de plus, « garder les défauts (recommandé) / économe / intensif / personnaliser » ; avec un profil « forfait Pro », `économe` passe en premier.
+- **Scripts** : `hooks/statusline.sh`, `hooks/notify.sh` et `tools/quota.sh` lisent `seuils`, `notifications` et `barre` (profil, puis `CLAUDE.md` du dossier courant), avec repli sur les défauts ; `cout` ajoute le coût de la session à la barre quand le JSON donne `cost.total_cost_usd`. Le mod de bureau lit `seuils` et `notifications` (par `$.env.get("HOME")` et `$.fs.read`), pas `barre`.
+- **Récap de fin de projet** (`phases.md`, étape de livraison) : tableau agents / modèle / tokens / durée / part du quota tiré du tableau « Agents lancés » du HANDOFF (nouvelle colonne « Coût » du gabarit, script `tools/recap.sh`), et une ligne « pour la prochaine fois » avec un réglage conseillé.
+- Tests : `tests/hooks.sh` passe de 24 à 76 vérifications (seuils 60 75 85, notifications `rien`, barre sans jalon, réglages du projet qui surchargent, `reglages.sh`, `recap.sh`) ; le mod passe de 28 à 38 tests.
+
+### Modifié
+- `quota.sh` sort avec le seuil atteint (les seuils réglés ; 70, 80, 90 par défaut). Le skill parle de 1er, 2e et 3e seuil.
+- `notifications` : sans ce réglage, les fichiers `notifications-on` et `notifications-off` décident comme avant ; avec lui, `notifications-off` coupe encore tout.
+- Gabarit `HANDOFF.md` : colonne « Coût (tokens · durée · % fenêtre) » dans « Agents lancés ».
+
+### Efficacité (mesures du 2026-10-19, `claude plugin details`, CLI 2.1.299, estimations de la CLI)
+| | avant (v1.1.1, dépôt de départ) | après (v1.2.0) |
+|---|---|---|
+| Coût permanent (chaque session) | environ 267 tokens | environ 252 tokens |
+| Coût à l'appel du skill | environ 3,6 k | environ 3,7 k |
+
+- Le coût permanent baisse (description et `when_to_use` resserrés) ; le plafond demandé était 257. Le coût à l'appel monte d'environ 0,1 k au plus (mesure arrondie à 0,1 k près ; `SKILL.md` : 15 465 puis 15 684 octets).
+- Une mesure antérieure donnait 257 pour la v1.1.1 ; la remesure du dépôt de départ donne 267.
+
 ## [1.1.1] - 2026-10-19
 
 Corrections et ajouts issus d'une critique extérieure du dépôt publié (15 corrections, 5 modifications, 4 ajouts ; ceux de cette version sont listés ici).

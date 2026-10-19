@@ -10,8 +10,14 @@ import {
   isMaAgent,
   levelOf,
   parseMilestone,
+  parseNotifications,
+  parseThresholds,
   projectName,
+  readSection,
+  resolveSettings,
   truncate,
+  wantsAgentDone,
+  wantsQuotaAlerts,
 } from './lib'
 import type { AlertState, Window } from './lib'
 
@@ -60,7 +66,7 @@ describe('alertes de quota', () => {
   ]
 
   test('niveaux', async () => {
-    expect([0, 69.9, 70, 79, 80, 89.9, 90, 100].map(levelOf)).toEqual([0, 0, 70, 70, 80, 80, 90, 90])
+    expect([0, 69.9, 70, 79, 80, 89.9, 90, 100].map(p => levelOf(p))).toEqual([0, 0, 70, 70, 80, 80, 90, 90])
   })
 
   test('une seule fois par seuil et par fenêtre', async () => {
@@ -161,5 +167,52 @@ describe('jalon', () => {
   test('gabarit non rempli : pas de jalon', async () => {
     expect(parseMilestone('Jalon : <jalon ou étape en cours, en quelques mots> (lu par la barre d\'état)')).toBe(undefined)
     expect(parseMilestone('Jalon : <x>\nJalon : J3 tests')).toBe('J3 tests')
+  })
+})
+
+describe('réglages', () => {
+  test('readSection : rubrique exacte, clé insensible à la casse, commentaire entre parenthèses retiré', async () => {
+    const md = '# P\n## Réglages du projet\n- seuils : 1 2 3\n## Réglages\n- Seuils : 60 75 85 (économe)\n* **barre** : projet\n### Sous\n- ton : tutoiement\n## Autre\n- seuils : 9 9 9\n'
+    expect(readSection(md, 'Réglages')).toEqual({ seuils: '60 75 85', barre: 'projet', ton: 'tutoiement' })
+    expect(readSection(md, 'Réglages du projet')).toEqual({ seuils: '1 2 3' })
+    expect(readSection(undefined, 'Réglages')).toEqual({})
+  })
+
+  test('parseThresholds : trois entiers croissants de 10 à 99', async () => {
+    expect(parseThresholds('60 75 85')).toEqual([60, 75, 85])
+    expect(parseThresholds('60, 75/85')).toEqual([60, 75, 85])
+    expect(parseThresholds('85 75 60')).toBeUndefined()
+    expect(parseThresholds('60 75')).toBeUndefined()
+    expect(parseThresholds('5 75 85')).toBeUndefined()
+    expect(parseThresholds('60 75 100')).toBeUndefined()
+    expect(parseThresholds('a b c')).toBeUndefined()
+    expect(parseThresholds(undefined)).toBeUndefined()
+  })
+
+  test('resolveSettings : projet, puis profil, puis défauts (une valeur invalide est sautée)', async () => {
+    expect(resolveSettings(undefined, undefined)).toEqual({ thresholds: [70, 80, 90], notifications: 'agent+quota' })
+    const profil = '## Réglages\n- seuils : 60 75 85\n- notifications : tout\n'
+    expect(resolveSettings(undefined, profil)).toEqual({ thresholds: [60, 75, 85], notifications: 'tout' })
+    const projet = '## Réglages du projet\n- seuils : 40 50 60\n- notifications : bof\n'
+    expect(resolveSettings(projet, profil)).toEqual({ thresholds: [40, 50, 60], notifications: 'tout' })
+  })
+
+  test('notifications : modes et effets', async () => {
+    expect(parseNotifications('rien')).toBe('rien')
+    expect(parseNotifications('toujours')).toBeUndefined()
+    expect(wantsQuotaAlerts('rien')).toBe(false)
+    expect(wantsQuotaAlerts('quota')).toBe(true)
+    expect(wantsAgentDone('quota')).toBe(false)
+    expect(wantsAgentDone('agent+quota')).toBe(true)
+    expect(wantsAgentDone('tout')).toBe(true)
+  })
+
+  test('decideAlerts et levelOf avec des seuils réglés', async () => {
+    expect(levelOf(76, [60, 75, 85])).toBe(75)
+    const w = (p: number): Window[] => [{ kind: 'five_hour', percentUsed: p, resetsAt: at1830(18) }]
+    const first = decideAlerts(undefined, w(62), [60, 75, 85])
+    expect(first.alerts.map(a => a.threshold)).toEqual([60])
+    expect(decideAlerts(first.state, w(65), [60, 75, 85]).alerts).toEqual([])
+    expect(decideAlerts(first.state, w(90), [60, 75, 85]).alerts.map(a => a.threshold)).toEqual([85])
   })
 })

@@ -4,8 +4,8 @@
 /** Une fenêtre de quota, comme `session.measure` la donne. */
 export type Window = { kind: string; percentUsed: number; resetsAt?: string }
 
-/** Seuils d'alerte, en pourcentage de la fenêtre. */
-export const THRESHOLDS = [70, 80, 90] as const
+/** Seuils d'alerte par défaut, en pourcentage de la fenêtre (réglage `seuils`). */
+export const THRESHOLDS: readonly number[] = [70, 80, 90]
 
 /** État gardé par fenêtre : la fenêtre (resetsAt) et le plus haut seuil déjà signalé. */
 export type AlertState = Record<string, { resetsAt?: string; level: number }>
@@ -85,9 +85,9 @@ export function formatStatus(input: StatusInput): string {
 }
 
 /** Plus haut seuil atteint par ce pourcentage, 0 s'il est sous le premier. */
-export function levelOf(percent: number): number {
+export function levelOf(percent: number, thresholds: readonly number[] = THRESHOLDS): number {
   let level = 0
-  for (const t of THRESHOLDS) if (percent >= t) level = t
+  for (const t of thresholds) if (percent >= t) level = t
   return level
 }
 
@@ -100,6 +100,7 @@ export function levelOf(percent: number): number {
 export function decideAlerts(
   prev: AlertState | undefined,
   windows: readonly Window[],
+  thresholds: readonly number[] = THRESHOLDS,
 ): { alerts: Alert[]; state: AlertState } {
   const state: AlertState = { ...(prev ?? {}) }
   const alerts: Alert[] = []
@@ -115,7 +116,7 @@ export function decideAlerts(
       const isOtherWindow = !Number.isNaN(a) && !Number.isNaN(b) && Math.abs(a - b) > SAME_WINDOW_MS
       if (isOtherWindow || rounded < known) known = 0
     }
-    const level = levelOf(rounded)
+    const level = levelOf(rounded, thresholds)
     if (level > known) {
       alerts.push({ kind: w.kind, threshold: level, percent: w.percentUsed, resetsAt: w.resetsAt })
       known = level
@@ -184,4 +185,76 @@ export function parseMilestone(handoff: string | undefined): string | undefined 
     }
   }
   return undefined
+}
+
+// --- Réglages (voir skills/maitre-agent/reglages.md) ------------------------------------------------------
+// Mêmes règles que les scripts du terminal : lignes « - clé : valeur » sous « ## Réglages » du profil, surchargées
+// par « ## Réglages du projet » du CLAUDE.md du projet ; première valeur valide, sinon le défaut.
+
+/** Mode du réglage `notifications`. */
+export type NotifyMode = 'agent+quota' | 'tout' | 'quota' | 'rien'
+
+export type Settings = { thresholds: readonly number[]; notifications: NotifyMode }
+
+/** Lignes « - clé : valeur » de la rubrique `## <titre>` (clés en minuscules, première occurrence), sans le commentaire final entre parenthèses. */
+export function readSection(text: string | undefined, title: string): Record<string, string> {
+  const out: Record<string, string> = {}
+  if (!text) return out
+  let on = false
+  for (const raw of text.split(/\r?\n/)) {
+    if (/^#+[ \t]/.test(raw)) {
+      if (/^##[ \t]/.test(raw)) on = raw.replace(/^##[ \t]+/, '').replace(/[ \t\r]+$/, '') === title
+      else if (/^#[ \t]/.test(raw)) on = false
+      continue
+    }
+    if (!on) continue
+    const m = /^[ \t]*[-*][ \t]+(.*)$/.exec(raw)
+    if (!m) continue
+    const line = m[1] as string
+    const i = line.indexOf(':')
+    if (i < 1) continue
+    const key = line.slice(0, i).replace(/[ \t*`]+/g, '').toLowerCase()
+    if (key in out) continue
+    out[key] = line
+      .slice(i + 1)
+      .replace(/^[ \t*`]+/, '')
+      .replace(/[ \t\r*`]+$/, '')
+      .replace(/[ \t]*\(.*\)$/, '')
+  }
+  return out
+}
+
+/** Trois entiers croissants de 10 à 99 (séparés par espace, virgule ou /), sinon undefined. */
+export function parseThresholds(value: string | undefined): readonly number[] | undefined {
+  if (!value) return undefined
+  const parts = value.split(/[\s,/]+/).filter(p => p.length > 0)
+  if (parts.length !== 3 || !parts.every(p => /^[0-9]+$/.test(p))) return undefined
+  const [a, b, c] = parts.map(Number) as [number, number, number]
+  return a >= 10 && a < b && b < c && c <= 99 ? [a, b, c] : undefined
+}
+
+export function parseNotifications(value: string | undefined): NotifyMode | undefined {
+  return value === 'agent+quota' || value === 'tout' || value === 'quota' || value === 'rien' ? value : undefined
+}
+
+/** Réglages en vigueur : le projet d'abord, puis le profil, sinon les défauts (70 80 90 ; agent+quota). */
+export function resolveSettings(project: string | undefined, profile: string | undefined): Settings {
+  const sources = [readSection(project, 'Réglages du projet'), readSection(profile, 'Réglages')]
+  let thresholds: readonly number[] | undefined
+  let notifications: NotifyMode | undefined
+  for (const src of sources) {
+    thresholds ??= parseThresholds(src['seuils'])
+    notifications ??= parseNotifications(src['notifications'])
+  }
+  return { thresholds: thresholds ?? THRESHOLDS, notifications: notifications ?? 'agent+quota' }
+}
+
+/** Les alertes de quota sont-elles permises ? */
+export function wantsQuotaAlerts(mode: NotifyMode): boolean {
+  return mode !== 'rien'
+}
+
+/** La fin d'un sous-agent ma-* doit-elle prévenir ? */
+export function wantsAgentDone(mode: NotifyMode): boolean {
+  return mode === 'agent+quota' || mode === 'tout'
 }

@@ -21,9 +21,9 @@ Git : <SHA du dernier commit / pas de git>. Longueur visée : moins de 250 ligne
 - Installé, acheté, publié : <rien / liste>
 
 ## Agents lancés
-| Agent | Tâche | Modèle | Fichier de travail | Statut | Brief |
-|---|---|---|---|---|---|
-| <nom court> | <tâche> | <modèle> | <fichier> | en cours / terminé / arrêté / à reprendre | `docs/briefs/NN-<agent>.md` |
+| Agent | Tâche | Modèle | Fichier de travail | Statut | Brief | Coût (tokens · durée · % fenêtre) |
+|---|---|---|---|---|---|---|
+| <nom court> | <tâche> | <modèle> | <fichier> | en cours / terminé / arrêté / à reprendre | `docs/briefs/NN-<agent>.md` | <180 k · 9 min · 6 %, ou non mesuré> |
 
 ## Pistes échouées et pièges connus (ne jamais couper cette section)
 - <ce qui a été essayé, pourquoi ça a échoué>

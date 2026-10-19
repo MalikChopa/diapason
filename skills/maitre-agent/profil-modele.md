@@ -14,10 +14,12 @@ Emplacement : `~/.claude/maitre-agent/profil.md`, hors du skill, pour qu'une mis
 2. **Un seul message** (outil de questions s'il existe, sinon une liste numérotée), qui contient :
    - les 4 questions essentielles ci-dessous ;
    - les questions bloquantes du projet demandé (2 au maximum) ;
+   - une question de plus, à boutons : « Réglages : garder les défauts (recommandé) / économe / intensif / personnaliser ». Si le profil dit « forfait Pro » (ou si l'utilisateur l'a dit), « économe (recommandé) » passe en premier et « garder les défauts » en deuxième ;
    - « Je l'enregistre dans <chemin> et je le complète au fil de tes corrections. Réponds "défauts" pour tout accepter. »
    Si les agents `ma-*` ne figurent ni dans `~/.claude/agents/` ni dans la liste de l'outil de sous-agents (ni sous la forme `maitre-agent:ma-*`, fournie par le plugin), ajoute une question : « J'installe les sous-agents et les garde-fous de la méthode ? (voir `installation.md`) ». Défaut : non, tant que l'utilisateur n'a pas dit oui. S'ils sont fournis par le plugin, ne pose pas la question.
 3. Après la réponse :
    - écris le profil ;
+   - écris la rubrique « Réglages » : `sh SKILL_DIR/hooks/reglages.sh preset <économe → econome | défauts → normal | intensif>` ; « personnaliser » : montre `sh SKILL_DIR/hooks/reglages.sh`, demande quelles clés changer et applique-les avec `set` (détail : `reglages.md`) ;
    - marque « (défaut, à confirmer) » toute ligne que l'utilisateur n'a pas choisie explicitement ;
    - montre le profil en 5 lignes ;
    - **enchaîne sans attendre** avec le projet (`phases.md`).
@@ -35,7 +37,7 @@ Pour une demande triviale (réponse directe, aucun agent), crée un profil minim
 Les autres préférences prennent leur défaut, en attendant que l'utilisateur les corrige :
 - tests : les agents testent, l'utilisateur regarde s'il veut ;
 - git : local, avec un commit par étape vérifiée ; push sur demande seulement ;
-- seuils de quota : 70 / 80 / 90 % ;
+- seuils de quota : 70 / 80 / 90 % (rubrique « Réglages » : `seuils`) ;
 - modèle le plus capable : permis ;
 - outils possédés : aucun ;
 - limites : aucune.
@@ -59,8 +61,11 @@ Créé : <AAAA-MM-JJ> · Mis à jour : <AAAA-MM-JJ> · Mises à jour automatique
 - Dossiers : <…>
 - Langue, tutoiement, ton, niveau : <…>
 - Toujours demander avant : <liste>
-- Quota : seuils <70/80/90> ; modèle le plus capable <permis / non>
+- Quota : modèle le plus capable <permis / non> ; seuils et autres réglages : rubrique « Réglages » ci-dessous
 - Limites : <…>
+
+## Réglages
+- (écrite par `reglages.sh` à la première utilisation ; clés dans `reglages.md`, par exemple `- seuils : 70 80 90`)
 
 ## Usages et équipement (pour cadrer les recherches)
 - <ce que l'utilisateur fait, utilise ou possède : jeux, logiciels, matériel, abonnements, outils créatifs>
