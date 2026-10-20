@@ -1,4 +1,4 @@
-# Contribuer à majordome
+# Contribuer à Diapason
 
 Merci de ton intérêt. Le projet est petit : un skill Claude Code, cinq agents, quelques scripts `sh` et un mod de bureau.
 
@@ -15,7 +15,7 @@ LINT_SKIP_LOCAL=1 sh tools/lint-skill.sh
 `LINT_SKIP_LOCAL=1` saute les contrôles de ton installation locale (`~/.claude`) : sans lui, des agents installés chez toi et différents de ceux du dépôt donneraient une `ERR` qui ne concerne pas ta PR. Pour tester aussi des motifs personnels à refuser, passe-les par l'environnement (`LINT_PRIVATE_PATTERNS='nom1|nom2'`) ; ne les écris jamais dans un fichier du dépôt.
 Il vérifie le YAML des agents et du skill, la taille de `SKILL.md`, les renvois entre fichiers, la cohérence du plugin et de la marketplace, la copie des agents et des hooks, et l'absence de traces personnelles. La même commande tourne sur GitHub à chaque push.
 
-Si tu modifies un script de `hooks/`, la copie dans `skills/majordome/hooks/` doit rester identique (le lint le vérifie). Les scripts restent en `sh` POSIX, sans bashisme, et doivent marcher sous macOS et Linux.
+Si tu modifies un script de `hooks/`, la copie dans `skills/diapason/hooks/` doit rester identique (le lint le vérifie). Les scripts restent en `sh` POSIX, sans bashisme, et doivent marcher sous macOS et Linux.
 
 ## Règle absolue : aucune donnée personnelle
 Aucun nom, email, identifiant, chemin absolu vers un dossier personnel (sous macOS, Linux ou Windows), nom de projet privé, capture ou journal de session réel dans le dépôt. Pour les chemins, utilise `~`, `$HOME` ou `${CLAUDE_PLUGIN_ROOT}` ; pour les tests et exemples, des données factices. Le lint refuse les chemins personnels, mais c'est à toi de relire ton diff.

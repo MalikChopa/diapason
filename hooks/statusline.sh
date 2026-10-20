@@ -1,5 +1,5 @@
 #!/bin/sh
-# Méthode Majordome : barre d'état (statusLine) du terminal.
+# Méthode Diapason : barre d'état (statusLine) du terminal.
 # Entrée : JSON de la barre d'état sur l'entrée standard. Sortie : une ligne
 #   🛎️ <projet> · <jalon> · <n> agents · 5 h <x> % (reset HH:MM) · 7 j <y> %
 # - projet : nom du dossier courant (.workspace.current_dir, sinon .cwd, sinon $PWD)
@@ -10,27 +10,28 @@
 #            (ESC, BEL, C1…) sont retirés avant l'affichage.
 # - n      : nombre de fichiers du compteur de la session (voir agent-count.sh)
 # - quota  : rate_limits.five_hour / seven_day ; « quota ? » si le JSON n'en contient pas.
-# Réglages (voir skills/majordome/reglages.md) : lignes « - clé : valeur » de la rubrique « ## Réglages » du
+# Réglages (voir skills/diapason/reglages.md) : lignes « - clé : valeur » de la rubrique « ## Réglages » du
 # profil, surchargées par « ## Réglages du projet » du CLAUDE.md du dossier courant. Lus ici : `barre` (éléments
 # et ordre : projet jalon agents quota, et cout si le JSON donne cost.total_cost_usd), `seuils` (3 entiers,
 # fenêtre de 5 h seulement), `seuils-hebdo` et `plafonds-hebdo` (3 entiers chacun, fenêtre de 7 j).
 # Absents ou illisibles : barre « projet jalon agents quota », seuils 70 80 90, seuils-hebdo 20 40 60,
 # plafonds-hebdo 85 92 97.
-# Effets de bord : écrit ~/.claude/majordome/usage.json (jamais écrasé par du vide) et
+# Effets de bord : écrit ~/.claude/diapason/usage.json (jamais écrasé par du vide) et
 # lance les alertes de quota une seule fois par seuil et par resets_at : fenêtre de 5 h aux seuils du réglage
 # (70 / 80 / 90 % par défaut) ; fenêtre de 7 j aux paliers 1 à 3 de la variante C (écart de rythme ou plafond,
 # même calcul que `quota.sh hebdo`, recopié ici car la barre peut être installée seule : un test compare les deux).
 # Jamais bloquant : sort toujours avec 0.
-# Dossier des données : ~/.claude/majordome s'il existe, sinon l'ancien ~/.claude/maitre-agent (v1.3 et avant), sinon ~/.claude/majordome
-if [ -d "$HOME/.claude/majordome" ]; then BASE="$HOME/.claude/majordome"
+# Dossier des données : ~/.claude/diapason s'il existe, sinon l'ancien ~/.claude/majordome (v1.4), sinon ~/.claude/maitre-agent (v1.3 et avant), sinon ~/.claude/diapason
+if [ -d "$HOME/.claude/diapason" ]; then BASE="$HOME/.claude/diapason"
+elif [ -d "$HOME/.claude/majordome" ]; then BASE="$HOME/.claude/majordome"
 elif [ -d "$HOME/.claude/maitre-agent" ]; then BASE="$HOME/.claude/maitre-agent"
-else BASE="$HOME/.claude/majordome"; fi
+else BASE="$HOME/.claude/diapason"; fi
 SELF_DIR=$(dirname "$0" 2>/dev/null) || SELF_DIR=.
 if [ -t 0 ]; then in="{}"; else in=$(cat 2>/dev/null) || in="{}"; fi
 [ -n "$in" ] || in="{}"
 
 if ! command -v jq >/dev/null 2>&1; then
-  printf '🛎️ majordome · jq absent · quota ?\n'
+  printf '🛎️ diapason · jq absent · quota ?\n'
   exit 0
 fi
 
@@ -172,7 +173,7 @@ alerte() { # $1 nom de fenêtre (5h|7j)  $2 pourcentage entier  $3 resets_at  $4
   h=$(hhmm "$3"); extra=""; [ -n "$h" ] && extra=" (reset $h)"
   nt=""
   for c in "$SELF_DIR/notify.sh" "$BASE/notify.sh" "$BASE/hooks/notify.sh"; do [ -f "$c" ] && { nt="$c"; break; }; done
-  [ -n "$nt" ] && MAJORDOME_PROJECT_DIR="$dir" sh "$nt" quota "Quota $4 à $2 %$extra : seuil $top % franchi." >&2
+  [ -n "$nt" ] && DIAPASON_PROJECT_DIR="$dir" sh "$nt" quota "Quota $4 à $2 %$extra : seuil $top % franchi." >&2
 }
 alerte 5h "$p5" "$r5" "5 h"
 # Fenêtre de 7 j : palier 0 à 3 = le plus haut du palier d'écart (utilisé % - écoulé % >= seuils-hebdo) et du
@@ -215,7 +216,7 @@ alerte_h() { # $1 pourcentage entier  $2 resets_at : une alerte par palier et pa
   h=$(hhmm "$2"); extra=""; [ -n "$h" ] && extra=" (remise $h)"
   nt=""
   for c in "$SELF_DIR/notify.sh" "$BASE/notify.sh" "$BASE/hooks/notify.sh"; do [ -f "$c" ] && { nt="$c"; break; }; done
-  [ -n "$nt" ] && MAJORDOME_PROJECT_DIR="$dir" sh "$nt" quota "Quota 7 j à $1 %$extra : palier $top sur 3$PH_ECART." >&2
+  [ -n "$nt" ] && DIAPASON_PROJECT_DIR="$dir" sh "$nt" quota "Quota 7 j à $1 %$extra : palier $top sur 3$PH_ECART." >&2
 }
 alerte_h "$p7" "$r7"
 # Purge des marqueurs d'alerte de plus de 8 jours (fichiers d'une ancienne version ou dossiers vides)

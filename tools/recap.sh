@@ -1,5 +1,5 @@
 #!/bin/sh
-# Méthode Majordome : récap de fin de projet, tiré du tableau « Agents lancés » de docs/HANDOFF.md.
+# Méthode Diapason : récap de fin de projet, tiré du tableau « Agents lancés » de docs/HANDOFF.md.
 # Usage : sh recap.sh [chemin du HANDOFF.md]      (défaut : docs/HANDOFF.md du dossier courant)
 # Sortie : un tableau Agent | Modèle | Tokens | Durée | Part du quota, une ligne par agent.
 # La colonne « Coût » du tableau du HANDOFF contient « <tokens> · <durée> · <part de la fenêtre> »

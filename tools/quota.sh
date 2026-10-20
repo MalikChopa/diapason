@@ -1,11 +1,11 @@
 #!/bin/sh
-# Méthode Majordome : lit le quota dans ~/.claude/majordome/usage.json (écrit par la barre d'état
+# Méthode Diapason : lit le quota dans ~/.claude/diapason/usage.json (écrit par la barre d'état
 # ou par une copie de ce fichier) et conclut le palier, pour que le modèle n'ait pas à calculer.
 # Usage : sh quota.sh [seuil1 seuil2 seuil3]
 #         sh quota.sh hebdo <utilisé %> [<resetsAt : date ISO 8601 ou epoch>]
 #   Sans argument, les seuils de la fenêtre de 5 h sont ceux du réglage `seuils` (ligne « - seuils : 60 75 85 »
 #   de la rubrique « ## Réglages » du profil, surchargée par « ## Réglages du projet » du CLAUDE.md du dossier
-#   courant ou de MAJORDOME_PROJECT_DIR) ; absent ou invalide : 70 80 90. `seuils` ne vaut QUE pour la
+#   courant ou de DIAPASON_PROJECT_DIR) ; absent ou invalide : 70 80 90. `seuils` ne vaut QUE pour la
 #   fenêtre de 5 h. La fenêtre hebdomadaire (7 j) a ses propres règles (variante C de docs/research/04) :
 #     écart = utilisé % - écoulé % de la semaine (7 j avant la remise) ; projection = utilisé / écoulé x 100.
 #     Palier d'écart : écart >= 1er, 2e, 3e nombre de `seuils-hebdo` (défaut 20 40 60 points).
@@ -28,16 +28,17 @@
 #                   inventer aucun pourcentage : il demande à l'utilisateur.
 # Code de sortie, mode hebdo : le palier lui-même, 0 à 3 ; 4 = pourcentage illisible (rien n'est calculé).
 # Variables pour les tests : QUOTA_NOW (secondes epoch à la place de l'heure actuelle),
-#   QUOTA_FILE (autre fichier que ~/.claude/majordome/usage.json).
+#   QUOTA_FILE (autre fichier que ~/.claude/diapason/usage.json).
 # Lecture seule : ne modifie rien, aucun appel réseau.
-# Dossier des données : ~/.claude/majordome s'il existe, sinon l'ancien ~/.claude/maitre-agent (v1.3 et avant), sinon ~/.claude/majordome
-if [ -d "$HOME/.claude/majordome" ]; then BASE="$HOME/.claude/majordome"
+# Dossier des données : ~/.claude/diapason s'il existe, sinon l'ancien ~/.claude/majordome (v1.4), sinon ~/.claude/maitre-agent (v1.3 et avant), sinon ~/.claude/diapason
+if [ -d "$HOME/.claude/diapason" ]; then BASE="$HOME/.claude/diapason"
+elif [ -d "$HOME/.claude/majordome" ]; then BASE="$HOME/.claude/majordome"
 elif [ -d "$HOME/.claude/maitre-agent" ]; then BASE="$HOME/.claude/maitre-agent"
-else BASE="$HOME/.claude/majordome"; fi
+else BASE="$HOME/.claude/diapason"; fi
 f="${QUOTA_FILE:-$BASE/usage.json}"
-# Anciens noms des variables (v1.3) : MAITRE_AGENT_* reste lu
-MAJORDOME_PROJECT_DIR="${MAJORDOME_PROJECT_DIR:-${MAITRE_AGENT_PROJECT_DIR:-}}"
-PROJ="${MAJORDOME_PROJECT_DIR:-$PWD}"
+# Anciens noms des variables : MAJORDOME_* (v1.4) et MAITRE_AGENT_* (v1.3) restent lus
+DIAPASON_PROJECT_DIR="${DIAPASON_PROJECT_DIR:-${MAJORDOME_PROJECT_DIR:-${MAITRE_AGENT_PROJECT_DIR:-}}}"
+PROJ="${DIAPASON_PROJECT_DIR:-$PWD}"
 rg() { # $1 fichier  $2 titre de la rubrique  $3 clé -> valeur (sans commentaire entre parenthèses)
   [ -f "$1" ] || return 0
   awk -v t="$2" -v k="$3" '

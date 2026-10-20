@@ -1,4 +1,4 @@
-// majordome-bureau : ce que la barre d'état du terminal ne peut pas afficher
+// diapason-bureau : ce que la barre d'état du terminal ne peut pas afficher
 // dans l'onglet Code de l'app Claude de bureau.
 //   1. ligne d'état (quota, agents en cours, jalon),
 //   2. alertes de quota aux seuils du réglage `seuils` (70, 80 et 90 % par défaut),
@@ -85,7 +85,7 @@ async function refresh($: Api, options: RefreshOptions = {}): Promise<void> {
 
 /**
  * Réglages `seuils` et `notifications` : CLAUDE.md du projet (dossier de la session) puis profil
- * (`~/.claude/majordome/profil.md`, sinon l'ancien `~/.claude/maitre-agent/profil.md` de la v1.3). Fichier absent, illisible ou valeur invalide : les défauts. Ne lève jamais.
+ * (`~/.claude/diapason/profil.md`, sinon l'ancien `~/.claude/majordome/profil.md` de la v1.4, sinon `~/.claude/maitre-agent/profil.md` de la v1.3). Fichier absent, illisible ou valeur invalide : les défauts. Ne lève jamais.
  */
 async function loadSettings($: Api): Promise<Settings> {
   const readOr = async (path: string): Promise<string | undefined> => {
@@ -103,7 +103,9 @@ async function loadSettings($: Api): Promise<Settings> {
   }
   const project = await readOr('CLAUDE.md')
   const profile = home
-    ? ((await readOr(`${home}/.claude/majordome/profil.md`)) ?? (await readOr(`${home}/.claude/maitre-agent/profil.md`)))
+    ? ((await readOr(`${home}/.claude/diapason/profil.md`)) ??
+        (await readOr(`${home}/.claude/majordome/profil.md`)) ??
+        (await readOr(`${home}/.claude/maitre-agent/profil.md`)))
     : undefined
   return resolveSettings(project, profile)
 }

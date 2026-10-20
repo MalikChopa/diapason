@@ -128,7 +128,8 @@ describe('alertes de quota', () => {
 describe('sous-agents ma-*', () => {
   test('reconnaissance du type', async () => {
     expect(isMaAgent('ma-chercheur')).toBe(true)
-    expect(isMaAgent('majordome:ma-executant')).toBe(true)
+    expect(isMaAgent('diapason:ma-executant')).toBe(true)
+    expect(isMaAgent('majordome:ma-executant')).toBe(true) // ancien préfixe du plugin (v1.4)
     expect(isMaAgent('maitre-agent:ma-executant')).toBe(true) // ancien préfixe du plugin (v1.3)
     expect(isMaAgent('general-purpose')).toBe(false)
     expect(isMaAgent('autre:ma-x')).toBe(false)
@@ -143,7 +144,7 @@ describe('sous-agents ma-*', () => {
   })
 
   test('texte du toast : 80 caractères au plus', async () => {
-    expect(agentDoneText('majordome:ma-chercheur', 'TERMINÉ\nsuite')).toBe('ma-chercheur : TERMINÉ')
+    expect(agentDoneText('diapason:ma-chercheur', 'TERMINÉ\nsuite')).toBe('ma-chercheur : TERMINÉ')
     const long = agentDoneText('ma-executant', 'TERMINÉ ' + 'x'.repeat(200))
     expect(Array.from(long).length).toBe(80)
     expect(long.endsWith('…')).toBe(true)

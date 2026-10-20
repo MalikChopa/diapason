@@ -1,4 +1,4 @@
-// Fonctions pures du mod majordome-bureau : aucune dépendance à `$`,
+// Fonctions pures du mod diapason-bureau : aucune dépendance à `$`,
 // pour pouvoir les tester sans moteur.
 
 /** Une fenêtre de quota, comme `session.measure` la donne. */
@@ -135,9 +135,9 @@ export function alertText(a: Alert): string {
   return reset ? `${base}, reset ${reset}` : base
 }
 
-/** Vrai si le type d'agent est un agent du majordome : `ma-*`, `majordome:ma-*` ou, avant la v1.4, `maitre-agent:ma-*`. */
+/** Vrai si le type d'agent est un agent de Diapason : `ma-*`, `diapason:ma-*` ou, avant la v1.5, `majordome:ma-*` / `maitre-agent:ma-*`. */
 export function isMaAgent(type: string | undefined): boolean {
-  return !!type && /^(majordome:|maitre-agent:)?ma-/.test(type)
+  return !!type && /^(diapason:|majordome:|maitre-agent:)?ma-/.test(type)
 }
 
 /** Nom court d'un type d'agent : sans préfixe de plugin. */
@@ -187,7 +187,7 @@ export function parseMilestone(handoff: string | undefined): string | undefined 
   return undefined
 }
 
-// --- Réglages (voir skills/majordome/reglages.md) ------------------------------------------------------
+// --- Réglages (voir skills/diapason/reglages.md) ------------------------------------------------------
 // Mêmes règles que les scripts du terminal : lignes « - clé : valeur » sous « ## Réglages » du profil, surchargées
 // par « ## Réglages du projet » du CLAUDE.md du projet ; première valeur valide, sinon le défaut.
 

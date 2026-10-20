@@ -1,8 +1,8 @@
-# Majordome: the guide
+# Diapason: the guide
 
-English · [Version française](GUIDE.md) · [Back to the README](README.en.md)
+English · [Version française](GUIDE.md) · [Back to the README](README.md#english)
 
-This guide holds the details: installation, sub-commands, settings, safeguards, FAQ, limits. The README fits on one page. Were you using v1.3, under its former name? Go to the migration section ("Coming from…", between installation and sub-commands).
+This guide holds the details: installation, sub-commands, settings, safeguards, FAQ, limits. The README fits on one page. Were you using v1.3 or v1.4, under their former names (maitre-agent, majordome)? Go to the migration section ("Coming from…", between installation and sub-commands).
 
 > Since v1.3.0 the skill's internal text (`SKILL.md`, the skill files, briefs, templates, agent definitions) is in English, to save tokens. What you see stays in your profile's language, and the scripts' messages (status line, notifications) are in French. This page is a full translation of the French guide. Some linked documents (`docs/fabrication.md`, `evals/`, `commandes.md`) are in French.
 
@@ -16,7 +16,7 @@ macOS or Linux (the scripts are `sh`), [`jq`](https://jqlang.org/) (`brew instal
 
 ## The pitch
 
-`majordome` is a skill for [Claude Code](https://code.claude.com/docs/en/skills). You give it an idea (a script, a purchase to compare, a piece of research, a text) or a project to resume. The main session becomes the "majordome": it reads your profile, splits the work, hands it to sub-agents running the right model, verifies the facts that matter by itself, watches your quota, and writes a handoff file (`HANDOFF.md`).
+`diapason` is a skill for [Claude Code](https://code.claude.com/docs/en/skills). You give it an idea (a script, a purchase to compare, a piece of research, a text) or a project to resume. The main session becomes the "diapason": it reads your profile, splits the work, hands it to sub-agents running the right model, verifies the facts that matter by itself, watches your quota, and writes a handoff file (`HANDOFF.md`).
 
 It is for people who use Claude Code on projects that last longer than one conversation and who want to stay in control: product decisions are yours, approval is asked before anything that costs money or cannot be undone, nothing is built before you have approved a sheet, and work can resume after a quota cut, in a fresh session, or from another account.
 
@@ -26,11 +26,11 @@ It does not aim for more agents. It aims for the smallest usable result. For a t
 
 ```mermaid
 flowchart TD
-    U(["You: an idea, or a project to resume"]) --> M["Majordome<br/>reads the profile, frames, splits,<br/>delegates with a written brief"]
+    U(["You: an idea, or a project to resume"]) --> M["Diapason<br/>reads the profile, frames, splits,<br/>delegates with a written brief"]
 
     M --> A1["ma-chercheur (researcher)<br/>sonnet"]
     M --> A2["ma-concepteur (designer)<br/>opus"]
-    M --> A3["ma-executant (implementer)<br/>model chosen by the majordome"]
+    M --> A3["ma-executant (implementer)<br/>model chosen by Diapason"]
     M --> A4["ma-testeur (tester)<br/>sonnet"]
     M --> A5["ma-auditeur (auditor)<br/>sonnet"]
 
@@ -40,7 +40,7 @@ flowchart TD
     A4 --> F
     A5 --> F
 
-    F --> V{"Verification by the majordome<br/>primary source, command, recomputation"}
+    F --> V{"Verification by Diapason<br/>primary source, command, recomputation"}
     V -- "needs fixing<br/>(2 or 3 rounds at most)" --> M
     V -- "verified" --> H["HANDOFF.md<br/>state, agents launched, immediate resume"]
     H --> R["Resume: new session,<br/>other account, other person"]
@@ -51,13 +51,13 @@ flowchart TD
     Q -.-> H
 ```
 
-The agents write the big pieces. They never launch other agents. The majordome does the decisive checks itself: "the tests pass" means the output of a command run just now, not an agent's report.
+The agents write the big pieces. They never launch other agents. Diapason does the decisive checks itself: "the tests pass" means the output of a command run just now, not an agent's report.
 
 ## How it works with you
 
 Since v1.3.0 the skill accompanies you instead of rushing ahead. What prompted the change: on a real project, the session had picked on its own to build a web page and had coded without asking a single question. Here is what happens now. Each point names the skill file that describes it (these files are in English since v1.3.0).
 
-**Who decides what** (`skills/majordome/SKILL.md`, section 2).
+**Who decides what** (`skills/diapason/SKILL.md`, section 2).
 - **Yours, always**: the shape of the product (website, mobile app, tool, document, game...), the platform, the audience, the MVP features, the main technologies, where the data lives, the style, accounts and budget.
 - **Delegated**: file structure, secondary libraries, test tools, naming. It decides, notes "délégué" (delegated) in the project's `CLAUDE.md` and explains it in one line at the checkpoint (setting `autonomie`, default `accompagnant`). When in doubt, it is a product decision, so it is yours.
 - Approvals (money, installs, publishing, sending, accounts, deletion) are still asked, whatever the value of `autonomie`.
@@ -74,7 +74,7 @@ Since v1.3.0 the skill accompanies you instead of rushing ahead. What prompted t
 
 **A preset matching your plan** (`reglages.md`, "Forfait et préréglage"). On first launch it reads your plan from the usage tool and offers, confirmed once: `econome` for a Pro plan (1 or 2 parallel agents, the most capable model for design only, a single grouped research, one audit round, one mock-up variant), `normal` for Max 5x (3 or 4 agents), `intensif` for Max 20x or an API key (5 agents, the most capable model for audits too, 2 to 3 mock-up variants). **Only the value "Pro" has been seen**; the Max values are inferred and not verified: for an unexpected value, it asks you. What each preset sets (number of research agents, audit rounds, variants) are design choices, not measured in use.
 
-**What is verified, and what is not.** The scripts (settings, quota, diagnostic, safeguard) are tested with dummy JSON: 358 checks under `sh` and under `dash` at v1.4.0, 0 failures. **Seen twice, on 2026-10-19, in two fresh test sessions** (run by the majordome, which played the user through messages). **First trial** (skill in French): tours 1 and 2 of the workshop asked as a numbered list, each with a recommendation (tour 1 asked 5 questions instead of 4: a deviation); a "go" refused before "Valider"; the safeguard refusing a `Write` outside `docs/` while the sheet was still a draft; the sheet approved; a 3-screen HTML mock-up, tested in the browser by the session; a checkpoint "Étape 2/7" with the cost of what follows and "Continuer / Ajuster / S'arrêter"; a clean stop. **Second trial** (skill internal text in English, answers in French): everything in French; 4 questions per tour at most; the connectors question asked; a checkpoint "Étape 2/5"; a mock-up as a private Artifact and `maquette/index.html`, one single screenshot; no code on disk; stop after the mock-up. **Not seen:** the buttons of the question tool (the first trial replaced them with a list; the second does not note them), the sub-agents under the safeguard. The evaluations 06 to 10 that describe these situations are written, **not run**.
+**What is verified, and what is not.** The scripts (settings, quota, diagnostic, safeguard) are tested with dummy JSON: 378 checks under `sh` and under `dash` at v1.5.0, 0 failures. **Seen twice, on 2026-10-19, in two fresh test sessions** (run by Diapason, which played the user through messages). **First trial** (skill in French): tours 1 and 2 of the workshop asked as a numbered list, each with a recommendation (tour 1 asked 5 questions instead of 4: a deviation); a "go" refused before "Valider"; the safeguard refusing a `Write` outside `docs/` while the sheet was still a draft; the sheet approved; a 3-screen HTML mock-up, tested in the browser by the session; a checkpoint "Étape 2/7" with the cost of what follows and "Continuer / Ajuster / S'arrêter"; a clean stop. **Second trial** (skill internal text in English, answers in French): everything in French; 4 questions per tour at most; the connectors question asked; a checkpoint "Étape 2/5"; a mock-up as a private Artifact and `maquette/index.html`, one single screenshot; no code on disk; stop after the mock-up. **Not seen:** the buttons of the question tool (the first trial replaced them with a list; the second does not note them), the sub-agents under the safeguard. The evaluations 06 to 10 that describe these situations are written, **not run**.
 
 ## Features
 
@@ -82,11 +82,11 @@ Since v1.3.0 the skill accompanies you instead of rushing ahead. What prompted t
 
 | Feature | What it does | Status |
 |---|---|---|
-| Profile | Reads `~/.claude/majordome/profil.md` first (language, level, budget, machine). Creates it in two exchanges at most on first use. Stays on your machine. | used for real (v1.0.0, details not kept) |
+| Profile | Reads `~/.claude/diapason/profil.md` first (language, level, budget, machine). Creates it in two exchanges at most on first use. Stays on your machine. | used for real (v1.0.0, details not kept) |
 | Routing | Idea, project path, file to process, or sub-command: it picks between new project, resume and command. | used for real (v1.0.0, details not kept); sub-command routing: written |
 | Proportionality | Aims for the smallest usable result. When unsure between two sizes, it takes the smaller one and says so. | used for real (v1.0.0, details not kept) |
 | Delegation by model | Light model for mechanical work, intermediate for research, audit and routine code, most capable for design. The model is always stated explicitly. 5 `ma-*` agents. | used for real |
-| Verification | Decisive facts are verified by the majordome. Required-proof table, audits capped at 2 rounds, code fixes capped at 3 rounds, "3 failures" protocol. | used for real |
+| Verification | Decisive facts are verified by Diapason. Required-proof table, audits capped at 2 rounds, code fixes capped at 3 rounds, "3 failures" protocol. | used for real |
 | Framing workshop (v1.3) | 3 button rounds (the what, the how, the sheet), at most 4 questions per call, a survey of the available tools before asking. See "How it works with you". | seen twice (2026-10-19): tours 1 and 2 as a numbered list with recommendation; 5 questions in tour 1 of the first trial (limit 4: a deviation), 4 per tour in the second; connectors question asked in the second; buttons not seen; evals 06 to 10 written, not run |
 | Approved sheet (v1.3) | One-page `docs/FICHE.md`, "Valider / Modifier / Tout revoir"; no code before approval; re-approval if a product decision changes. | seen twice (2026-10-19): draft first, "go" refused before "Valider", sheet approved (first trial); status "validée" in the second |
 | Mock-up before the code (v1.3) | Ladder: your mock-up, connected design tool (writing = your approval), private Artifact, static HTML, text preview. The approved mock-up is the tester's reference. | seen twice (2026-10-19): static HTML, 3 screens, tested in the browser by the session (first trial); private Artifact and `maquette/index.html` with one single screenshot (second); the connected design tool was not played |
@@ -98,13 +98,13 @@ Since v1.3.0 the skill accompanies you instead of rushing ahead. What prompted t
 | Handoff | `HANDOFF.md` with [V] verified / [?] not rechecked tags, an "Agents launched" table, an "Immediate resume" section. Files on disk win if HANDOFF is behind. | used for real (one resume after a cut) |
 | Sub-commands | `aide` (help), `statut`, `reprendre`, `profil`, `reglages` (or `settings`), `diagnostic` (or `doctor`: 8 read-only checks of the installation, by the script `hooks/diagnostic.sh`, which ends with an "N KO out of 8" count), `nouveau`. | written |
 | Settings (v1.2, extended in v1.3) | A `## Réglages` section of the profile (and `## Réglages du projet` in a project's `CLAUDE.md`) sets quota thresholds, batch size, autonomy (4 values since v1.3), models, parallel agents, notifications, status line, git, language, tone, report length. Three presets: `econome` (thrifty), `normal`, `intensif`. See "Settings" below. | script `tools/reglages.sh` and the scripts that read it: tested with dummy JSON (`tests/hooks.sh`); settings applied by the model: written, never seen in a real session |
-| Terminal status line | `🛎️ <project> · <milestone> · <n> agents · 5 h <x> % (reset HH:MM) · 7 j <y> %`. Also writes the quota to `~/.claude/majordome/usage.json`. 7-day alerts, one per tier and per reset. | tested with dummy JSON on every push (`tests/hooks.sh`); not seen in a real terminal |
-| Desktop mod | The same idea for the Code tab of the Claude desktop app: status line, quota alerts, agent-finished toast. It does not read the weekly thresholds. | tested: 38 of 38 tests before the rename (including the `seuils` and `notifications` settings); tests updated in v1.4.0 but **not re-run** (`bun` missing); status line and agent-finished toast seen for real (v1.1.x) |
-| Notifications | System notification when a `ma-*` agent finishes and at the quota thresholds (70 / 80 / 90% by default), on by default; "Claude is waiting" (permission, idle) **off by default**. The `notifications` setting (`agent+quota`, `tout`, `quota`, `rien`) chooses; without it, the file `~/.claude/majordome/notifications-on` turns "Claude is waiting" on and `notifications-off` turns everything off. macOS and Linux. Quota alerts require the status line (terminal) or the mod (desktop). | macOS command tested for real; scripts tested with dummy JSON (`tests/hooks.sh`); hooks not tested end to end by Claude Code |
+| Terminal status line | `🛎️ <project> · <milestone> · <n> agents · 5 h <x> % (reset HH:MM) · 7 j <y> %`. Also writes the quota to `~/.claude/diapason/usage.json`. 7-day alerts, one per tier and per reset. | tested with dummy JSON on every push (`tests/hooks.sh`); not seen in a real terminal |
+| Desktop mod | The same idea for the Code tab of the Claude desktop app: status line, quota alerts, agent-finished toast. It does not read the weekly thresholds. | tested: 41 of 41 tests at v1.5.0 (`claude plugin test bureau`, the app's CLI 2.1.299, throwaway HOME; including the `seuils` and `notifications` settings and the three profile folders); status line and agent-finished toast seen for real (v1.1.x) |
+| Notifications | System notification when a `ma-*` agent finishes and at the quota thresholds (70 / 80 / 90% by default), on by default; "Claude is waiting" (permission, idle) **off by default**. The `notifications` setting (`agent+quota`, `tout`, `quota`, `rien`) chooses; without it, the file `~/.claude/diapason/notifications-on` turns "Claude is waiting" on and `notifications-off` turns everything off. macOS and Linux. Quota alerts require the status line (terminal) or the mod (desktop). | macOS command tested for real; scripts tested with dummy JSON (`tests/hooks.sh`); hooks not tested end to end by Claude Code |
 | Buttons | Questions go through the environment's question tool (at most 4 questions per call, 2 to 4 options, the recommended one first, marked "(recommandé)"). Without that tool: a numbered list. | written |
 | Chapters | One chapter per phase (framing, research, mock-up, design, milestones, delivery) if the environment has a chapter tool. Otherwise nothing. | written |
 | "Since your last visit" | On every resume, 3 lines: what changed, what is done, what is expected from you. | written |
-| Sobriety (v1.3) | No sub-agents of sub-agents: Claude Code allows up to 3 levels, the skill does not (fresh context at each level, cost hidden from quota tracking, verification by the majordome alone). **Connectors: never turned off by default**; the recommended option is "Keep everything"; it only turns off the ones you name, and reminds you that this changes the default of new sessions. Savings (**estimated**, unless marked "measured"): quota read only when an agent is about to run (about 8k per average project); resume without re-reading every brief (about 3.6k); HANDOFF and profile capped (about 3.5k); `reinject.sh` capped at 3,000 bytes (measured: 6,078 → 852 bytes). Briefs written once; the agent call only says "read this path". Simple mock-up done by the majordome; variants by `ma-executant` with `briefs/maquette.md`. | written; the real gain of a session is not measured. Benchmark, a single measurement: lot 12 cost 68k tokens in 3 min, against 110 to 250k for the earlier lots |
+| Sobriety (v1.3) | No sub-agents of sub-agents: Claude Code allows up to 3 levels, the skill does not (fresh context at each level, cost hidden from quota tracking, verification by Diapason alone). **Connectors: never turned off by default**; the recommended option is "Keep everything"; it only turns off the ones you name, and reminds you that this changes the default of new sessions. Savings (**estimated**, unless marked "measured"): quota read only when an agent is about to run (about 8k per average project); resume without re-reading every brief (about 3.6k); HANDOFF and profile capped (about 3.5k); `reinject.sh` capped at 3,000 bytes (measured: 6,078 → 852 bytes). Briefs written once; the agent call only says "read this path". Simple mock-up done by Diapason; variants by `ma-executant` with `briefs/maquette.md`. | written; the real gain of a session is not measured. Benchmark, a single measurement: lot 12 cost 68k tokens in 3 min, against 110 to 250k for the earlier lots |
 
 ## Installation
 
@@ -115,72 +115,72 @@ Three routes. Pick **only one**: a skill installed through two routes would load
 In a Claude Code session:
 
 ```text
-/plugin marketplace add MalikMoussaoui/majordome
-/plugin install majordome@majordome
+/plugin marketplace add MalikMoussaoui/diapason
+/plugin install diapason@diapason
 ```
 
 For the desktop app (Code tab), also add the mod, which replaces the status line the app does not display:
 
 ```text
-/plugin install majordome-bureau@majordome
+/plugin install diapason-bureau@diapason
 ```
 
-From a shell: `claude plugin marketplace add https://github.com/MalikMoussaoui/majordome`, then `claude plugin install majordome@majordome` (form tried successfully from GitHub, CLI 2.1.299, throwaway HOME, **under the plugin's former name**: not tried again under the Majordome name). The short form `MalikMoussaoui/majordome` was not tried (it may go through SSH). To pin a version: `MalikMoussaoui/majordome#v1.4.0` (the tag only exists once v1.4.0 is published).
+From a shell: `claude plugin marketplace add https://github.com/MalikMoussaoui/diapason`, then `claude plugin install diapason@diapason` (form tried successfully from GitHub, CLI 2.1.299, throwaway HOME, **under the plugin's former name**: not tried again under the Diapason name). The short form `MalikMoussaoui/diapason` was not tried (it may go through SSH). To pin a version: `MalikMoussaoui/diapason#v1.5.0` (the tag only exists once v1.5.0 is published).
 
-You get: the skill (started only by `/majordome`), the 5 `ma-*` agents, the agent counter, the agent-finished notification, re-injection of the state after an automatic summary, and (since v1.3.0) the "approved sheet" safeguard. **The hooks are active in all your Claude Code sessions**, not only when the skill runs: the re-injection does nothing outside a project that has a `docs/HANDOFF.md`, the safeguard does nothing outside a project whose `docs/FICHE.md` has a "Statut : ..." line (in such a project it refuses to write code until the sheet is approved), and the "Claude is waiting" notification is off by default. Quota alerts are not part of it: they come from the status line (terminal) or the mod (desktop). What a plugin **cannot** install: the terminal status line and the `permissions.ask` rules (see below). No plugins in cloud sessions.
+You get: the skill (started only by `/diapason`), the 5 `ma-*` agents, the agent counter, the agent-finished notification, re-injection of the state after an automatic summary, and (since v1.3.0) the "approved sheet" safeguard. **The hooks are active in all your Claude Code sessions**, not only when the skill runs: the re-injection does nothing outside a project that has a `docs/HANDOFF.md`, the safeguard does nothing outside a project whose `docs/FICHE.md` has a "Statut : ..." line (in such a project it refuses to write code until the sheet is approved), and the "Claude is waiting" notification is off by default. Quota alerts are not part of it: they come from the status line (terminal) or the mod (desktop). What a plugin **cannot** install: the terminal status line and the `permissions.ask` rules (see below). No plugins in cloud sessions.
 
-Size measured with `claude plugin details` (CLI 2.1.299, 2026-10-19, the CLI's estimates; not re-measured after lot 17): **v1.3.0** about 3.9k tokens when the skill is called, about 252 tokens added permanently to every session (skill and 5 agents; the safeguard is a hook, with no context cost according to the tool). **v1.2.0**, measured the same day: about 3.7k and about 252. **v1.1.1**, measured again the same day on the repository before the v1.2.0 changes: about 3.6k and about 267 (an earlier measurement had given 257). The detail of the settings lives in `skills/majordome/reglages.md`, read only by the `reglages` command or when a setting is used: it costs nothing to anyone who sets nothing. **Language of the internal text (v1.3.0), measured on 2026-10-19 on the same text:** `SKILL.md` costs about 8.8k real tokens in French and about 6.2k in English (−30%); the French README costs about 25% more tokens than the English one. One measurement each, by the rise in context (development measurement, not published). The estimate of `claude plugin details` clearly understates this gain: do not rely on it for size.
+Size measured with `claude plugin details` (CLI 2.1.299, 2026-10-19, the CLI's estimates; not re-measured after lot 17): **v1.3.0** about 3.9k tokens when the skill is called, about 252 tokens added permanently to every session (skill and 5 agents; the safeguard is a hook, with no context cost according to the tool). **v1.2.0**, measured the same day: about 3.7k and about 252. **v1.1.1**, measured again the same day on the repository before the v1.2.0 changes: about 3.6k and about 267 (an earlier measurement had given 257). The detail of the settings lives in `skills/diapason/reglages.md`, read only by the `reglages` command or when a setting is used: it costs nothing to anyone who sets nothing. **Language of the internal text (v1.3.0), measured on 2026-10-19 on the same text:** `SKILL.md` costs about 8.8k real tokens in French and about 6.2k in English (−30%); the French README costs about 25% more tokens than the English one. One measurement each, by the rise in context (development measurement, not published). The estimate of `claude plugin details` clearly understates this gain: do not rely on it for size.
 
 ### Route B: copy the skill
 
 ```sh
-git clone https://github.com/MalikMoussaoui/majordome.git
-cd majordome
-mkdir -p ~/.claude/skills && cp -R skills/majordome ~/.claude/skills/
+git clone https://github.com/MalikMoussaoui/diapason.git
+cd diapason
+mkdir -p ~/.claude/skills && cp -R skills/diapason ~/.claude/skills/
 ```
 
-Open a new session. The hooks (agent counter, notifications, re-injection) only come with the plugin; without it, they are copied by hand (`installation.md`, section 5). The 5 agents are to be copied into `~/.claude/agents/` (from `skills/majordome/agents/`); compare before replacing a file of the same name. The details, written so that Claude can apply them with your approval, are in [`skills/majordome/installation.md`](skills/majordome/installation.md) (in French).
+Open a new session. The hooks (agent counter, notifications, re-injection) only come with the plugin; without it, they are copied by hand (`installation.md`, section 5). The 5 agents are to be copied into `~/.claude/agents/` (from `skills/diapason/agents/`); compare before replacing a file of the same name. The details, written so that Claude can apply them with your approval, are in [`skills/diapason/installation.md`](skills/diapason/installation.md) (in French).
 
 ### Route C: release zip
 
-On the [releases page](https://github.com/MalikMoussaoui/majordome/releases), two zips (same remark as route B: the skill-only zip brings no hooks):
+On the [releases page](https://github.com/MalikMoussaoui/diapason/releases), two zips (same remark as route B: the skill-only zip brings no hooks):
 
 ```sh
-# the skill alone (same as route B): the zip contains the majordome/ folder
-unzip majordome-skill-v1.4.0.zip -d ~/.claude/skills/
+# the skill alone (same as route B): the zip contains Diapason/ folder
+unzip diapason-skill-v1.5.0.zip -d ~/.claude/skills/
 
 # the full plugin (files at the zip root), to try it out
-unzip majordome-plugin-v1.4.0.zip -d majordome-plugin
-claude --plugin-dir majordome-plugin
+unzip diapason-plugin-v1.5.0.zip -d diapason-plugin
+claude --plugin-dir diapason-plugin
 ```
 
 ### Command name
-- Through the plugin: `/majordome:majordome`. The short name `/majordome` also works as long as no other skill takes it.
-- Through the copied skill (routes B and C): `/majordome`.
-- **Start it with `/majordome`.** The skill can use a good share of a quota window: its description and `when_to_use` limit loading to an explicit request (the command, or a session asking for the method). `disable-model-invocation: true` was ruled out, because it would stop another session from starting it through the Skill tool.
+- Through the plugin: `/diapason:diapason`. The short name `/diapason` also works as long as no other skill takes it.
+- Through the copied skill (routes B and C): `/diapason`.
+- **Start it with `/diapason`.** The skill can use a good share of a quota window: its description and `when_to_use` limit loading to an explicit request (the command, or a session asking for the method). `disable-model-invocation: true` was ruled out, because it would stop another session from starting it through the Skill tool.
 
 ### Manual configuration (optional, with your approval, and merging)
 
 Both settings go in `~/.claude/settings.json`. **Read the file and merge: never overwrite it.**
 
-**Terminal status line** (does not work in the desktop app, see the limits). With the plugin there is no need for `git clone`: the scripts sit in its cache, and you copy them to a stable path (the cache folder changes with every version, so copy again after an update). Path **observed on 2.1.299** after installing from GitHub, under the plugin's former name, not documented: `~/.claude/plugins/cache/majordome/majordome/<version>/hooks/` (same form expected with the Majordome name: not verified). Check with `ls`; if several versions are there, replace `*` with the newest:
+**Terminal status line** (does not work in the desktop app, see the limits). With the plugin there is no need for `git clone`: the scripts sit in its cache, and you copy them to a stable path (the cache folder changes with every version, so copy again after an update). Path **observed on 2.1.299** after installing from GitHub, under the plugin's former name, not documented: `~/.claude/plugins/cache/diapason/diapason/<version>/hooks/` (same form expected with the Diapason name: not verified). Check with `ls`; if several versions are there, replace `*` with the newest:
 
 ```sh
-mkdir -p ~/.claude/majordome
-cp ~/.claude/plugins/cache/majordome/majordome/*/hooks/statusline.sh ~/.claude/majordome/
-cp ~/.claude/plugins/cache/majordome/majordome/*/hooks/notify.sh ~/.claude/majordome/
-chmod +x ~/.claude/majordome/statusline.sh ~/.claude/majordome/notify.sh
+mkdir -p ~/.claude/diapason
+cp ~/.claude/plugins/cache/diapason/diapason/*/hooks/statusline.sh ~/.claude/diapason/
+cp ~/.claude/plugins/cache/diapason/diapason/*/hooks/notify.sh ~/.claude/diapason/
+chmod +x ~/.claude/diapason/statusline.sh ~/.claude/diapason/notify.sh
 ```
 
 Without the plugin (routes B and C), take the same files from `hooks/` in a copy of the repository (`git clone`) or from the plugin zip.
 ```json
 "statusLine": {
   "type": "command",
-  "command": "~/.claude/majordome/statusline.sh",
+  "command": "~/.claude/diapason/statusline.sh",
   "refreshInterval": 10
 }
 ```
-It needs `jq`. The quota it shows comes from Claude Code (Pro and Max plans, after the session's first reply); without it, the line shows `quota ?`. The milestone shown is the `Jalon : …` line of `docs/HANDOFF.md`. The same script writes the quota to `~/.claude/majordome/usage.json`, which the skill reads to apply its thresholds.
+It needs `jq`. The quota it shows comes from Claude Code (Pro and Max plans, after the session's first reply); without it, the line shows `quota ?`. The milestone shown is the `Jalon : …` line of `docs/HANDOFF.md`. The same script writes the quota to `~/.claude/diapason/usage.json`, which the skill reads to apply its thresholds.
 
 **Ask before risky commands** (`permissions.ask`): a plugin cannot install these.
 ```json
@@ -194,39 +194,40 @@ It needs `jq`. The quota it shows comes from Claude Code (Pro and Max plans, aft
 ```
 Adapt the list to your system. These rules also apply to sub-agents.
 
-## Coming from maitre-agent (v1.3)
+## Coming from majordome (v1.4) or maitre-agent (v1.3)
 
-The skill was called `maitre-agent` up to v1.3. What changes for you:
+The skill was called `maitre-agent` up to v1.3, then `majordome` in v1.4; it has been called `diapason` since v1.5. What changes for you:
 
-- **The command**: `/maitre-agent` becomes `/majordome`. No alias is shipped: a project whose `CLAUDE.md` says `/maitre-agent` is resumed with `/majordome <project path>`.
-- **Your data**: on the first use of `/majordome`, if `~/.claude/majordome/profil.md` is missing and the old profile exists, the old folder `~/.claude/maitre-agent/` is **copied** to `~/.claude/majordome/` (script `hooks/migrer.sh`), overwriting and deleting nothing, and the skill says so in one line. The old folder stays in place: removing it is your choice, by hand.
-- **Your projects**: nothing to change. A v1.3 project resumes as before (`Jalon :`, `## Agents lancés`, `## Reprise immédiate`, `## Réglages`, the status lines of `FICHE.md` are read as they are).
-- **Uninstall the old plugin or the old skill**, then install Majordome (route A, B or C above): both together would load twice. The `diagnostic` sub-command reports an old skill left in `~/.claude/skills/` and a status line path left in the old folder (information, not an error).
-- **Status line and desktop mod**: the prefix becomes `🛎️`, the mod is called `majordome-bureau`. If your status line still points to the old folder, `diagnostic` tells you; then redo the copy described in "Manual configuration".
-- **Environment variables**: `MAJORDOME_PROJECT_DIR`, `MAJORDOME_DRY_RUN`, `MAJORDOME_REINJECT_MAX`, `MAJORDOME_PROFIL`; the old `MAITRE_AGENT_*` ones are still read.
-- The agents keep the `ma-` prefix (read as MAjordome).
+- **The command**: `/maitre-agent` and `/majordome` become `/diapason`. No alias is shipped: a project whose `CLAUDE.md` says `/maitre-agent` or `/majordome` is resumed with `/diapason <project path>`.
+- **Your data**: on the first use of `/diapason`, if `~/.claude/diapason/profil.md` is missing and an old profile exists, the old folder (`~/.claude/majordome/`, else `~/.claude/maitre-agent/`) is **copied** to `~/.claude/diapason/` (script `hooks/migrer.sh`), overwriting and deleting nothing, and the skill says so in one line. The `sauvegarde-skill-*` folders are not copied. If `~/.claude/diapason/profil.md` already exists, the script refuses to copy. The old folder stays in place: removing it is your choice, by hand.
+- **Your `settings.json`** is never modified by the script. If a hook there points into the old folder (typically `~/.claude/majordome/hooks/reinject.sh`), the script only prints the lines to change (`-` old, `+` new); you approve, then apply them (or have it done, after seeing the diff).
+- **Your projects**: nothing to change. A v1.3 or v1.4 project resumes as before (`Jalon :`, `## Agents lancés`, `## Reprise immédiate`, `## Réglages`, the status lines of `FICHE.md` are read as they are).
+- **Uninstall the old plugin or the old skill** (`majordome@majordome` or `maitre-agent@maitre-agent`), then install Diapason (route A, B or C above): both together would load twice. The `diagnostic` sub-command reports an old skill left in `~/.claude/skills/` and a status line path left in the old folder (information, not an error).
+- **Status line and desktop mod**: the status line prefix becomes `🎵`, the mod is called `diapason-bureau` (formerly `majordome-bureau`). If your status line still points to the old folder, `diagnostic` tells you; then redo the copy described in "Manual configuration".
+- **Environment variables**: `DIAPASON_PROJECT_DIR`, `DIAPASON_DRY_RUN`, `DIAPASON_REINJECT_MAX`, `DIAPASON_PROFIL`; the old `MAJORDOME_*` (v1.4) and `MAITRE_AGENT_*` (v1.3) ones are still read.
+- The agents keep the `ma-` prefix: no agent is renamed.
 
-Repository: GitHub redirects the old address to `github.com/MalikMoussaoui/majordome` once the repository is renamed. Details: `skills/majordome/installation.md`, section 7 (in French).
+Repository: GitHub normally redirects the old addresses to `github.com/MalikMoussaoui/diapason` once the repository is renamed (GitHub behaviour, not verified for Claude Code marketplaces). Details: `skills/diapason/installation.md`, §7.
 
 ## Sub-commands
 
 | Command | Alias | Effect |
 |---|---|---|
-| `/majordome aide` | `help`, `?` | explains the skill in 15 lines at most and says what is installed on your machine |
-| `/majordome statut` | `status` | 5 lines at most per known project, changes nothing |
-| `/majordome reprendre` | `resume` | offers the known projects as buttons, then resumes the one you pick |
-| `/majordome profil` | `profile` | shows or edits your profile, starts no project |
-| `/majordome reglages` | `settings` | no argument: the settings table (current value, default, source). `reglages <key> <value>` changes one, `reglages econome` (or `normal`, `intensif`) applies a preset, `reglages reset` goes back to the defaults |
-| `/majordome diagnostic` | `doctor` | 8 read-only checks (`jq`, status line, duplicate skill or agents, readable quota, notifications, version, profile), each "OK / KO + command to fix it" |
-| `/majordome nouveau <idea>` | `new <idea>` | starts a new project with that idea |
-| `/majordome <idea>` | | same thing, it is the default case |
-| `/majordome <project path>` | | resumes that project |
+| `/diapason aide` | `help`, `?` | explains the skill in 15 lines at most and says what is installed on your machine |
+| `/diapason statut` | `status` | 5 lines at most per known project, changes nothing |
+| `/diapason reprendre` | `resume` | offers the known projects as buttons, then resumes the one you pick |
+| `/diapason profil` | `profile` | shows or edits your profile, starts no project |
+| `/diapason reglages` | `settings` | no argument: the settings table (current value, default, source). `reglages <key> <value>` changes one, `reglages econome` (or `normal`, `intensif`) applies a preset, `reglages reset` goes back to the defaults |
+| `/diapason diagnostic` | `doctor` | 8 read-only checks (`jq`, status line, duplicate skill or agents, readable quota, notifications, version, profile), each "OK / KO + command to fix it" |
+| `/diapason nouveau <idea>` | `new <idea>` | starts a new project with that idea |
+| `/diapason <idea>` | | same thing, it is the default case |
+| `/diapason <project path>` | | resumes that project |
 
-With the plugin, use `/majordome:majordome` if the short name is taken. Details: [`skills/majordome/commandes.md`](skills/majordome/commandes.md) (in French).
+With the plugin, use `/diapason:diapason` if the short name is taken. Details: [`skills/diapason/commandes.md`](skills/diapason/commandes.md) (in French).
 
 ## Settings
 
-One place: the `## Réglages` section of your profile (`~/.claude/majordome/profil.md`), as `- <key> : <value>` lines. A `## Réglages du projet` section in a project's `CLAUDE.md` overrides the profile for that project, key by key. Section missing, unknown key or invalid value: the default. **Anyone who sets nothing sees no change in behaviour.** The detail of the keys (`skills/majordome/reglages.md`) is read only by the `reglages` command or when a setting is used, and the calculations (thresholds, tiers, reading the profile) are done by scripts, not by the model. Measured extra cost for anyone who does not use it: about 0.1k tokens when the skill is called in v1.2.0 (3.6k to 3.7k, rounded measurement), then about 0.2k more in v1.3.0 (3.7k to 3.9k), the skill having gained the workshop and the checkpoints; the permanent cost does not move (see "Size measured").
+One place: the `## Réglages` section of your profile (`~/.claude/diapason/profil.md`), as `- <key> : <value>` lines. A `## Réglages du projet` section in a project's `CLAUDE.md` overrides the profile for that project, key by key. Section missing, unknown key or invalid value: the default. **Anyone who sets nothing sees no change in behaviour.** The detail of the keys (`skills/diapason/reglages.md`) is read only by the `reglages` command or when a setting is used, and the calculations (thresholds, tiers, reading the profile) are done by scripts, not by the model. Measured extra cost for anyone who does not use it: about 0.1k tokens when the skill is called in v1.2.0 (3.6k to 3.7k, rounded measurement), then about 0.2k more in v1.3.0 (3.7k to 3.9k), the skill having gained the workshop and the checkpoints; the permanent cost does not move (see "Size measured").
 
 | Key | Values | Default | Effect |
 |---|---|---|---|
@@ -243,7 +244,7 @@ One place: the `## Réglages` section of your profile (`~/.claude/majordome/prof
 | `langue`, `ton` | `profil`, a language code; `tutoiement`, `vouvoiement`, `neutre` | `profil` | how it writes |
 | `rapports` | `court`, `detaille` | `detaille` | length of agent reports and answers |
 
-Presets (`/majordome reglages econome|normal|intensif`). What the `reglages preset` script writes:
+Presets (`/diapason reglages econome|normal|intensif`). What the `reglages preset` script writes:
 
 | Preset | For | Written in the `## Réglages` section |
 |---|---|---|
@@ -254,14 +255,14 @@ Presets (`/majordome reglages econome|normal|intensif`). What the `reglages pres
 A preset replaces the section but **keeps your `autonomie` line**. On top of these lines, the skill applies written rules (`reglages.md`): `econome` asks for short briefs, a single grouped research, one audit round, one mock-up variant and a tester at the last milestone only; `normal` does 1 to 2 mock-up variants and 2 audit rounds; `intensif` does 2 to 3 variants, and two independent auditors for what gets published. These rules are design choices, **not measured**. On first launch, the preset matching your plan is offered first, marked "recommended"; the real saving of `econome` is **not measured**: at the end of a project the skill gives you a table of agents / model / tokens / duration / share of quota and a "for next time" line (one suggested setting).
 
 ```text
-/majordome reglages                       # the table
-/majordome reglages econome               # the thrifty preset
-/majordome reglages seuils 60 75 85       # a single setting
-/majordome reglages barre quota projet    # status line: quota then project
-/majordome reglages reset                 # back to the defaults
+/diapason reglages                       # the table
+/diapason reglages econome               # the thrifty preset
+/diapason reglages seuils 60 75 85       # a single setting
+/diapason reglages barre quota projet    # status line: quota then project
+/diapason reglages reset                 # back to the defaults
 ```
 
-The status line reads `seuils`, `seuils-hebdo`, `plafonds-hebdo` and `barre`; `quota.sh` reads the three quota keys; `notify.sh` reads `notifications`, not the thresholds. The desktop mod reads `seuils` and `notifications` (not `barre`: its line stays fixed; not the weekly thresholds). Detail and limits: [`skills/majordome/reglages.md`](skills/majordome/reglages.md) (in French).
+The status line reads `seuils`, `seuils-hebdo`, `plafonds-hebdo` and `barre`; `quota.sh` reads the three quota keys; `notify.sh` reads `notifications`, not the thresholds. The desktop mod reads `seuils` and `notifications` (not `barre`: its line stays fixed; not the weekly thresholds). Detail and limits: [`skills/diapason/reglages.md`](skills/diapason/reglages.md) (in French).
 
 ## Safeguards
 
@@ -302,7 +303,7 @@ This repository was built on a Pro plan, with a forced pause at 90% of the 5-hou
 Yes. Without a sub-agent tool, the skill says so once, then works alone: it keeps verification, permissions and handoff. An audit done by itself is then not independent, and it writes so ("auto-vérifié, non indépendant", self-verified, not independent).
 
 **In the terminal, the desktop app, the cloud?**
-Terminal: meant to do everything, but the status line has only been tested with dummy JSON. Desktop app: the skill; the hooks are meant to work there (not tested); the status line is not displayed there, so install the `majordome-bureau` mod. Cloud: plugins are not available there; the skill alone in a cloud environment has not been tried (not verified).
+Terminal: meant to do everything, but the status line has only been tested with dummy JSON. Desktop app: the skill; the hooks are meant to work there (not tested); the status line is not displayed there, so install the `diapason-bureau` mod. Cloud: plugins are not available there; the skill alone in a cloud environment has not been tried (not verified).
 
 **Which language?**
 The language of your profile, for everything you see: answers, sheet, checkpoints, workshop questions. The skill's internal text (`SKILL.md`, the skill files, briefs, templates, agent definitions) has been in English since v1.3.0, to save tokens (−30% on `SKILL.md`, measured on 2026-10-19). File names stay in English (`HANDOFF.md`, `CLAUDE.md`...). The scripts' messages (status line, notifications) stay in French; there is no English version of these messages. The safeguard reads the sheets in French and in English.
@@ -311,21 +312,21 @@ The language of your profile, for everything you see: answers, sheet, checkpoint
 Yes, that is the point of the handoff: only the project's files travel (`CLAUDE.md`, `docs/HANDOFF.md`, `docs/research/`, `docs/briefs/`). The profile used is the one of the person resuming. The skill compares HANDOFF to the disk before relaunching anything.
 
 **How do I turn notifications off?**
-The `notifications` setting (`/majordome reglages notifications rien`) turns them all off, or keeps only the quota (`quota`). Without it, the files below decide. By default the "Claude is waiting" notification (permission request, idle) is **off**; the end of a `ma-*` agent and the quota alerts do notify. To turn the first one on, create `~/.claude/majordome/notifications-on`. To turn everything off, create `~/.claude/majordome/notifications-off` (no more notifications from the scripts, quota alerts included; the status line keeps working). The desktop mod has its own toasts, which this file does not turn off. Useful in the desktop app, which already notifies when a task ends. To test without showing anything: environment variable `MAJORDOME_DRY_RUN=1`. To remove everything: uninstall the plugin.
+The `notifications` setting (`/diapason reglages notifications rien`) turns them all off, or keeps only the quota (`quota`). Without it, the files below decide. By default the "Claude is waiting" notification (permission request, idle) is **off**; the end of a `ma-*` agent and the quota alerts do notify. To turn the first one on, create `~/.claude/diapason/notifications-on`. To turn everything off, create `~/.claude/diapason/notifications-off` (no more notifications from the scripts, quota alerts included; the status line keeps working). The desktop mod has its own toasts, which this file does not turn off. Useful in the desktop app, which already notifies when a task ends. To test without showing anything: environment variable `DIAPASON_DRY_RUN=1`. To remove everything: uninstall the plugin.
 
 **Are the scripts safe?**
-The counter, notifications, status line and re-injection never block (short timeout, `|| true`, exit code 0). **The `garde-fiche.sh` safeguard blocks on purpose** (exit code 2, no `|| true`): it refuses to write code until a project's sheet is approved, and lets everything through without `jq`, without a sheet or with unreadable input. To turn it off: remove its `PreToolUse` block from `settings.json` (manual copy), or disable the plugin; with the plugin, the documentation read does not say how to turn off a single hook (not verified). A search through their code finds no network call (`curl`, `wget`...); they write only to `~/.claude/majordome/`. Read them before installing: `hooks/` is about 430 lines of `sh` in total (98 of them for the safeguard). `tools/reglages.sh` (about 240 lines), on the other hand, writes the "Réglages" section of the profile (or of the project's `CLAUDE.md` with `--projet`) when you run the `reglages` command. The text they display (milestone, agent report, message) is filtered: control characters (terminal escape sequences) are removed.
+The counter, notifications, status line and re-injection never block (short timeout, `|| true`, exit code 0). **The `garde-fiche.sh` safeguard blocks on purpose** (exit code 2, no `|| true`): it refuses to write code until a project's sheet is approved, and lets everything through without `jq`, without a sheet or with unreadable input. To turn it off: remove its `PreToolUse` block from `settings.json` (manual copy), or disable the plugin; with the plugin, the documentation read does not say how to turn off a single hook (not verified). A search through their code finds no network call (`curl`, `wget`...); they write only to `~/.claude/diapason/`. Read them before installing: `hooks/` is about 430 lines of `sh` in total (98 of them for the safeguard). `tools/reglages.sh` (about 240 lines), on the other hand, writes the "Réglages" section of the profile (or of the project's `CLAUDE.md` with `--projet`) when you run the `reglages` command. The text they display (milestone, agent report, message) is filtered: control characters (terminal escape sequences) are removed.
 
 ## Limits, honestly
 
-- **The terminal status line is not displayed in the desktop app.** A test script declared as `statusLine` was called by none of the 6 following messages (caveat: hot reloading of the project setting is not proven). This matches the public Claude Code issue #41456 (open); #83534 was closed as a duplicate of #41456. Hence the `majordome-bureau` mod, which relies on an early-access API and may break from one version to the next (written for Claude Code 2.1.299).
+- **The terminal status line is not displayed in the desktop app.** A test script declared as `statusLine` was called by none of the 6 following messages (caveat: hot reloading of the project setting is not proven). This matches the public Claude Code issue #41456 (open); #83534 was closed as a duplicate of #41456. Hence the `diapason-bureau` mod, which relies on an early-access API and may break from one version to the next (written for Claude Code 2.1.299).
 - **The plugin's hooks have not been tested end to end by Claude Code.** The scripts are tested with dummy JSON on every push (`tests/hooks.sh`, throwaway HOME, no real notification), and the commands in `hooks.json` were run one by one with `sh -c` and the `CLAUDE_PLUGIN_ROOT` variable; the plugin passes `claude plugin validate --strict`. But Claude Code has not yet triggered them in a real session with the plugin installed. The "approved sheet" safeguard (v1.3.0) was called once by Claude Code in the test session of 2026-10-19, with the hook wired by hand; not verified: its wiring by the plugin, that it applies to sub-agents' tools, the input shape of `MultiEdit` and `NotebookEdit`, the `Task` tool name and how the refusal is shown to you. An agent you interrupt may not fire `SubagentStop` (not verified): the counter then ignores its files after 5 hours.
 - **Notifications:** the macOS command was seen working when run outside the sandbox of Claude's commands. Linux (`notify-send`): not tested.
-- **Installation from the GitHub marketplace: tried, with a caveat.** On 2026-10-19 an outside reviewer installed the plugin and the desktop mod (under their former names) from GitHub in a throwaway HOME (CLI 2.1.299, full HTTPS URL): "Successfully installed", status enabled. Not tried: installing under the Majordome name, the short `owner/repo` form, the desktop app, and behaviour in a real session (no authentication in a throwaway HOME).
-- **Agent names under the plugin.** Under the plugin the agents are called `majordome:ma-chercheur`. Since v1.1.1 the skill asks for "the exact name shown by the sub-agent tool"; that this resolves in a real session has not been tried (a single real trial is still to do). If the `ma-*` agents are missing it falls back to `general-purpose`, and says so.
+- **Installation from the GitHub marketplace: tried, with a caveat.** On 2026-10-19 an outside reviewer installed the plugin and the desktop mod (under their former names) from GitHub in a throwaway HOME (CLI 2.1.299, full HTTPS URL): "Successfully installed", status enabled. Not tried: installing under the Diapason name, the short `owner/repo` form, the desktop app, and behaviour in a real session (no authentication in a throwaway HOME).
+- **Agent names under the plugin.** Under the plugin the agents are called `diapason:ma-chercheur`. Since v1.1.1 the skill asks for "the exact name shown by the sub-agent tool"; that this resolves in a real session has not been tried (a single real trial is still to do). If the `ma-*` agents are missing it falls back to `general-purpose`, and says so.
 - **The GitHub workflows (`lint.yml`, `release.yml`) have been run** and were green on 2026-10-18 (lint and release, release v1.1.0 with its two zips). The v1.1.1 result is only known after its push.
 - **The evaluations are written but not yet run**: ten situations in [`evals/`](evals/README.md) (in French), including the five from v1.3 (06 to 10: no building before the sheet, a game with a mock-up before the code, resuming without framing, a project without interface, mock-up tools). Their format is not that of `claude plugin eval`. No result is claimed.
-- **The workshop, the sheet, the mock-up and the checkpoints have been seen in two trials**, in two fresh test sessions (2026-10-19, the majordome playing the user). In the first trial (skill in French), tour 1 asked 5 questions (limit 4). In the second (skill internal text in English), 4 questions per tour, and no code on disk. Neither trial records the buttons of the question tool; the offer of a fresh session at 40% context and the full journey map were not recorded. Settings were not seen in these trials; only the scripts (settings, quota, diagnostic, safeguard) are tested beyond them.
+- **The workshop, the sheet, the mock-up and the checkpoints have been seen in two trials**, in two fresh test sessions (2026-10-19, Diapason playing the user). In the first trial (skill in French), tour 1 asked 5 questions (limit 4). In the second (skill internal text in English), 4 questions per tour, and no code on disk. Neither trial records the buttons of the question tool; the offer of a fresh session at 40% context and the full journey map were not recorded. Settings were not seen in these trials; only the scripts (settings, quota, diagnostic, safeguard) are tested beyond them.
 - **The plan is only known for Pro.** `plan.plan` has only been seen with "Pro"; the Max values (and the API-key one) are inferred. The facts about writing into Figma (`use_figma` tool, beta, paid plan) come from Figma's documentation read on 2026-10-19 and were not re-checked for this version; the exact support in Claude Code is not verified.
 - **In the terminal the quota comes from the status line.** The `get_usage` tool is not visible to the model in CLI 2.1.299 (it only shows up as an SDK control request); the skill therefore reads `usage.json` through `hooks/quota.sh`, which assumes the status line is installed (and called: not in the desktop app). Without a valid measurement (under 15 minutes old) it asks you for the percentage.
 - **Buttons and chapters depend on the environment.** Without a question tool, the skill asks numbered lists; without a chapter tool, it opens none. The desktop app's chapter tool is not publicly documented.
@@ -335,7 +336,7 @@ The counter, notifications, status line and re-injection never block (short time
 
 ## Credits
 
-`majordome` draws on ideas read in these projects and documents. Everything is reworded: no text was copied.
+`diapason` draws on ideas read in these projects and documents. Everything is reworded: no text was copied.
 
 - [obra/superpowers](https://github.com/obra/superpowers) (MIT): the on-disk handoff as a ledger of trust after compaction; codified agent report statuses (done, done with concerns, needs context, blocked); one brief per file instead of pasted text; the model always stated at each launch; the requirement of proof before saying "it's done".
 - [OthmanAdi/planning-with-files](https://github.com/OthmanAdi/planning-with-files) (MIT): writing findings to a file as you go; the three-failures protocol (diagnose, try another approach, rethink); a single owner of the plan; the idea that a resume can be tested with a few questions.
@@ -352,15 +353,16 @@ About twenty other repositories were read during the initial research; only thos
 The story, short, funny and checkable:
 
 - **v1.0.0**: research on about twenty GitHub repositories and on the Claude Code docs, a design, **2 audits** and **1 real test** (per the project brief; details not kept), then a home-made lint. The skill reviewed itself before reviewing anyone else.
-- **v1.1.0** was driven by the skill on its own build, with its own agents: one `ma-chercheur` (sonnet, 209,000 tokens), two `ma-executant` (sonnet) for the plugin and the desktop mod, and a third to write the README. The majordome kept the checks that mattered for itself.
+- **v1.1.0** was driven by the skill on its own build, with its own agents: one `ma-chercheur` (sonnet, 209,000 tokens), two `ma-executant` (sonnet) for the plugin and the desktop mod, and a third to write the README. Diapason kept the checks that mattered for itself.
 - **It stopped exactly when it should.** At 90% of the 5-hour quota, the skill's rule kicked in: clean stop, HANDOFF updated, not one more agent launched. After the reset, the build resumed, HANDOFF up to date.
-- **It also tripped over its own feet, and wrote it down.** The majordome overwrote a local settings file without reading it (the opposite of its own rule). A commit meant to contain a piece of research contained none of it, because of a git exclusion. Both are told in the handoff, not hidden.
+- **It also tripped over its own feet, and wrote it down.** Diapason overwrote a local settings file without reading it (the opposite of its own rule). A commit meant to contain a piece of research contained none of it, because of a git exclusion. Both are told in the handoff, not hidden.
 - **The real tests have admitted limits:** the notification arrived, but not when it was fired from the sandbox; the test script showed that the desktop app does not call the status line, which is how the mod was born.
 - **Reviewed by an independent auditor (`ma-auditeur`) on 2026-10-18, corrections applied.**
 - **v1.1.1** comes from an outside review of the published repository (15 fixes, 5 modifications, 4 additions, reviewer in read-only mode): filtered status line, a quota the skill can finally read, a "Pro plan" rule, a skill started only by command, a `diagnostic` sub-command, hook tests.
 - **v1.2.0** (customizable settings) was requested by the user and written by a `ma-executant` agent.
-- **v1.3.0** (the accompanying skill) was written by two `ma-executant` agents (the first: autonomy, workshop, sheet, mock-up, checkpoints, presets; the second: tool survey, mock-up ladder, safeguard, fuller sheet, journey map, matrix) and the documentation by a third. The majordome read the files and ran the tests itself. One trial in a fresh test session (2026-10-19) showed part of the journey; the rest has not run in a real session.
+- **v1.3.0** (the accompanying skill) was written by two `ma-executant` agents (the first: autonomy, workshop, sheet, mock-up, checkpoints, presets; the second: tool survey, mock-up ladder, safeguard, fuller sheet, journey map, matrix) and the documentation by a third. Diapason read the files and ran the tests itself. One trial in a fresh test session (2026-10-19) showed part of the journey; the rest has not run in a real session.
 - **v1.4.0** comes from 10 paper simulations of the v1.3.0 skill (1 blocker, 19 annoyances), fixed, then the rename to Majordome. The values and rules of this batch are design settings, not replayed in a real session.
+- **v1.5.0** is the rename to Diapason (the user's choice): renaming, data migration and extended tests, no change in behaviour. The desktop mod's 41 tests pass (`claude plugin test`, CLI 2.1.299).
 - **Not done yet:** running the evaluations (`evals/`).
 
 The full story, with the agents, their models, measured costs, decisions and mistakes: [`docs/fabrication.md`](docs/fabrication.md) (in French).

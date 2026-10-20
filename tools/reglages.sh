@@ -1,7 +1,7 @@
 #!/bin/sh
-# Méthode Majordome : lit, vérifie et écrit les réglages (détail des clés : skills/majordome/reglages.md).
-# Les réglages sont des lignes « - clé : valeur » sous « ## Réglages » dans ~/.claude/majordome/profil.md ;
-# la rubrique « ## Réglages du projet » du CLAUDE.md du projet (MAJORDOME_PROJECT_DIR, sinon le dossier
+# Méthode Diapason : lit, vérifie et écrit les réglages (détail des clés : skills/diapason/reglages.md).
+# Les réglages sont des lignes « - clé : valeur » sous « ## Réglages » dans ~/.claude/diapason/profil.md ;
+# la rubrique « ## Réglages du projet » du CLAUDE.md du projet (DIAPASON_PROJECT_DIR, sinon le dossier
 # courant) les surcharge pour ce projet. Une valeur absente ou invalide vaut le défaut.
 # Usage :
 #   reglages.sh                          tableau : clé | valeur en vigueur | défaut | source
@@ -11,14 +11,15 @@
 #   reglages.sh reset                    retire la rubrique « ## Réglages » du profil (retour aux défauts)
 # Sortie : 0 fait ; 1 clé ou valeur invalide (rien n'est écrit) ; 2 fichier à modifier absent (rien n'est écrit).
 # Écrit seulement le profil (ou le CLAUDE.md avec --projet), jamais ailleurs. Aucun appel réseau.
-# Dossier des données : ~/.claude/majordome s'il existe, sinon l'ancien ~/.claude/maitre-agent (v1.3 et avant), sinon ~/.claude/majordome
-if [ -d "$HOME/.claude/majordome" ]; then BASE="$HOME/.claude/majordome"
+# Dossier des données : ~/.claude/diapason s'il existe, sinon l'ancien ~/.claude/majordome (v1.4), sinon ~/.claude/maitre-agent (v1.3 et avant), sinon ~/.claude/diapason
+if [ -d "$HOME/.claude/diapason" ]; then BASE="$HOME/.claude/diapason"
+elif [ -d "$HOME/.claude/majordome" ]; then BASE="$HOME/.claude/majordome"
 elif [ -d "$HOME/.claude/maitre-agent" ]; then BASE="$HOME/.claude/maitre-agent"
-else BASE="$HOME/.claude/majordome"; fi
-# Anciens noms des variables (v1.3) : MAITRE_AGENT_* reste lu
-MAJORDOME_PROJECT_DIR="${MAJORDOME_PROJECT_DIR:-${MAITRE_AGENT_PROJECT_DIR:-}}"
-PROFIL="${MAJORDOME_PROFIL:-${MAITRE_AGENT_PROFIL:-$BASE/profil.md}}"
-PROJ="${MAJORDOME_PROJECT_DIR:-$PWD}"
+else BASE="$HOME/.claude/diapason"; fi
+# Anciens noms des variables : MAJORDOME_* (v1.4) et MAITRE_AGENT_* (v1.3) restent lus
+DIAPASON_PROJECT_DIR="${DIAPASON_PROJECT_DIR:-${MAJORDOME_PROJECT_DIR:-${MAITRE_AGENT_PROJECT_DIR:-}}}"
+PROFIL="${DIAPASON_PROFIL:-${MAJORDOME_PROFIL:-${MAITRE_AGENT_PROFIL:-$BASE/profil.md}}}"
+PROJ="${DIAPASON_PROJECT_DIR:-$PWD}"
 CMD="$PROJ/CLAUDE.md"
 T_PROFIL="Réglages"
 T_PROJET="Réglages du projet"

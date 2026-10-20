@@ -1,6 +1,6 @@
 #!/bin/sh
-# Contrôle du dépôt majordome (skill + plugin).
-# Usage : sh tools/lint-skill.sh [dossier du skill]     (défaut : skills/majordome du dépôt)
+# Contrôle du dépôt diapason (skill + plugin).
+# Usage : sh tools/lint-skill.sh [dossier du skill]     (défaut : skills/diapason du dépôt)
 # Variables facultatives :
 #   LINT_PRIVATE_PATTERNS  motifs personnels à refuser partout dans le dépôt (expression régulière
 #                          étendue, ex. 'nom1|nom2'). À passer par l'environnement : ne les écris
@@ -8,7 +8,7 @@
 #   LINT_SKIP_LOCAL=1      saute les contrôles de l'installation locale (~/.claude).
 # Sortie 0 si tout est bon, 1 sinon. Les lignes « avert » n'échouent pas.
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-S="${1:-$ROOT/skills/majordome}"
+S="${1:-$ROOT/skills/diapason}"
 err=0
 ok(){ echo "ok   $1"; }; ko(){ echo "ERR  $1"; err=1; }; wa(){ echo "avert $1"; }
 
@@ -81,7 +81,7 @@ done
 if command -v jq >/dev/null 2>&1; then
   P="$ROOT/.claude-plugin/plugin.json"; M="$ROOT/.claude-plugin/marketplace.json"; H="$ROOT/hooks/hooks.json"
   if [ -f "$P" ]; then
-    jq -e '.name == "majordome" and (.version | type == "string")' "$P" >/dev/null 2>&1 && ok "plugin.json : nom et version" || ko "plugin.json : nom ou version"
+    jq -e '.name == "diapason" and (.version | type == "string")' "$P" >/dev/null 2>&1 && ok "plugin.json : nom et version" || ko "plugin.json : nom ou version"
     jq -e 'has("statusLine") or has("permissions") | not' "$P" >/dev/null 2>&1 && ok "plugin.json : ni statusLine ni permissions" || ko "plugin.json contient statusLine ou permissions (ignorés par Claude Code)"
     v=$(jq -r '.version' "$P")
     if [ -f "$ROOT/CHANGELOG.md" ]; then grep -q "$v" "$ROOT/CHANGELOG.md" && ok "CHANGELOG.md cite la version $v" || ko "CHANGELOG.md ne cite pas la version $v"; fi

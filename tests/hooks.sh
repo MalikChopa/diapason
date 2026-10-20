@@ -1,6 +1,6 @@
 #!/bin/sh
 # Tests des hooks et scripts (hooks/*.sh, tools/quota.sh) avec des JSON factices.
-# HOME factice (dossier temporaire supprimé à la fin), MAJORDOME_DRY_RUN=1 : aucune notification
+# HOME factice (dossier temporaire supprimé à la fin), DIAPASON_DRY_RUN=1 : aucune notification
 # réelle, rien n'est écrit dans le vrai ~/.claude. Aucun appel réseau.
 # Usage : sh tests/hooks.sh          Sortie 0 si tout passe, 1 sinon. Demande jq (sinon : test sauté, sortie 0).
 # Couvre : C5 (séquences d'échappement), C7 (jalon), C8 (texte qui commence par « - », **), C10 (alerte
@@ -12,8 +12,8 @@ if ! command -v jq >/dev/null 2>&1; then echo "avert jq absent : tests des hooks
 
 T=$(mktemp -d 2>/dev/null) || { echo "ERR mktemp impossible"; exit 1; }
 trap 'rm -rf "$T"' EXIT INT TERM
-export HOME="$T/home" MAJORDOME_DRY_RUN=1
-BASE="$HOME/.claude/majordome"
+export HOME="$T/home" DIAPASON_DRY_RUN=1
+BASE="$HOME/.claude/diapason"
 mkdir -p "$HOME" "$T/p2/docs"
 st() { sh "$ROOT/hooks/statusline.sh" "$@"; }
 nt() { sh "$ROOT/hooks/notify.sh" "$@"; }
@@ -57,15 +57,15 @@ out=$(printf '%s\n' '{"message":"-x attend"}' | nt blocked)
 check "M1 blocked désactivé par défaut" "$out" ""
 mkdir -p "$BASE"; : > "$BASE/notifications-on"
 out=$(printf '%s\n' '{"message":"-x attend"}' | nt blocked)
-check "M1 blocked actif avec notifications-on ; C8 texte qui commence par «-»" "$out" "[notification] Majordome : Claude attend | -x attend"
+check "M1 blocked actif avec notifications-on ; C8 texte qui commence par «-»" "$out" "[notification] Diapason : Claude attend | -x attend"
 out=$(printf '%s\n' '{"agent_type":"ma-x","last_assistant_message":"- **BLOQUÉ** car il manque X"}' | nt agent)
-check "C8 ** retirés" "$out" "[notification] Majordome : agent terminé | ma-x : BLOQUÉ car il manque X"
+check "C8 ** retirés" "$out" "[notification] Diapason : agent terminé | ma-x : BLOQUÉ car il manque X"
 : > "$BASE/notifications-off"
 out=$(printf '%s\n' '{"message":"x"}' | nt blocked; nt quota "Quota 5 h à 85 %"; printf '%s\n' '{"agent_type":"ma-x","last_assistant_message":"fini"}' | nt agent)
 check "M1 notifications-off coupe tout" "$out" ""
 rm -f "$BASE/notifications-off" "$BASE/notifications-on"
 out=$(nt quota "Quota 5 h à 85 %")
-check "M1 quota reste actif par défaut" "$out" "[notification] Majordome : quota | Quota 5 h à 85 %"
+check "M1 quota reste actif par défaut" "$out" "[notification] Diapason : quota | Quota 5 h à 85 %"
 # C8 : le « -- » est bien présent avant le texte dans les deux commandes d'envoi (osascript, notify-send)
 if grep -q "'end run' -- \"\$txt\"" "$ROOT/hooks/notify.sh" && grep -q 'notify-send -- ' "$ROOT/hooks/notify.sh"; then r=present; else r=absent; fi
 check "C8 « -- » avant le texte (osascript, notify-send)" "$r" present
@@ -160,12 +160,12 @@ check "réglages : notifications rien -> aucune notification" "$out" ""
 setprof quota
 out=$(printf '%s\n' "$J" | nt agent; printf '%s\n' '{"message":"x"}' | nt blocked)
 check "réglages : notifications quota -> ni fin d'agent ni « bloqué »" "$out" ""
-out=$(nt quota "Quota 5 h à 85 %"); check "réglages : notifications quota -> l'alerte de quota passe" "$out" "[notification] Majordome : quota | Quota 5 h à 85 %"
+out=$(nt quota "Quota 5 h à 85 %"); check "réglages : notifications quota -> l'alerte de quota passe" "$out" "[notification] Diapason : quota | Quota 5 h à 85 %"
 setprof agent+quota
-out=$(printf '%s\n' "$J" | nt agent); check "réglages : notifications agent+quota -> fin d'agent notifiée" "$out" "[notification] Majordome : agent terminé | ma-x : fini"
+out=$(printf '%s\n' "$J" | nt agent); check "réglages : notifications agent+quota -> fin d'agent notifiée" "$out" "[notification] Diapason : agent terminé | ma-x : fini"
 out=$(printf '%s\n' '{"message":"x"}' | nt blocked); check "réglages : notifications agent+quota -> « bloqué » muet" "$out" ""
 setprof tout
-out=$(printf '%s\n' '{"message":"x"}' | nt blocked); check "réglages : notifications tout -> « bloqué » notifié" "$out" "[notification] Majordome : Claude attend | x"
+out=$(printf '%s\n' '{"message":"x"}' | nt blocked); check "réglages : notifications tout -> « bloqué » notifié" "$out" "[notification] Diapason : Claude attend | x"
 : > "$BASE/notifications-off"
 out=$(printf '%s\n' "$J" | nt agent); check "réglages : le fichier notifications-off coupe tout, même avec tout" "$out" ""
 rm -f "$BASE/notifications-off"
@@ -177,9 +177,9 @@ out=$(alerts 45 "$R4" "$T/p5"); check "réglages du projet : notifications rien 
 mkdir -p "$T/p7"; printf '# P\n\n## Réglages du projet\n- seuils : 40 50 60\n' > "$T/p7/CLAUDE.md"
 out=$(alerts 45 "$((R4 + 100))" "$T/p7"); check "réglages du projet : seuils 40 50 60 -> alerte à 40 (45 %)" "$(printf '%s' "$out" | grep -c 'seuil 40 % franchi')" 1
 printf '# P\n\n## Réglages du projet\n- notifications : peut-etre\n' > "$T/p5/CLAUDE.md"
-out=$(printf '%s\n' "$J" | nt agent); check "réglages du projet : valeur invalide -> retombe sur le profil" "$out" "[notification] Majordome : agent terminé | ma-x : fini"
+out=$(printf '%s\n' "$J" | nt agent); check "réglages du projet : valeur invalide -> retombe sur le profil" "$out" "[notification] Diapason : agent terminé | ma-x : fini"
 rm -f "$T/p5/CLAUDE.md" "$BASE/profil.md"
-out=$(printf '%s\n' "$J" | nt agent); check "réglages : sans profil, défaut agent+quota (fin d'agent notifiée)" "$out" "[notification] Majordome : agent terminé | ma-x : fini"
+out=$(printf '%s\n' "$J" | nt agent); check "réglages : sans profil, défaut agent+quota (fin d'agent notifiée)" "$out" "[notification] Diapason : agent terminé | ma-x : fini"
 
 # quota.sh : seuils du profil, puis du projet, puis arguments
 now=$(date +%s)
@@ -243,7 +243,7 @@ check "v1.3 le préréglage suivant le garde aussi, une seule ligne" "$(grep -c 
 printf '# Profil\n\n## Réglages\n- autonomie : valeur-cassee\n' > "$BASE/profil.md"
 rgl preset normal >/dev/null
 check "v1.3 un préréglage ne recopie pas une autonomie invalide" "$(grep -c '^- autonomie' "$BASE/profil.md")" 0
-if cmp -s "$ROOT/tools/reglages.sh" "$ROOT/skills/majordome/hooks/reglages.sh"; then r=identiques; else r=differentes; fi
+if cmp -s "$ROOT/tools/reglages.sh" "$ROOT/skills/diapason/hooks/reglages.sh"; then r=identiques; else r=differentes; fi
 check "v1.3 tools/reglages.sh et la copie du skill sont identiques" "$r" identiques
 printf '# Profil\n\n## Projets connus\n- x : y\n' > "$BASE/profil.md"   # retour à un profil sans réglages pour la suite
 mkdir -p "$T/p6"; printf '# P\n' > "$T/p6/CLAUDE.md"
@@ -307,17 +307,17 @@ gcheck "brouillon : docs/ permis" 0 "$G/brouillon" Write "$G/brouillon/docs/FICH
 gcheck "brouillon : maquette/ permise" 0 "$G/brouillon" Write "$G/brouillon/maquette/index.html"
 gcheck "brouillon : CLAUDE.md permis" 0 "$G/brouillon" Edit "$G/brouillon/CLAUDE.md"
 gcheck "brouillon : .claude/ permis" 0 "$G/brouillon" Write "$G/brouillon/.claude/settings.local.json"
-gcheck "brouillon : fichier hors du projet permis" 0 "$G/brouillon" Write "$T/home/.claude/majordome/profil.md"
+gcheck "brouillon : fichier hors du projet permis" 0 "$G/brouillon" Write "$T/home/.claude/diapason/profil.md"
 gcheck "brouillon : dossier voisin au nom proche (docs-x) refusé" 2 "$G/brouillon" Write "$G/brouillon/docs-x/a.js"
 gcheck "brouillon : docs/../src refusé (remontée de dossier)" 2 "$G/brouillon" Write "$G/brouillon/docs/../src/a.js"
 gcheck "brouillon : ../autre-projet permis (hors du projet)" 0 "$G/brouillon" Write "$G/brouillon/docs/../../vide/a.js"
 gcheck "brouillon : chemin relatif src/a.js refusé" 2 "$G/brouillon" Write "src/a.js"
 gcheck "brouillon : chemin relatif docs/a.md permis" 0 "$G/brouillon" Write "docs/a.md"
 gcheck "brouillon : Agent ma-executant refusé" 2 "$G/brouillon" Agent "" ma-executant
-gcheck "brouillon : Agent majordome:ma-executant refusé" 2 "$G/brouillon" Agent "" majordome:ma-executant
+gcheck "brouillon : Agent diapason:ma-executant refusé" 2 "$G/brouillon" Agent "" diapason:ma-executant
 gcheck "brouillon : Task ma-executant refusé" 2 "$G/brouillon" Task "" ma-executant
 gcheck "brouillon : Agent ma-chercheur permis" 0 "$G/brouillon" Agent "" ma-chercheur
-gcheck "brouillon : Agent majordome:ma-chercheur permis" 0 "$G/brouillon" Agent "" majordome:ma-chercheur
+gcheck "brouillon : Agent diapason:ma-chercheur permis" 0 "$G/brouillon" Agent "" diapason:ma-chercheur
 gcheck "brouillon : Agent ma-concepteur permis" 0 "$G/brouillon" Agent "" ma-concepteur
 gcheck "brouillon : un autre outil (Bash) n'est pas filtré" 0 "$G/brouillon" Bash "$G/brouillon/src/a.js"
 gcheck "gabarit non rempli (Statut : <brouillon / validée…>) : refus" 2 "$G/gabarit" Write "$G/gabarit/src/a.js"
@@ -342,7 +342,7 @@ gcheck "re-validation : « brouillon (modifiée le …) » même avec maquette :
 gcheck "re-validation : agent exécutant refusé" 2 "$G/revalider" Agent "" ma-executant
 fiche "$G/refaire" "Statut : validée le 2026-10-19 par l'utilisateur" "- Maquette validée (référence du testeur) : pas encore (à refaire)"
 gcheck "maquette « pas encore (à refaire) » : refus" 2 "$G/refaire" Write "$G/refaire/src/a.js"
-cp "$ROOT/skills/majordome/templates/FICHE.md" "$G/vrai/docs/FICHE.md"
+cp "$ROOT/skills/diapason/templates/FICHE.md" "$G/vrai/docs/FICHE.md"
 gcheck "le vrai templates/FICHE.md non rempli : refus" 2 "$G/vrai" Write "$G/vrai/src/a.js"
 # validée et maquette faite, ou sans interface, ou lien
 gcheck "validée + maquette validée (chemin) : code permis" 0 "$G/validee" Write "$G/validee/src/app.js"
@@ -375,7 +375,7 @@ gcheck "EN brouillon : Edit refusé" 2 "$G/en-brouillon" Edit "$G/en-brouillon/i
 gcheck "EN brouillon : docs/ permis" 0 "$G/en-brouillon" Write "$G/en-brouillon/docs/FICHE.md"
 gcheck "EN brouillon : maquette/ permise" 0 "$G/en-brouillon" Write "$G/en-brouillon/maquette/index.html"
 gcheck "EN brouillon : Agent ma-executant refusé" 2 "$G/en-brouillon" Agent "" ma-executant
-gcheck "EN brouillon : Agent majordome:ma-executant refusé" 2 "$G/en-brouillon" Agent "" majordome:ma-executant
+gcheck "EN brouillon : Agent diapason:ma-executant refusé" 2 "$G/en-brouillon" Agent "" diapason:ma-executant
 gcheck "EN brouillon : Agent ma-chercheur permis" 0 "$G/en-brouillon" Agent "" ma-chercheur
 gcheck "EN gabarit non rempli (Status: <draft / validated…>) : refus" 2 "$G/en-gabarit" Write "$G/en-gabarit/src/a.js"
 gcheck "EN « Status: not validated » : refus" 2 "$G/en-non" Write "$G/en-non/src/a.js"
@@ -423,7 +423,7 @@ rc=$(gj Write "/tmp/x.js" "" "" | env -u CLAUDE_PROJECT_DIR sh "$ROOT/hooks/gard
 check "garde-fiche : ni CLAUDE_PROJECT_DIR ni cwd : laisse passer" "$rc" 0
 # branchement et copies
 check "hooks.json : PreToolUse -> garde-fiche.sh, sans « || true » (il avalerait le blocage)" "$(jq -r '.hooks.PreToolUse[0].hooks[0].command' "$ROOT/hooks/hooks.json" | grep -c 'garde-fiche.sh')|$(jq -r '.hooks.PreToolUse[0].hooks[0].command' "$ROOT/hooks/hooks.json" | grep -c '|| true')" "1|0"
-if cmp -s "$ROOT/hooks/garde-fiche.sh" "$ROOT/skills/majordome/hooks/garde-fiche.sh"; then r=identiques; else r=differentes; fi
+if cmp -s "$ROOT/hooks/garde-fiche.sh" "$ROOT/skills/diapason/hooks/garde-fiche.sh"; then r=identiques; else r=differentes; fi
 check "garde-fiche.sh : la copie du plugin et celle du skill sont identiques" "$r" identiques
 
 # --- v1.3 économies : quota hebdomadaire (variante C), clés seuils-hebdo / plafonds-hebdo, réinjection bornée -------
@@ -525,29 +525,29 @@ sz=$(CLAUDE_PROJECT_DIR="$T/p6" sh "$ROOT/hooks/reinject.sh" | wc -c | tr -d ' '
 if [ "$sz" -le 3300 ]; then r=borne; else r="trop gros ($sz)"; fi
 check "reinject.sh : 200 agents en cours -> sortie bornée (~3 ko avec l'en-tête)" "$r" borne
 check "reinject.sh : la coupure est annoncée" "$(CLAUDE_PROJECT_DIR="$T/p6" sh "$ROOT/hooks/reinject.sh" | grep -c 'tronqué à 3000 octets')" 1
-out=$(MAJORDOME_REINJECT_MAX=500 CLAUDE_PROJECT_DIR="$T/p6" sh "$ROOT/hooks/reinject.sh" | tail -n +2 | wc -c | tr -d ' ')
+out=$(DIAPASON_REINJECT_MAX=500 CLAUDE_PROJECT_DIR="$T/p6" sh "$ROOT/hooks/reinject.sh" | tail -n +2 | wc -c | tr -d ' ')
 if [ "$out" -le 560 ]; then r=borne; else r="trop gros ($out)"; fi
-check "reinject.sh : MAJORDOME_REINJECT_MAX=500 borne la sortie" "$r" borne
-if cmp -s "$ROOT/hooks/reinject.sh" "$ROOT/skills/majordome/hooks/reinject.sh"; then r=identiques; else r=differentes; fi
+check "reinject.sh : DIAPASON_REINJECT_MAX=500 borne la sortie" "$r" borne
+if cmp -s "$ROOT/hooks/reinject.sh" "$ROOT/skills/diapason/hooks/reinject.sh"; then r=identiques; else r=differentes; fi
 check "reinject.sh : la copie du plugin et celle du skill sont identiques" "$r" identiques
-if cmp -s "$ROOT/hooks/statusline.sh" "$ROOT/skills/majordome/hooks/statusline.sh" && cmp -s "$ROOT/tools/quota.sh" "$ROOT/skills/majordome/hooks/quota.sh"; then r=identiques; else r=differentes; fi
+if cmp -s "$ROOT/hooks/statusline.sh" "$ROOT/skills/diapason/hooks/statusline.sh" && cmp -s "$ROOT/tools/quota.sh" "$ROOT/skills/diapason/hooks/quota.sh"; then r=identiques; else r=differentes; fi
 check "statusline.sh et quota.sh : copies identiques au skill" "$r" identiques
 
 # diagnostic.sh : 8 lignes, lecture seule
-DH="$T/dh"; mkdir -p "$DH/.claude/majordome" "$DH/.claude/agents"
-printf '# Profil\n' > "$DH/.claude/majordome/profil.md"
-printf '{"statusLine":{"type":"command","command":"%s/.claude/majordome/statusline.sh"}}\n' "$DH" > "$DH/.claude/settings.json"
+DH="$T/dh"; mkdir -p "$DH/.claude/diapason" "$DH/.claude/agents"
+printf '# Profil\n' > "$DH/.claude/diapason/profil.md"
+printf '{"statusLine":{"type":"command","command":"%s/.claude/diapason/statusline.sh"}}\n' "$DH" > "$DH/.claude/settings.json"
 : > "$DH/.claude/agents/ma-x.md"
 before=$(cd "$DH" && find . -type f -exec cksum {} + | sort)
-out=$(HOME="$DH" sh "$ROOT/skills/majordome/hooks/diagnostic.sh"); rc=$?
+out=$(HOME="$DH" sh "$ROOT/skills/diapason/hooks/diagnostic.sh"); rc=$?
 after=$(cd "$DH" && find . -type f -exec cksum {} + | sort)
 check "diagnostic.sh : 8 lignes numérotées et un total, code 0" "$rc|$(printf '%s\n' "$out" | grep -c '^[1-8] | ')|$(printf '%s\n' "$out" | tail -n 1 | grep -c ' KO sur 8$')" "0|8|1"
 check "diagnostic.sh : lecture seule (aucun fichier créé, modifié ni supprimé)" "$([ "$before" = "$after" ] && echo identique || echo modifie)" identique
 check "diagnostic.sh : script de barre d'état non exécutable -> KO ; profil présent -> OK" "$(printf '%s\n' "$out" | grep -c '^2 | .*| KO |')|$(printf '%s\n' "$out" | grep -c '^8 | profil | OK |')" "1|1"
-out=$(HOME="$T/vide" sh "$ROOT/skills/majordome/hooks/diagnostic.sh")
-check "diagnostic.sh : sans profil -> KO avec la commande pour corriger" "$(printf '%s\n' "$out" | grep -c '^8 | profil absent | KO | /majordome profil$')" 1
+out=$(HOME="$T/vide" sh "$ROOT/skills/diapason/hooks/diagnostic.sh")
+check "diagnostic.sh : sans profil -> KO avec la commande pour corriger" "$(printf '%s\n' "$out" | grep -c '^8 | profil absent | KO | /diapason profil$')" 1
 check "diagnostic.sh : sans rien d'installé, le quota n'est qu'une information (pas un KO)" "$(printf '%s\n' "$out" | grep -c '^5 | .*| info |')" 1
-if cmp -s "$ROOT/hooks/diagnostic.sh" "$ROOT/skills/majordome/hooks/diagnostic.sh"; then r=identiques; else r=differentes; fi
+if cmp -s "$ROOT/hooks/diagnostic.sh" "$ROOT/skills/diapason/hooks/diagnostic.sh"; then r=identiques; else r=differentes; fi
 check "diagnostic.sh : la copie du plugin et celle du skill sont identiques" "$r" identiques
 
 # --- v1.4 : une clé réglée à la main fait passer le préréglage à « personnalise » ; dossier du projet explicite -----
@@ -564,63 +564,89 @@ printf '# Projet\n\n## Réglages du projet\n- agents-paralleles : 1\n' > "$T/p5/
 check "v1.4 reglages.sh set --projet : le préréglage du profil ne change pas" "$(rgl | grep -c '^prereglage | econome | ')" 1
 out=$(cd "$T/p5" && sh "$ROOT/tools/reglages.sh" actifs | grep -c '^agents-paralleles : 1 (projet)$')
 check "v1.4 reglages.sh actifs : sans variable, lit le CLAUDE.md du dossier courant" "$out" 1
-out=$(cd "$T/p5" && MAJORDOME_PROJECT_DIR="$T/nouveau-projet" sh "$ROOT/tools/reglages.sh" actifs | grep -c '(projet)')
-check "v1.4 reglages.sh actifs : MAJORDOME_PROJECT_DIR (nouveau projet) ignore le projet du dossier courant" "$out" 0
+out=$(cd "$T/p5" && DIAPASON_PROJECT_DIR="$T/nouveau-projet" sh "$ROOT/tools/reglages.sh" actifs | grep -c '(projet)')
+check "v1.4 reglages.sh actifs : DIAPASON_PROJECT_DIR (nouveau projet) ignore le projet du dossier courant" "$out" 0
 
-# --- v1.4 : renommage en Majordome : dossier des données (nouveau seul, ancien seul, les deux, aucun) ---------------
+# --- v1.5 : renommage en Diapason : dossier des données (diapason, majordome v1.4, maitre-agent v1.3, aucun) ----------
 # Chaque cas a son HOME factice ; le dossier retenu se lit dans le message de reglages.sh (chemin du profil absent),
 # dans l'endroit où la barre d'état écrit usage.json et dans l'effet d'un fichier notifications-off.
-hm() { # $1 nom du cas  $2 "n" si ~/.claude/majordome existe  $3 "o" si ~/.claude/maitre-agent existe
+hm() { # $1 nom du cas  $2 "d" si ~/.claude/diapason existe  $3 "m" si ~/.claude/majordome existe  $4 "o" si ~/.claude/maitre-agent existe
   H="$T/h-$1"; rm -rf "$H"; mkdir -p "$H"
-  [ "$2" = n ] && mkdir -p "$H/.claude/majordome"
-  [ "$3" = o ] && mkdir -p "$H/.claude/maitre-agent"
+  [ "$2" = d ] && mkdir -p "$H/.claude/diapason"
+  [ "$3" = m ] && mkdir -p "$H/.claude/majordome"
+  [ "$4" = o ] && mkdir -p "$H/.claude/maitre-agent"
   return 0
 }
 base_of() { HOME="$H" sh "$ROOT/tools/reglages.sh" set seuils 60 75 85 | sed -n 's#.*(\(.*\)/profil.md).*#\1#p'; }
-for cas in "nouveau-seul n -" "ancien-seul - o" "les-deux n o" "aucun - -"; do
-  set -- $cas; hm "$1" "$2" "$3"
-  case "$1" in ancien-seul) want="$H/.claude/maitre-agent" ;; *) want="$H/.claude/majordome" ;; esac
-  check "v1.4 dossier des données ($1) : reglages.sh" "$(base_of)" "$want"
-  rm -f "$H/.claude/majordome/usage.json" "$H/.claude/maitre-agent/usage.json"
+for cas in "diapason-seul d - -" "majordome-seul - m -" "maitre-seul - - o" "diapason-et-majordome d m -" "majordome-et-maitre - m o" "les-trois d m o" "aucun - - -"; do
+  set -- $cas; hm "$1" "$2" "$3" "$4"
+  case "$1" in majordome-seul|majordome-et-maitre) want="$H/.claude/majordome" ;; maitre-seul) want="$H/.claude/maitre-agent" ;; *) want="$H/.claude/diapason" ;; esac
+  check "v1.5 dossier des données ($1) : reglages.sh" "$(base_of)" "$want"
+  rm -f "$H/.claude/diapason/usage.json" "$H/.claude/majordome/usage.json" "$H/.claude/maitre-agent/usage.json"
   printf '%s\n' '{"cwd":"'"$T"'/p2","rate_limits":{"five_hour":{"used_percentage":40,"resets_at":'"$(( $(date +%s) + 3600 ))"'}}}' | HOME="$H" sh "$ROOT/hooks/statusline.sh" >/dev/null 2>&1
-  check "v1.4 dossier des données ($1) : la barre d'état écrit usage.json dans le bon dossier" "$([ -f "$want/usage.json" ] && echo oui || echo non)" oui
+  check "v1.5 dossier des données ($1) : la barre d'état écrit usage.json dans le bon dossier" "$([ -f "$want/usage.json" ] && echo oui || echo non)" oui
   printf '%s\n' '{"session_id":"s1","agent_id":"a1"}' | HOME="$H" sh "$ROOT/hooks/agent-count.sh" start
-  check "v1.4 dossier des données ($1) : le compteur d'agents écrit dans le bon dossier" "$([ -d "$want/state/s1/agents" ] && echo oui || echo non)" oui
+  check "v1.5 dossier des données ($1) : le compteur d'agents écrit dans le bon dossier" "$([ -d "$want/state/s1/agents" ] && echo oui || echo non)" oui
 done
-# notifications-off : l'ancien dossier compte seul, mais ne gagne pas contre un nouveau dossier
-hm off-ancien - o; : > "$H/.claude/maitre-agent/notifications-off"
-check "v1.4 ancien dossier seul : son notifications-off coupe tout" "$(HOME="$H" sh "$ROOT/hooks/notify.sh" quota "Quota 5 h à 85 %")" ""
-hm off-deux n o; : > "$H/.claude/maitre-agent/notifications-off"
-check "v1.4 les deux dossiers : seul le nouveau compte (l'ancien notifications-off est ignoré)" "$(HOME="$H" sh "$ROOT/hooks/notify.sh" quota "Quota 5 h à 85 %")" "[notification] Majordome : quota | Quota 5 h à 85 %"
-# anciens noms des variables d'environnement (v1.3)
-hm var n -; mkdir -p "$H/proj-ancien"; printf '# P\n\n## Réglages du projet\n- agents-paralleles : 1\n' > "$H/proj-ancien/CLAUDE.md"
-check "v1.4 ancienne variable MAITRE_AGENT_PROJECT_DIR toujours lue" "$(cd "$H" && env -u MAJORDOME_PROJECT_DIR MAITRE_AGENT_PROJECT_DIR="$H/proj-ancien" HOME="$H" sh "$ROOT/tools/reglages.sh" actifs)" "agents-paralleles : 1 (projet)"
-check "v1.4 ancienne variable MAITRE_AGENT_DRY_RUN toujours lue" "$(env -u MAJORDOME_DRY_RUN MAITRE_AGENT_DRY_RUN=1 HOME="$H" sh "$ROOT/hooks/notify.sh" quota "x")" "[notification] Majordome : quota | x"
-# préfixe d'agent de la v1.3 (maitre-agent:ma-executant) toujours reconnu par le garde-fou et par hooks.json
+# notifications-off : un ancien dossier compte seul, mais ne gagne pas contre un dossier plus récent
+hm off-majordome - m -; : > "$H/.claude/majordome/notifications-off"
+check "v1.5 majordome seul : son notifications-off coupe tout" "$(HOME="$H" sh "$ROOT/hooks/notify.sh" quota "Quota 5 h à 85 %")" ""
+hm off-maitre - - o; : > "$H/.claude/maitre-agent/notifications-off"
+check "v1.5 maitre-agent seul : son notifications-off coupe tout" "$(HOME="$H" sh "$ROOT/hooks/notify.sh" quota "Quota 5 h à 85 %")" ""
+hm off-deux d m -; : > "$H/.claude/majordome/notifications-off"
+check "v1.5 diapason + majordome : seul diapason compte (l'ancien notifications-off est ignoré)" "$(HOME="$H" sh "$ROOT/hooks/notify.sh" quota "Quota 5 h à 85 %")" "[notification] Diapason : quota | Quota 5 h à 85 %"
+# anciens noms des variables d'environnement (v1.4 MAJORDOME_*, v1.3 MAITRE_AGENT_*)
+hm var d - -; mkdir -p "$H/proj-ancien"; printf '# P\n\n## Réglages du projet\n- agents-paralleles : 1\n' > "$H/proj-ancien/CLAUDE.md"
+check "v1.5 ancienne variable MAJORDOME_PROJECT_DIR toujours lue" "$(cd "$H" && env -u DIAPASON_PROJECT_DIR MAJORDOME_PROJECT_DIR="$H/proj-ancien" HOME="$H" sh "$ROOT/tools/reglages.sh" actifs)" "agents-paralleles : 1 (projet)"
+check "v1.5 ancienne variable MAITRE_AGENT_PROJECT_DIR toujours lue" "$(cd "$H" && env -u DIAPASON_PROJECT_DIR -u MAJORDOME_PROJECT_DIR MAITRE_AGENT_PROJECT_DIR="$H/proj-ancien" HOME="$H" sh "$ROOT/tools/reglages.sh" actifs)" "agents-paralleles : 1 (projet)"
+check "v1.5 ancienne variable MAJORDOME_DRY_RUN toujours lue" "$(env -u DIAPASON_DRY_RUN MAJORDOME_DRY_RUN=1 HOME="$H" sh "$ROOT/hooks/notify.sh" quota "x")" "[notification] Diapason : quota | x"
+check "v1.5 ancienne variable MAITRE_AGENT_DRY_RUN toujours lue" "$(env -u DIAPASON_DRY_RUN MAITRE_AGENT_DRY_RUN=1 HOME="$H" sh "$ROOT/hooks/notify.sh" quota "x")" "[notification] Diapason : quota | x"
+# préfixes d'agent (diapason: v1.5, majordome: v1.4, maitre-agent: v1.3) reconnus par le garde-fou et par hooks.json
 mkdir -p "$T/pg/docs"; printf 'Statut : brouillon\n' > "$T/pg/docs/FICHE.md"
-printf '%s\n' '{"tool_name":"Agent","cwd":"'"$T"'/pg","tool_input":{"subagent_type":"maitre-agent:ma-executant"}}' | CLAUDE_PROJECT_DIR="$T/pg" sh "$ROOT/hooks/garde-fiche.sh" >/dev/null 2>&1
-check "v1.4 garde-fou : l'agent maitre-agent:ma-executant (préfixe v1.3) est refusé sur une fiche en brouillon" "$?" 2
+for pre in diapason majordome maitre-agent; do
+  printf '%s\n' '{"tool_name":"Agent","cwd":"'"$T"'/pg","tool_input":{"subagent_type":"'"$pre"':ma-executant"}}' | CLAUDE_PROJECT_DIR="$T/pg" sh "$ROOT/hooks/garde-fiche.sh" >/dev/null 2>&1
+  check "v1.5 garde-fou : l'agent $pre:ma-executant est refusé sur une fiche en brouillon" "$?" 2
+done
 mt=$(jq -r '.hooks.SubagentStop[1].matcher' "$ROOT/hooks/hooks.json")
-if printf 'ma-x' | grep -Eq "$mt" && printf 'majordome:ma-x' | grep -Eq "$mt" && printf 'maitre-agent:ma-x' | grep -Eq "$mt" && ! printf 'autre:ma-x' | grep -Eq "$mt"; then r=ok; else r=ko; fi
-check "v1.4 hooks.json : la notification de fin accepte les deux préfixes de plugin" "$r" ok
+if printf 'ma-x' | grep -Eq "$mt" && printf 'diapason:ma-x' | grep -Eq "$mt" && printf 'majordome:ma-x' | grep -Eq "$mt" && printf 'maitre-agent:ma-x' | grep -Eq "$mt" && ! printf 'autre:ma-x' | grep -Eq "$mt"; then r=ok; else r=ko; fi
+check "v1.5 hooks.json : la notification de fin accepte les trois préfixes de plugin" "$r" ok
 # diagnostic : ancien skill encore installé -> information, pas de KO
-hm diag n -; mkdir -p "$H/.claude/skills/maitre-agent"; : > "$H/.claude/skills/maitre-agent/SKILL.md"
+hm diag d - -; mkdir -p "$H/.claude/skills/majordome"; : > "$H/.claude/skills/majordome/SKILL.md"
 out=$(HOME="$H" sh "$ROOT/hooks/diagnostic.sh")
-check "v1.4 diagnostic.sh : l'ancien skill maitre-agent est signalé (info)" "$(printf '%s\n' "$out" | grep -c '^3 | ancien skill maitre-agent encore installé.*| info |')" 1
-# migration : migrer.sh copie sans écraser ni supprimer, une seule fois
-hm mig - o; printf '# Profil\n' > "$H/.claude/maitre-agent/profil.md"; mkdir -p "$H/.claude/maitre-agent/sous"; echo ancien > "$H/.claude/maitre-agent/sous/a.txt"; echo ancien > "$H/.claude/maitre-agent/notifications-on"
-out=$(HOME="$H" sh "$ROOT/tools/migrer.sh")
-check "v1.4 migrer.sh : profil et sous-dossier copiés, un message, l'ancien dossier gardé" "$([ -f "$H/.claude/majordome/profil.md" ] && [ -f "$H/.claude/majordome/sous/a.txt" ] && [ -f "$H/.claude/maitre-agent/profil.md" ] && echo ok)|$(printf '%s' "$out" | grep -c 'Données copiées')" "ok|1"
-check "v1.4 migrer.sh : deuxième appel sans effet ni message (le profil est déjà là)" "$(HOME="$H" sh "$ROOT/tools/migrer.sh")" ""
-hm mig2 n o; printf '# Ancien\n' > "$H/.claude/maitre-agent/profil.md"; echo ancien > "$H/.claude/maitre-agent/x.txt"; echo nouveau > "$H/.claude/majordome/x.txt"
+check "v1.5 diagnostic.sh : l'ancien skill majordome est signalé (info)" "$(printf '%s\n' "$out" | grep -c '^3 | ancien skill majordome encore installé.*| info |')" 1
+hm diag2 d - -; mkdir -p "$H/.claude/skills/maitre-agent"; : > "$H/.claude/skills/maitre-agent/SKILL.md"
+out=$(HOME="$H" sh "$ROOT/hooks/diagnostic.sh")
+check "v1.5 diagnostic.sh : l'ancien skill maitre-agent est signalé (info)" "$(printf '%s\n' "$out" | grep -c '^3 | ancien skill maitre-agent encore installé.*| info |')" 1
+# migration : migrer.sh copie sans écraser ni supprimer, ne copie pas les sauvegarde-skill-*, n'écrit jamais settings.json
+hm mig - m -; printf '# Profil\n' > "$H/.claude/majordome/profil.md"; mkdir -p "$H/.claude/majordome/sous" "$H/.claude/majordome/sauvegarde-skill-v1.3.0"; echo ancien > "$H/.claude/majordome/sous/a.txt"; echo ancien > "$H/.claude/majordome/notifications-on"; echo lourd > "$H/.claude/majordome/sauvegarde-skill-v1.3.0/SKILL.md"
+printf '{"hooks":{"SessionStart":[{"command":"~/.claude/majordome/hooks/reinject.sh 2>/dev/null || true"}]}}\n' > "$H/.claude/settings.json"
+sum_avant=$(cksum < "$H/.claude/settings.json")
+out=$(HOME="$H" sh "$ROOT/tools/migrer.sh"); rc=$?
+check "v1.5 migrer.sh (depuis majordome) : profil et sous-dossier copiés, ancien dossier gardé, un message, sortie 0" "$([ -f "$H/.claude/diapason/profil.md" ] && [ -f "$H/.claude/diapason/sous/a.txt" ] && [ -f "$H/.claude/majordome/profil.md" ] && echo ok)|$(printf '%s' "$out" | grep -c 'Données copiées de ~/.claude/majordome vers ~/.claude/diapason')|$rc" "ok|1|0"
+check "v1.5 migrer.sh : les sauvegarde-skill-* ne sont pas copiées" "$([ -e "$H/.claude/diapason/sauvegarde-skill-v1.3.0" ] && echo copiee || echo non)" non
+check "v1.5 migrer.sh : settings.json est affiché en diff proposé (- ancien / + nouveau) mais jamais modifié" "$(printf '%s\n' "$out" | grep -c '^  - .*\.claude/majordome/hooks/reinject.sh')|$(printf '%s\n' "$out" | grep -c '^  + .*\.claude/diapason/hooks/reinject.sh')|$([ "$(cksum < "$H/.claude/settings.json")" = "$sum_avant" ] && echo inchange)" "1|1|inchange"
+out=$(HOME="$H" sh "$ROOT/tools/migrer.sh"); rc=$?
+check "v1.5 migrer.sh : deuxième appel -> refus d'une ligne, rien copié de plus, sortie 0" "$(printf '%s' "$out" | grep -c '^Rien copié')|$rc" "1|0"
+hm mig-o - - o; printf '# Profil ancien\n' > "$H/.claude/maitre-agent/profil.md"; mkdir -p "$H/.claude/maitre-agent/sous"; echo ancien > "$H/.claude/maitre-agent/sous/a.txt"
+out=$(HOME="$H" sh "$ROOT/tools/migrer.sh"); rc=$?
+check "v1.5 migrer.sh (depuis maitre-agent, à défaut de majordome) : copié, ancien dossier gardé" "$([ -f "$H/.claude/diapason/sous/a.txt" ] && [ -f "$H/.claude/maitre-agent/sous/a.txt" ] && echo ok)|$(printf '%s' "$out" | grep -c 'Données copiées de ~/.claude/maitre-agent')|$rc" "ok|1|0"
+hm mig-mo - m o; printf '# Profil majordome\n' > "$H/.claude/majordome/profil.md"; printf '# Profil maitre-agent\n' > "$H/.claude/maitre-agent/profil.md"
 HOME="$H" sh "$ROOT/tools/migrer.sh" >/dev/null
-check "v1.4 migrer.sh : un fichier déjà présent dans le nouveau dossier n'est pas écrasé" "$(cat "$H/.claude/majordome/x.txt")|$([ -f "$H/.claude/majordome/profil.md" ] && echo copie)" "nouveau|copie"
-hm mig3 n o; printf '# Ancien\n' > "$H/.claude/maitre-agent/profil.md"; printf '# Nouveau\n' > "$H/.claude/majordome/profil.md"
-check "v1.4 migrer.sh : un profil déjà présent dans le nouveau dossier -> rien n'est fait" "$(HOME="$H" sh "$ROOT/tools/migrer.sh")|$(cat "$H/.claude/majordome/profil.md")" "|# Nouveau"
-hm mig4 - -
-check "v1.4 migrer.sh : aucun ancien dossier -> rien n'est fait, rien n'est créé" "$(HOME="$H" sh "$ROOT/tools/migrer.sh")|$([ -e "$H/.claude/majordome/profil.md" ] && echo cree || echo rien)" "|rien"
-cmp -s "$ROOT/tools/migrer.sh" "$ROOT/skills/majordome/hooks/migrer.sh" && r=identiques || r=differentes
-check "v1.4 migrer.sh : la copie du skill et la source sont identiques" "$r" identiques
+check "v1.5 migrer.sh : les deux sources présentes -> majordome (plus récent) est la source" "$(cat "$H/.claude/diapason/profil.md")" "# Profil majordome"
+hm mig2 d m -; printf '# Ancien\n' > "$H/.claude/majordome/profil.md"; echo ancien > "$H/.claude/majordome/x.txt"; echo nouveau > "$H/.claude/diapason/x.txt"
+HOME="$H" sh "$ROOT/tools/migrer.sh" >/dev/null
+check "v1.5 migrer.sh : un fichier déjà présent dans le nouveau dossier n'est pas écrasé" "$(cat "$H/.claude/diapason/x.txt")|$([ -f "$H/.claude/diapason/profil.md" ] && echo copie)" "nouveau|copie"
+hm mig3 d m o; printf '# Ancien\n' > "$H/.claude/majordome/profil.md"; printf '# Nouveau\n' > "$H/.claude/diapason/profil.md"; echo ancien > "$H/.claude/majordome/y.txt"
+out=$(HOME="$H" sh "$ROOT/tools/migrer.sh"); rc=$?
+check "v1.5 migrer.sh : un profil déjà présent dans diapason -> refus, rien copié ni écrasé, sortie 0" "$(printf '%s' "$out" | grep -c '^Rien copié')|$rc|$(cat "$H/.claude/diapason/profil.md")|$([ -e "$H/.claude/diapason/y.txt" ] && echo copie || echo rien)" "1|0|# Nouveau|rien"
+hm mig4 - - -
+out=$(HOME="$H" sh "$ROOT/tools/migrer.sh"); rc=$?
+check "v1.5 migrer.sh : rien à migrer -> silence, sortie 0, rien créé" "$out|$rc|$([ -e "$H/.claude/diapason" ] && echo cree || echo rien)" "|0|rien"
+hm mig5 - m -; printf '# Profil\n' > "$H/.claude/majordome/profil.md"; : > "$H/.claude/diapason"
+out=$(HOME="$H" sh "$ROOT/tools/migrer.sh" 2>&1); rc=$?
+check "v1.5 migrer.sh : échec (destination impossible à créer) -> sortie non nulle et message, ancien dossier intact" "$([ "$rc" -ne 0 ] && echo non-nul)|$(printf '%s' "$out" | grep -c 'Échec')|$([ -f "$H/.claude/majordome/profil.md" ] && echo intact)" "non-nul|1|intact"
+cmp -s "$ROOT/tools/migrer.sh" "$ROOT/skills/diapason/hooks/migrer.sh" && r=identiques || r=differentes
+check "v1.5 migrer.sh : la copie du skill et la source sont identiques" "$r" identiques
 
 echo "RÉSULTAT : $n vérifications, $bad échec(s)"
 [ "$bad" -eq 0 ]

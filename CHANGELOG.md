@@ -3,7 +3,27 @@
 Toutes les évolutions notables de ce projet sont notées ici.
 Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le projet suit le [versionnement sémantique](https://semver.org/lang/fr/).
 
-## [1.4.0] — non publiée
+## [1.5.0] - 2026-10-20
+
+Changement de nom : Majordome devient **Diapason** (nom choisi par l'utilisateur). Un diapason donne le la à l'orchestre ; ici, il donne le la à l'équipe d'agents. Aucun changement de fonctionnement.
+
+### Renommé : Majordome devient Diapason
+- **Nom** : produit « Diapason », skill `skills/diapason/` (`name: diapason`), commande **`/diapason`** (« /majordome devient /diapason » et « /maitre-agent devient /diapason » ; aucun skill-alias n'est livré : un projet dont le `CLAUDE.md` dit `/majordome` se reprend avec `/diapason <chemin du projet>`). Le mot de rôle « le majordome » devient « Diapason ».
+- **Plugin et marketplace** : `diapason` et `diapason-bureau` (le mod de bureau, avant `majordome-bureau`) ; zips de release `diapason-skill-v<version>.zip` et `diapason-plugin-v<version>.zip` ; dépôt `MalikMoussaoui/diapason` (GitHub redirige en principe les anciennes adresses ; non vérifié pour les marketplaces de Claude Code).
+- **Agents** : les `ma-*` gardent leur nom (aucun agent renommé). Sous plugin ils s'appellent `diapason:ma-*` ; les préfixes `majordome:` et `maitre-agent:` restent reconnus (garde-fou, notification de fin d'agent, mod de bureau).
+- **Barre d'état et mod** : préfixe `🎵` au lieu de `🛎️`.
+- **Variables d'environnement** : `DIAPASON_PROJECT_DIR`, `DIAPASON_DRY_RUN`, `DIAPASON_REINJECT_MAX`, `DIAPASON_PROFIL` ; les `MAJORDOME_*` (v1.4) et `MAITRE_AGENT_*` (v1.3) restent lues.
+- **Dossier des données** : `~/.claude/diapason/`. Chaque script (hooks, outils, copies du skill, mod de bureau) prend `~/.claude/diapason` s'il existe, sinon `~/.claude/majordome`, sinon `~/.claude/maitre-agent`, sinon `~/.claude/diapason`.
+- **Migration** (`migrer.sh`, lancé au premier `/diapason` quand `~/.claude/diapason/profil.md` manque) : copie `~/.claude/majordome` ou, à défaut, `~/.claude/maitre-agent` vers `~/.claude/diapason`, sans rien écraser ni supprimer (l'ancien dossier reste) ; les `sauvegarde-skill-*` ne sont pas copiées ; refus en une ligne si `~/.claude/diapason/profil.md` existe déjà ; sortie non nulle si une copie échoue. Il **n'écrit jamais `settings.json`** : si un hook (par exemple la réinjection) y pointe vers l'ancien dossier, il affiche seulement le changement proposé (lignes `-` / `+`).
+- **Rien à modifier dans tes projets** : les clés lues par les scripts ne changent pas ; les anciens titres « Vérifications du majordome » et « Vérifications du maître agent » restent acceptés.
+- `diagnostic` signale aussi un ancien skill `~/.claude/skills/majordome`.
+- Version **1.5.0** dans `plugin.json` du plugin et du mod de bureau.
+- Tests : `tests/hooks.sh` couvre les sept cas du dossier des données, `migrer.sh` (depuis majordome, depuis maitre-agent, les deux sources, destination existante, rien à migrer, échec, `settings.json` intact, `sauvegarde-skill-*` non copiées), les anciennes variables et les trois préfixes d'agent (378 vérifications sous `sh` et `dash`). Les tests du mod de bureau : 41 sur 41 (`claude plugin test bureau`, CLI 2.1.299 de l'app, HOME factice).
+
+### Changé
+- **README bilingue en un seul fichier** (anglais puis français, avec ancres) ; `README.en.md` est retiré. Le détail est dans `GUIDE.md` et `GUIDE.en.md`, dont la section de migration couvre maintenant `maitre-agent` et `majordome`.
+
+## [1.4.0] - 2026-10-20
 
 Correctifs issus de 10 simulations sur papier du skill v1.3.0 (1 blocage, 19 points gênants), puis changement de nom en Majordome. Valeurs et règles de ce lot : réglages de conception, non rejoués en vraie session.
 

@@ -1,6 +1,6 @@
 # Comment maitre-agent s'est fabriqué
 
-> Le skill s'appelle **Majordome** depuis la v1.4 (2026-10-20) ; ce récit garde son ancien nom, celui de l'époque.
+> Le skill s'appelle **Diapason** depuis la v1.5 (2026-10-20) ; il a été `maitre-agent` jusqu'à la v1.3, puis Majordome en v1.4. Ce récit garde l'ancien nom, celui de l'époque.
 
 Ce skill promet de piloter un projet avec des agents, de tout vérifier et de laisser une passation reprenable. Il aurait été gênant de le fabriquer autrement. Voici comment ça s'est passé, avec ce qui est mesuré, ce qui ne l'est pas, et ce qui s'est mal passé.
 

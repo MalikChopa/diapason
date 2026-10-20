@@ -1,5 +1,5 @@
 #!/bin/sh
-# Méthode Majordome : garde-fou PreToolUse « pas de construction avant la fiche validée ».
+# Méthode Diapason : garde-fou PreToolUse « pas de construction avant la fiche validée ».
 # Entrée : le JSON du hook PreToolUse sur l'entrée standard (tool_name, tool_input, cwd ; doc officielle
 #   https://code.claude.com/docs/en/hooks, relue le 2026-10-19). Blocage : sortie 2, le message sur stderr
 #   est la raison montrée à Claude (« A hook that blocks by exiting 2 routes the same way as "deny" »).
@@ -12,7 +12,7 @@
 # Le message de refus (lu par le modèle, pas par l'utilisateur) est en anglais court.
 # - Fiche non « validée » : refuse Write / Edit / MultiEdit / NotebookEdit hors de docs/, maquette/, CLAUDE.md,
 #   .claude/ et hors du dossier du projet ; refuse aussi l'agent d'implémentation (ma-executant, avec ou sans
-#   préfixe « majordome: » ou, avant la v1.4, « maitre-agent: »).
+#   préfixe « diapason: » ou, avant la v1.5, « majordome: » ou « maitre-agent: »).
 # - Fiche validée mais ligne « Maquette validée » à « pas encore » : mêmes écritures refusées (« sans interface »,
 #   un chemin ou un lien = permis). L'agent d'implémentation reste permis : il peut écrire la maquette dans maquette/.
 # Limites : les écritures faites par Bash ne sont pas filtrées ; les liens symboliques ne sont pas suivis ; le hook
@@ -69,11 +69,12 @@ fi
 
 if [ "$kind" = agent ]; then
   sub="${sub#maitre-agent:}"   # ancien préfixe du plugin (v1.3)
-  case "${sub#majordome:}" in
+  sub="${sub#majordome:}"      # ancien préfixe du plugin (v1.4)
+  case "${sub#diapason:}" in
     ma-executant)
       # la maquette peut être écrite par l'agent d'implémentation : permis tant que la fiche est validée
       [ "$statut" = validee ] && exit 0
-      printf '%s\n' "majordome safeguard: launching the implementation agent (ma-executant) is refused. $raison" >&2
+      printf '%s\n' "diapason safeguard: launching the implementation agent (ma-executant) is refused. $raison" >&2
       exit 2 ;;
     *) exit 0 ;;
   esac
@@ -99,5 +100,5 @@ case "$rel" in
   docs/*|maquette/*|CLAUDE.md|.claude/*) exit 0 ;;
 esac
 rel=$(printf '%s' "$rel" | tr -d '\000-\037\177')
-printf '%s\n' "majordome safeguard: writing to \"$rel\" is refused. $raison Only docs/, maquette/, CLAUDE.md and .claude/ stay open for writing." >&2
+printf '%s\n' "diapason safeguard: writing to \"$rel\" is refused. $raison Only docs/, maquette/, CLAUDE.md and .claude/ stay open for writing." >&2
 exit 2

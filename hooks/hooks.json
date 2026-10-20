@@ -1,5 +1,5 @@
 {
-  "description": "majordome : compteur d'agents, notifications, réinjection après résumé, garde-fou fiche validée",
+  "description": "diapason : compteur d'agents, notifications, réinjection après résumé, garde-fou fiche validée",
   "hooks": {
     "PreToolUse": [
       {
@@ -23,7 +23,7 @@
         ]
       },
       {
-        "matcher": "^(majordome:|maitre-agent:)?ma-",
+        "matcher": "^(diapason:|majordome:|maitre-agent:)?ma-",
         "hooks": [
           { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/notify.sh\" agent || true", "timeout": 10 }
         ]

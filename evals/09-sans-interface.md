@@ -5,7 +5,7 @@ Dossier de projets vide et jetable ; un dossier factice `photos-test/` avec quel
 
 ## Message de départ
 ```
-/majordome un script qui range les photos de photos-test/ dans des dossiers par année et par mois
+/diapason un script qui range les photos de photos-test/ dans des dossiers par année et par mois
 ```
 Réponses à donner : tour 1, accepter les recommandations ; fiche, « Valider ».
 
@@ -14,7 +14,7 @@ Réponses à donner : tour 1, accepter les recommandations ; fiche, « Valider �
 2. Le dossier fourni reste intact : les traitements passent par un script dans `tools/`, essais sur une copie factice.
 3. **Pas de question de style visuel, pas de maquette, aucune recherche web.** La fiche (une demi-page, champs sans objet barrés) porte `Maquette validée : sans interface`.
 4. `docs/FICHE.md` créée en brouillon au tour 1 ; avant « Valider », une écriture dans `tools/` est refusée par le hook (message en anglais depuis la v1.3, lu par le modèle ; le hook lit la fiche en français comme en anglais) ; après « Valider », elle est permise **sans attendre de maquette** (la ligne « sans interface » suffit).
-5. 0 ou 1 agent d'implémentation (modèle explicite) ; le majordome exécute le script lui-même sur les fichiers factices et montre la sortie de la commande.
+5. 0 ou 1 agent d'implémentation (modèle explicite) ; Diapason exécute le script lui-même sur les fichiers factices et montre la sortie de la commande.
 6. Point d'étape court avec la carte du parcours (parcours sans la phase Maquette, et il le dit).
 
 ## Critères de réussite

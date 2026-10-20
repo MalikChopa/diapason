@@ -5,7 +5,7 @@ Dossier jetable contenant un petit projet **déjà construit**, fait de fichiers
 
 ## Message de départ
 ```
-/majordome <chemin du dossier jetable>
+/diapason <chemin du dossier jetable>
 ```
 Réponses à donner : variante A, « Garder tel quel » ; variante B, « Adapter » puis « Valider » ; variante C, « Repartir de zéro ».
 

@@ -1,15 +1,15 @@
 {
-  "name": "majordome",
+  "name": "diapason",
   "owner": { "name": "Chopa" },
-  "description": "Marketplace du plugin Majordome et de son mod de bureau",
+  "description": "Marketplace du plugin Diapason et de son mod de bureau",
   "plugins": [
     {
-      "name": "majordome",
+      "name": "diapason",
       "source": "./",
-      "description": "Méthode Majordome : skill, 5 sous-agents, compteur d'agents, notifications, réinjection après résumé, garde-fou fiche validée"
+      "description": "Méthode Diapason : skill, 5 sous-agents, compteur d'agents, notifications, réinjection après résumé, garde-fou fiche validée"
     },
     {
-      "name": "majordome-bureau",
+      "name": "diapason-bureau",
       "source": "./bureau",
       "description": "Mod de bureau : quota et agents en cours dans l'onglet Code de l'app Claude"
     }

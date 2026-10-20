@@ -21,7 +21,7 @@ const info = (id: string, type: string, status: AgentInfo['status'] = 'running')
 /** Pose le fond : enregistre statuts, toasts et notifications ; données factices. */
 function backdrop(
   on: On,
-  data: { agents?: AgentInfo[]; handoff?: string; notifyOk?: boolean; profile?: string; profileAt?: 'new' | 'old' | 'both'; claude?: string; home?: string } = {},
+  data: { agents?: AgentInfo[]; handoff?: string; notifyOk?: boolean; profile?: string; profileAt?: 'new' | 'old' | 'v14' | 'both'; claude?: string; home?: string } = {},
 ) {
   const seen = { status: [] as (string | undefined)[], toasts: [] as string[], notices: [] as string[] }
   mock.store(on)
@@ -52,9 +52,11 @@ function backdrop(
       ? data.handoff
       : e.path.endsWith('CLAUDE.md')
         ? data.claude
-        : e.path === '/tmp/faux-home/.claude/majordome/profil.md' && data.profileAt !== 'old'
+        : e.path === '/tmp/faux-home/.claude/diapason/profil.md' && data.profileAt !== 'old' && data.profileAt !== 'v14'
           ? data.profile
-          : e.path === '/tmp/faux-home/.claude/maitre-agent/profil.md' && data.profileAt !== undefined && data.profileAt !== 'new'
+          : e.path === '/tmp/faux-home/.claude/majordome/profil.md' && data.profileAt === 'v14'
+            ? data.profile
+            : e.path === '/tmp/faux-home/.claude/maitre-agent/profil.md' && data.profileAt !== undefined && data.profileAt !== 'new' && data.profileAt !== 'v14'
             ? (data.profileAt === 'both' ? '## Réglages\n- seuils : 90 91 92\n' : data.profile)
             : undefined
     return content === undefined ? { deny: 'ENOENT : fichier absent' } : { value: content }
@@ -131,7 +133,7 @@ test('agent.spawn : sans agentId ni type, le lancement passe quand même', async
 })
 
 test('fin d\'un sous-agent ma-* : toast avec le statut', async ($, on) => {
-  const seen = backdrop(on, { agents: [info('n1', 'majordome:ma-executant')] })
+  const seen = backdrop(on, { agents: [info('n1', 'diapason:ma-executant')] })
   on('turn.complete', () => ({ text: '' }))
   await $.turn.complete({
     answer: '**TERMINÉ AVEC RÉSERVES**\nle détail est dans le journal',
@@ -207,6 +209,14 @@ test('profil absent, valeur invalide ou HOME inconnu : les défauts 70 / 80 / 90
   expect(seen.toasts[0]).toContain('70 % atteint')
 })
 
+test('profil de la v1.4 dans l\'ancien dossier majordome : lu quand le dossier diapason n\'a pas de profil', async ($, on) => {
+  const seen = backdrop(on, { profile: PROFIL, profileAt: 'v14' })
+  for (const p of [50, 60, 61]) {
+    await $.session.measure({ context: CONTEXT, rateLimits: limits(p), changed: ['rateLimits'] })
+  }
+  expect(seen.toasts).toEqual(['Quota 5 h : 60 % atteint (60 %), reset 18:30'])
+})
+
 test('profil de la v1.3 dans l\'ancien dossier maitre-agent : lu quand le nouveau dossier n\'a pas de profil', async ($, on) => {
   const seen = backdrop(on, { profile: PROFIL, profileAt: 'old' })
   for (const p of [50, 60, 61]) {
@@ -215,7 +225,7 @@ test('profil de la v1.3 dans l\'ancien dossier maitre-agent : lu quand le nouvea
   expect(seen.toasts).toEqual(['Quota 5 h : 60 % atteint (60 %), reset 18:30'])
 })
 
-test('les deux profils présents : celui du dossier majordome gagne', async ($, on) => {
+test('les deux profils présents : celui du dossier diapason gagne', async ($, on) => {
   const seen = backdrop(on, { profile: PROFIL, profileAt: 'both' })
   for (const p of [50, 60, 61]) {
     await $.session.measure({ context: CONTEXT, rateLimits: limits(p), changed: ['rateLimits'] })

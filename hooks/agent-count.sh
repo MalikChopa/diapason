@@ -1,7 +1,7 @@
 #!/bin/sh
-# Méthode Majordome : compteur d'agents en cours.
+# Méthode Diapason : compteur d'agents en cours.
 # Usage : agent-count.sh start|stop  (JSON du hook SubagentStart / SubagentStop sur l'entrée standard)
-# Un fichier par agent_id dans ~/.claude/majordome/state/<session_id>/agents/ ;
+# Un fichier par agent_id dans ~/.claude/diapason/state/<session_id>/agents/ ;
 # les fichiers de plus de 5 h (la fenêtre de quota) sont purgés, puis les dossiers vides. Jamais bloquant : sort toujours avec 0.
 mode="$1"
 case "$mode" in start|stop) ;; *) exit 0 ;; esac
@@ -19,10 +19,11 @@ sid=$(printf '%s' "$sid" | tr -c 'A-Za-z0-9_.-' '_')
 aid=$(printf '%s' "$aid" | tr -c 'A-Za-z0-9_.-' '_')
 case "$sid" in "") exit 0 ;; .*) sid="_$sid" ;; esac
 case "$aid" in "") exit 0 ;; .*) aid="_$aid" ;; esac
-# Dossier des données : ~/.claude/majordome s'il existe, sinon l'ancien ~/.claude/maitre-agent (v1.3 et avant), sinon ~/.claude/majordome
-if [ -d "$HOME/.claude/majordome" ]; then BASE="$HOME/.claude/majordome"
+# Dossier des données : ~/.claude/diapason s'il existe, sinon l'ancien ~/.claude/majordome (v1.4), sinon ~/.claude/maitre-agent (v1.3 et avant), sinon ~/.claude/diapason
+if [ -d "$HOME/.claude/diapason" ]; then BASE="$HOME/.claude/diapason"
+elif [ -d "$HOME/.claude/majordome" ]; then BASE="$HOME/.claude/majordome"
 elif [ -d "$HOME/.claude/maitre-agent" ]; then BASE="$HOME/.claude/maitre-agent"
-else BASE="$HOME/.claude/majordome"; fi
+else BASE="$HOME/.claude/diapason"; fi
 STATE="$BASE/state"
 dir="$STATE/$sid/agents"
 umask 077
