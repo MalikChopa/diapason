@@ -1,15 +1,15 @@
 {
-  "name": "maitre-agent",
+  "name": "majordome",
   "owner": { "name": "Chopa" },
-  "description": "Marketplace du plugin maitre-agent et de son mod de bureau",
+  "description": "Marketplace du plugin Majordome et de son mod de bureau",
   "plugins": [
     {
-      "name": "maitre-agent",
+      "name": "majordome",
       "source": "./",
-      "description": "Méthode maître agent : skill, 5 sous-agents, compteur d'agents, notifications, réinjection après résumé, garde-fou fiche validée"
+      "description": "Méthode Majordome : skill, 5 sous-agents, compteur d'agents, notifications, réinjection après résumé, garde-fou fiche validée"
     },
     {
-      "name": "maitre-agent-bureau",
+      "name": "majordome-bureau",
       "source": "./bureau",
       "description": "Mod de bureau : quota et agents en cours dans l'onglet Code de l'app Claude"
     }

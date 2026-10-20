@@ -3,6 +3,37 @@
 Toutes les évolutions notables de ce projet sont notées ici.
 Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le projet suit le [versionnement sémantique](https://semver.org/lang/fr/).
 
+## [1.4.0] — non publiée
+
+Correctifs issus de 10 simulations sur papier du skill v1.3.0 (1 blocage, 19 points gênants), puis changement de nom en Majordome. Valeurs et règles de ce lot : réglages de conception, non rejoués en vraie session.
+
+### Renommé : maitre-agent devient Majordome
+- **Nom** : produit « Majordome », skill `skills/majordome/` (`name: majordome`), commande **`/majordome`** (« /maitre-agent devient /majordome » ; aucun skill-alias n'est livré : un projet dont le `CLAUDE.md` dit `/maitre-agent` se reprend avec `/majordome <chemin du projet>`), plugin `majordome`, marketplace `majordome`, mod de bureau `majordome-bureau`, zips `majordome-skill-v…` et `majordome-plugin-v…`. Dépôt public prévu : `MalikMoussaoui/majordome` (GitHub redirige l'ancienne adresse ; le renommage lui-même se fait après accord). Le rôle s'appelle « le majordome » (avant : « le maître agent »). Les agents gardent le préfixe `ma-` (lu comme MAjordome).
+- **Barre d'état et mod** : préfixe `🛎️ majordome` au lieu de `🧭 maitre-agent`.
+- **Dossier des données** : `~/.claude/majordome/`. Chaque script (hooks, outils, copies du skill, mod de bureau) prend `~/.claude/majordome` s'il existe, sinon l'ancien `~/.claude/maitre-agent` s'il existe, sinon `~/.claude/majordome`. À la première utilisation de `/majordome`, si `~/.claude/majordome/profil.md` manque et que l'ancien profil existe, `hooks/migrer.sh` copie tout l'ancien dossier dans le nouveau **sans rien écraser ni supprimer** et le dit en une ligne ; supprimer l'ancien dossier reste ton choix. Détail et cas des copies faites à la main : `installation.md` §7.
+- **Rien à modifier dans tes projets de la v1.3** : les clés lues par les scripts ne changent pas (`Jalon :`, `## Agents lancés`, `## Reprise immédiate`, `## Réglages`, `## Réglages du projet`, lignes de statut de `FICHE.md`) ; l'ancien titre « Vérifications du maître agent » est lu comme le nouveau ; l'ancien préfixe d'agent `maitre-agent:ma-…` reste reconnu (garde-fou, notifications, mod). Variables d'environnement : `MAJORDOME_PROJECT_DIR`, `MAJORDOME_DRY_RUN`, `MAJORDOME_REINJECT_MAX`, `MAJORDOME_PROFIL` ; les anciennes `MAITRE_AGENT_*` restent lues.
+- `diagnostic` signale un ancien skill `~/.claude/skills/maitre-agent` et un chemin de barre d'état resté dans l'ancien dossier (information, pas d'erreur).
+- Version **1.4.0** dans `plugin.json` du plugin et du mod de bureau.
+- Tests : `tests/hooks.sh` couvre les quatre cas du dossier (nouveau seul, ancien seul, les deux, aucun), `migrer.sh`, les anciennes variables, l'ancien préfixe d'agent et le diagnostic (358 vérifications sous `sh` et `dash`) ; les tests TypeScript du mod de bureau sont mis à jour (profil de l'ancien dossier, ancien préfixe) mais **non exécutés ici** (`bun` absent).
+
+### Corrigé
+- **« Garder tel quel » est un vrai choix** (blocage) : un projet construit sans cadrage dont tu as choisi « Garder tel quel » continue sans fiche, noté avec sa date dans son `CLAUDE.md` ; les décisions de produit rencontrées en route te sont toujours posées. La reprise ne dit plus que l'atelier « redémarre » quand il n'y a pas de fiche, avec ou sans HANDOFF. « Repartir de zéro » n'est jamais recommandé, et « mettre de côté » veut dire copier dans un dossier daté.
+- **Originaux** : le maître et les agents ne modifient jamais tes fichiers d'origine ; un outil livré peut les modifier quand tu le lances ou l'approuves, après un essai à blanc qui liste les changements, avec un retour en arrière (copie ou journal d'annulation). Règle alignée dans `SKILL.md`, `briefs/_entete.md` et les 5 agents.
+- **Boutons** : « recommandé » seulement quand une recommandation a un sens (pas pour la langue, le budget, un nom, une préférence, le choix d'un projet) ; au palier de quota 2 ou plus, la réponse recommandée à « lancer ? » est « attendre » ; une option recommandée ne change jamais ta configuration.
+- **Premier usage** : langue et tutoiement détectés dans ton message, seuls le niveau et la longueur des réponses sont demandés ; ce que tu viens de choisir n'est plus marqué « à confirmer » ; une seule reconfirmation au plus ; plus d'appel de questions pour les seules lignes annexes.
+- **Une validation au lieu de deux** : « Valider et continuer » fusionne l'approbation de la fiche et le point d'étape.
+- **Questions de la matrice** : ordre de priorité, 4 questions par appel au plus ; 3 à 4 questions pour un petit projet qui touche tes fichiers.
+- **Coût** : annoncé en tokens et en % de la fenêtre de 5 h d'après tes « Repères de coût » ; la part hebdomadaire reste « non mesurée » sans ratio mesuré (exemple mesuré le 2026-10-20 sur Pro : un agent sonnet de ≈ 150 k tokens ≈ 10 points de la fenêtre de 5 h et ≈ 2 points de l'hebdomadaire). Quota hebdomadaire de palier 2 ou plus lu au démarrage : annoncé avant l'atelier, avec « cadrer maintenant, agents après la remise à zéro ». Code de sortie 2 de `quota.sh hebdo` = palier 2 (et non « sans mesure »).
+- **Taille d'un projet** : critères objectifs (écrans, données, comptes, fichiers) et mots-clés en français et en anglais, un seul tableau (`phases.md`) ; jeux et démos alignés entre `matrice.md` et `phases.md` ; une ligne de parcours « petit projet à construire ».
+- **Achat ou décision sans agent** : pas de dossier de projet, pas d'entrée dans « Projets connus ». Réponse de décision : une règle de longueur (8 lignes en `econome`, avec ce qu'on garde : le choix, le prix, 2 raisons, 1 risque, les liens). Sans outil web, un agent source et le maître écrit « non vérifié à la source ».
+- **Nouveau projet** : `reglages.sh actifs` est appelé avec `MAITRE_AGENT_PROJECT_DIR` tant que le dossier du projet n'est pas le dossier courant (avant : il lisait le `CLAUDE.md` d'un autre projet). `phases.md` dit quelles étapes précèdent le tour 1.
+- **Lectures évitées** : un petit projet sans agent ne lit ni les clés de réglages ni les préréglages ; `cadrage.md` se lit par sections.
+- **`statut`** affiche « quota : non lu » dans l'appli au lieu de rien, et se limite aux 3 projets les plus récents. **`reglages`** sans argument pose « Quoi changer ? » à boutons ; le préréglage d'abord, les clés ensuite.
+- **`reglages.sh set`** : une clé de quota réglée à la main (valeur différente de celle du préréglage) fait passer `prereglage` à `personnalise`, et le dit.
+- `SKILL.md` repasse sous 5 000 tokens : les détails de la fenêtre hebdomadaire, du seuil de contexte et du rythme sont dans le nouveau `quota.md`.
+- Évaluations : `08-reprise-sans-cadrage.md` mise à jour (Garder / Adapter / Repartir), `11-renommer-les-photos.md` ajoutée. Écrites, **pas lancées**.
+- Tests : 6 nouvelles vérifications (`personnalise`, variable du dossier du projet).
+
 ## [1.3.0] - 2026-10-19
 
 Le skill devient accompagnant : tu décides du produit, il décide de l'exécution et te l'explique. Rien n'est construit avant ta validation. Les valeurs de ce lot sont des réglages de conception, vus par les tests des scripts, pas encore en vraie session (voir « Non vérifié »).

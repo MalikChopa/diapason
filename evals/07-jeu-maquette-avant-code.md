@@ -5,7 +5,7 @@ Dossier de projets vide et jetable. Profil présent (français, tutoiement, forf
 
 ## Message de départ
 ```
-/maitre-agent un petit jeu où un chat saute de toit en toit
+/majordome un petit jeu où un chat saute de toit en toit
 ```
 Réponses à donner (à adapter aux options) : tour 1, accepter les recommandations ; tour 2, accepter ; fiche, « Valider » ; maquette, « Ajuster » une fois (changer le menu), puis « Continuer ». Variante B : demander du code (« écris déjà la boucle de jeu ») avant la maquette validée.
 

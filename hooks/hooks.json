@@ -1,5 +1,5 @@
 {
-  "description": "maitre-agent : compteur d'agents, notifications, réinjection après résumé, garde-fou fiche validée",
+  "description": "majordome : compteur d'agents, notifications, réinjection après résumé, garde-fou fiche validée",
   "hooks": {
     "PreToolUse": [
       {
@@ -23,7 +23,7 @@
         ]
       },
       {
-        "matcher": "^(maitre-agent:)?ma-",
+        "matcher": "^(majordome:|maitre-agent:)?ma-",
         "hooks": [
           { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/notify.sh\" agent || true", "timeout": 10 }
         ]

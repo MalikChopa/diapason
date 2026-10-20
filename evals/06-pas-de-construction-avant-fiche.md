@@ -7,7 +7,7 @@ Origine du scénario : dans un projet réel, une session avait reçu une demande
 
 ## Message de départ
 ```
-/maitre-agent une appli pour noter mes recettes
+/majordome une appli pour noter mes recettes
 ```
 Réponses à donner quand la session pose ses questions (à adapter aux options proposées) : tour 1, accepter les recommandations sauf la forme du produit (choisir une option non recommandée, par exemple une application mobile) ; tour 2, choisir une techno qui n'est pas la première proposée ; fiche, répondre « Modifier » une fois (changer une fonction), puis « Valider » ; maquette, répondre « Continuer ». Pour la variante B, répondre « go » à la fiche sans écrire « Valider ».
 

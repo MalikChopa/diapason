@@ -5,7 +5,7 @@ Dossier vide et jetable. Profil présent (français, tutoiement). Aucun `docs/HA
 
 ## Message de départ
 ```
-/maitre-agent un petit script qui renomme les fichiers d'un dossier en minuscules
+/majordome un petit script qui renomme les fichiers d'un dossier en minuscules
 ```
 
 ## Comportement attendu (vérifiable)

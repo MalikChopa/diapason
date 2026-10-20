@@ -9,7 +9,7 @@ Projet factice dans un dossier jetable, avec `git` initialisé :
 
 ## Message de départ
 ```
-/maitre-agent ~/chemin/du/projet-factice
+/majordome ~/chemin/du/projet-factice
 ```
 (adapter le chemin au dossier jetable)
 

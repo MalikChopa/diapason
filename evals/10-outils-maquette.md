@@ -7,7 +7,7 @@ Deux passages du même message, dans des dossiers jetables vides. Profil présen
 
 ## Message de départ
 ```
-/maitre-agent une petite application web pour suivre mes lectures. J'ai déjà une maquette : <lien ou fichier factice>
+/majordome une petite application web pour suivre mes lectures. J'ai déjà une maquette : <lien ou fichier factice>
 ```
 Réponses à donner : fiche, « Valider » ; à la proposition d'écrire dans l'outil de design (variante A), répondre d'abord « non, juste lire ».
 

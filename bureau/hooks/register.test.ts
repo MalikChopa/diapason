@@ -21,7 +21,7 @@ const info = (id: string, type: string, status: AgentInfo['status'] = 'running')
 /** Pose le fond : enregistre statuts, toasts et notifications ; données factices. */
 function backdrop(
   on: On,
-  data: { agents?: AgentInfo[]; handoff?: string; notifyOk?: boolean; profile?: string; claude?: string; home?: string } = {},
+  data: { agents?: AgentInfo[]; handoff?: string; notifyOk?: boolean; profile?: string; profileAt?: 'new' | 'old' | 'both'; claude?: string; home?: string } = {},
 ) {
   const seen = { status: [] as (string | undefined)[], toasts: [] as string[], notices: [] as string[] }
   mock.store(on)
@@ -52,9 +52,11 @@ function backdrop(
       ? data.handoff
       : e.path.endsWith('CLAUDE.md')
         ? data.claude
-        : e.path === '/tmp/faux-home/.claude/maitre-agent/profil.md'
+        : e.path === '/tmp/faux-home/.claude/majordome/profil.md' && data.profileAt !== 'old'
           ? data.profile
-          : undefined
+          : e.path === '/tmp/faux-home/.claude/maitre-agent/profil.md' && data.profileAt !== undefined && data.profileAt !== 'new'
+            ? (data.profileAt === 'both' ? '## Réglages\n- seuils : 90 91 92\n' : data.profile)
+            : undefined
     return content === undefined ? { deny: 'ENOENT : fichier absent' } : { value: content }
   })
   // Événements du moteur que le test lève lui-même : le fond répond comme le moteur (écho).
@@ -65,20 +67,20 @@ function backdrop(
 test('session.measure : ligne d\'état avec projet, agents et quota', async ($, on) => {
   const seen = backdrop(on, { agents: [info('a1', 'ma-chercheur'), info('a2', 'Explore', 'completed')] })
   await $.session.measure({ context: CONTEXT, rateLimits: limits(42), changed: ['rateLimits'] })
-  expect(seen.status.at(-1)).toBe('🧭 projet-factice · 1 agent · 5 h 42 % (reset 18:30) · 7 j 12 %')
+  expect(seen.status.at(-1)).toBe('🛎️ projet-factice · 1 agent · 5 h 42 % (reset 18:30) · 7 j 12 %')
 })
 
 test('repli propre sans quota', async ($, on) => {
   const seen = backdrop(on)
   await $.session.measure({ context: CONTEXT, rateLimits: [], changed: ['context'] })
-  expect(seen.status.at(-1)).toBe('🧭 projet-factice · 0 agents · quota ?')
+  expect(seen.status.at(-1)).toBe('🛎️ projet-factice · 0 agents · quota ?')
   expect(seen.toasts).toEqual([])
 })
 
 test('jalon lu dans docs/HANDOFF.md', async ($, on) => {
   const seen = backdrop(on, { handoff: '# HANDOFF\nJalon : J3 bureau\n' })
   await $.session.measure({ context: CONTEXT, rateLimits: limits(5), changed: ['rateLimits'] })
-  expect(seen.status.at(-1)).toBe('🧭 projet-factice · J3 bureau · 0 agents · 5 h 5 % (reset 18:30) · 7 j 12 %')
+  expect(seen.status.at(-1)).toBe('🛎️ projet-factice · J3 bureau · 0 agents · 5 h 5 % (reset 18:30) · 7 j 12 %')
 })
 
 test('alertes 70 / 80 / 90 : une fois chacune, toast et notification', async ($, on) => {
@@ -117,7 +119,7 @@ test('agent.spawn : le compteur monte', async ($, on) => {
     description: 'lecture',
     subagentType: 'ma-chercheur',
   } as never)
-  expect(seen.status.at(-1)).toBe('🧭 projet-factice · 1 agent · quota ?')
+  expect(seen.status.at(-1)).toBe('🛎️ projet-factice · 1 agent · quota ?')
 })
 
 test('agent.spawn : sans agentId ni type, le lancement passe quand même', async ($, on) => {
@@ -129,7 +131,7 @@ test('agent.spawn : sans agentId ni type, le lancement passe quand même', async
 })
 
 test('fin d\'un sous-agent ma-* : toast avec le statut', async ($, on) => {
-  const seen = backdrop(on, { agents: [info('n1', 'maitre-agent:ma-executant')] })
+  const seen = backdrop(on, { agents: [info('n1', 'majordome:ma-executant')] })
   on('turn.complete', () => ({ text: '' }))
   await $.turn.complete({
     answer: '**TERMINÉ AVEC RÉSERVES**\nle détail est dans le journal',
@@ -140,7 +142,7 @@ test('fin d\'un sous-agent ma-* : toast avec le statut', async ($, on) => {
     reason: 'answer',
   })
   expect(seen.toasts).toEqual(['ma-executant : TERMINÉ AVEC RÉSERVES'])
-  expect(seen.status.at(-1)).toBe('🧭 projet-factice · 0 agents · quota ?')
+  expect(seen.status.at(-1)).toBe('🛎️ projet-factice · 0 agents · quota ?')
 })
 
 test('fin d\'un sous-agent hors ma-* ou du fil principal : pas de toast', async ($, on) => {
@@ -203,4 +205,20 @@ test('profil absent, valeur invalide ou HOME inconnu : les défauts 70 / 80 / 90
   await $.session.measure({ context: CONTEXT, rateLimits: limits(71), changed: ['rateLimits'] })
   expect(seen.toasts.length).toBe(1)
   expect(seen.toasts[0]).toContain('70 % atteint')
+})
+
+test('profil de la v1.3 dans l\'ancien dossier maitre-agent : lu quand le nouveau dossier n\'a pas de profil', async ($, on) => {
+  const seen = backdrop(on, { profile: PROFIL, profileAt: 'old' })
+  for (const p of [50, 60, 61]) {
+    await $.session.measure({ context: CONTEXT, rateLimits: limits(p), changed: ['rateLimits'] })
+  }
+  expect(seen.toasts).toEqual(['Quota 5 h : 60 % atteint (60 %), reset 18:30'])
+})
+
+test('les deux profils présents : celui du dossier majordome gagne', async ($, on) => {
+  const seen = backdrop(on, { profile: PROFIL, profileAt: 'both' })
+  for (const p of [50, 60, 61]) {
+    await $.session.measure({ context: CONTEXT, rateLimits: limits(p), changed: ['rateLimits'] })
+  }
+  expect(seen.toasts).toEqual(['Quota 5 h : 60 % atteint (60 %), reset 18:30'])
 })

@@ -34,19 +34,19 @@ describe('ligne d\'état', () => {
         { kind: 'seven_day', percentUsed: 12 },
       ],
     })
-    expect(line).toBe('🧭 demo · 2 agents · 5 h 42 % (reset 18:30) · 7 j 12 %')
+    expect(line).toBe('🛎️ demo · 2 agents · 5 h 42 % (reset 18:30) · 7 j 12 %')
   })
 
   test('singulier, jalon et quota absent', async () => {
     expect(formatStatus({ project: 'demo', agents: 1, rateLimits: [], milestone: 'J2' })).toBe(
-      '🧭 demo · J2 · 1 agent · quota ?',
+      '🛎️ demo · J2 · 1 agent · quota ?',
     )
-    expect(formatStatus({ project: '', agents: 0, rateLimits: undefined })).toBe('🧭 session · 0 agents · quota ?')
+    expect(formatStatus({ project: '', agents: 0, rateLimits: undefined })).toBe('🛎️ session · 0 agents · quota ?')
   })
 
   test('une seule fenêtre connue', async () => {
     expect(formatStatus({ project: 'p', agents: 0, rateLimits: [{ kind: 'five_hour', percentUsed: 5 }] })).toBe(
-      '🧭 p · 0 agents · 5 h 5 % · 7 j ?',
+      '🛎️ p · 0 agents · 5 h 5 % · 7 j ?',
     )
   })
 
@@ -128,7 +128,8 @@ describe('alertes de quota', () => {
 describe('sous-agents ma-*', () => {
   test('reconnaissance du type', async () => {
     expect(isMaAgent('ma-chercheur')).toBe(true)
-    expect(isMaAgent('maitre-agent:ma-executant')).toBe(true)
+    expect(isMaAgent('majordome:ma-executant')).toBe(true)
+    expect(isMaAgent('maitre-agent:ma-executant')).toBe(true) // ancien préfixe du plugin (v1.3)
     expect(isMaAgent('general-purpose')).toBe(false)
     expect(isMaAgent('autre:ma-x')).toBe(false)
     expect(isMaAgent('maman')).toBe(false)
@@ -142,7 +143,7 @@ describe('sous-agents ma-*', () => {
   })
 
   test('texte du toast : 80 caractères au plus', async () => {
-    expect(agentDoneText('maitre-agent:ma-chercheur', 'TERMINÉ\nsuite')).toBe('ma-chercheur : TERMINÉ')
+    expect(agentDoneText('majordome:ma-chercheur', 'TERMINÉ\nsuite')).toBe('ma-chercheur : TERMINÉ')
     const long = agentDoneText('ma-executant', 'TERMINÉ ' + 'x'.repeat(200))
     expect(Array.from(long).length).toBe(80)
     expect(long.endsWith('…')).toBe(true)

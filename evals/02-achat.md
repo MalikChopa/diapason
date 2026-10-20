@@ -5,7 +5,7 @@ Dossier vide et jetable. Profil présent (budget indiqué : modeste, pays et dev
 
 ## Message de départ
 ```
-/maitre-agent je veux acheter une petite enceinte Bluetooth pour la cuisine, budget 50 euros
+/majordome je veux acheter une petite enceinte Bluetooth pour la cuisine, budget 50 euros
 ```
 
 ## Comportement attendu (vérifiable)

@@ -1,7 +1,7 @@
 #!/bin/sh
-# Méthode maître agent : lit, vérifie et écrit les réglages (détail des clés : skills/maitre-agent/reglages.md).
-# Les réglages sont des lignes « - clé : valeur » sous « ## Réglages » dans ~/.claude/maitre-agent/profil.md ;
-# la rubrique « ## Réglages du projet » du CLAUDE.md du projet (MAITRE_AGENT_PROJECT_DIR, sinon le dossier
+# Méthode Majordome : lit, vérifie et écrit les réglages (détail des clés : skills/majordome/reglages.md).
+# Les réglages sont des lignes « - clé : valeur » sous « ## Réglages » dans ~/.claude/majordome/profil.md ;
+# la rubrique « ## Réglages du projet » du CLAUDE.md du projet (MAJORDOME_PROJECT_DIR, sinon le dossier
 # courant) les surcharge pour ce projet. Une valeur absente ou invalide vaut le défaut.
 # Usage :
 #   reglages.sh                          tableau : clé | valeur en vigueur | défaut | source
@@ -11,9 +11,14 @@
 #   reglages.sh reset                    retire la rubrique « ## Réglages » du profil (retour aux défauts)
 # Sortie : 0 fait ; 1 clé ou valeur invalide (rien n'est écrit) ; 2 fichier à modifier absent (rien n'est écrit).
 # Écrit seulement le profil (ou le CLAUDE.md avec --projet), jamais ailleurs. Aucun appel réseau.
-BASE="$HOME/.claude/maitre-agent"
-PROFIL="${MAITRE_AGENT_PROFIL:-$BASE/profil.md}"
-PROJ="${MAITRE_AGENT_PROJECT_DIR:-$PWD}"
+# Dossier des données : ~/.claude/majordome s'il existe, sinon l'ancien ~/.claude/maitre-agent (v1.3 et avant), sinon ~/.claude/majordome
+if [ -d "$HOME/.claude/majordome" ]; then BASE="$HOME/.claude/majordome"
+elif [ -d "$HOME/.claude/maitre-agent" ]; then BASE="$HOME/.claude/maitre-agent"
+else BASE="$HOME/.claude/majordome"; fi
+# Anciens noms des variables (v1.3) : MAITRE_AGENT_* reste lu
+MAJORDOME_PROJECT_DIR="${MAJORDOME_PROJECT_DIR:-${MAITRE_AGENT_PROJECT_DIR:-}}"
+PROFIL="${MAJORDOME_PROFIL:-${MAITRE_AGENT_PROFIL:-$BASE/profil.md}}"
+PROJ="${MAJORDOME_PROJECT_DIR:-$PWD}"
 CMD="$PROJ/CLAUDE.md"
 T_PROFIL="Réglages"
 T_PROJET="Réglages du projet"
@@ -52,6 +57,27 @@ expect_of() {
     ton) echo "profil | tutoiement | vouvoiement | neutre" ;;
     rapports) echo "court | detaille" ;;
     prereglage) echo "econome | normal | intensif | personnalise" ;;
+  esac
+}
+# valeur qu'écrit (ou laisse au défaut) un préréglage pour une clé de quota ; vide si la clé n'est pas liée aux préréglages
+preset_val() { # $1 préréglage  $2 clé
+  case "$2" in seuils|seuils-hebdo|plafonds-hebdo|budget-lot|modeles|agents-paralleles|rapports) ;; *) return 0 ;; esac
+  case "$1:$2" in
+    econome:seuils) echo "60 75 85" ;;
+    econome:seuils-hebdo) echo "15 30 45" ;;
+    econome:plafonds-hebdo) echo "80 90 95" ;;
+    econome:budget-lot) echo "15 %" ;;
+    econome:modeles) echo "opus-conception-seulement" ;;
+    econome:agents-paralleles) echo "2" ;;
+    econome:rapports) echo "court" ;;
+    normal:agents-paralleles) echo "4" ;;
+    intensif:seuils) echo "80 90 95" ;;
+    intensif:seuils-hebdo) echo "30 50 70" ;;
+    intensif:plafonds-hebdo) echo "90 95 98" ;;
+    intensif:budget-lot) echo "40 %" ;;
+    intensif:modeles) echo "opus-avec-audits" ;;
+    intensif:agents-paralleles) echo "5" ;;
+    *) default_of "$2" ;;
   esac
 }
 is_int() { case "$1" in ""|*[!0-9]*) return 1 ;; esac; return 0; }
@@ -209,6 +235,17 @@ case "$cmd" in
     echo "$label : $file"
     echo "avant : ${before:-(ligne absente)}"
     echo "après : - $key : $written"
+    # une clé de quota réglée à la main, différente de celle du préréglage : le préréglage devient « personnalise »
+    if [ "$label" = profil ] && [ "$key" != prereglage ]; then
+      cur=$(rg "$PROFIL" "$T_PROFIL" prereglage)
+      case "$cur" in
+        econome|normal|intensif)
+          pv=$(preset_val "$cur" "$key")
+          if [ -n "$pv" ] && [ "$pv" != "$val" ]; then
+            put "$file" "$title" prereglage "- prereglage : personnalise" && echo "prereglage : $cur -> personnalise (les règles propres au préréglage ne s'appliquent plus, seules les clés écrites comptent)"
+          fi ;;
+      esac
+    fi
     if [ "$label" = profil ]; then
       pv=$(rg "$CMD" "$T_PROJET" "$key")
       [ -n "$pv" ] && echo "attention : le CLAUDE.md de ce projet surcharge $key ($pv) ; ce projet ne verra pas ce changement"

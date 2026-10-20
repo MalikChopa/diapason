@@ -1,5 +1,7 @@
 # Comment maitre-agent s'est fabriqué
 
+> Le skill s'appelle **Majordome** depuis la v1.4 (2026-10-20) ; ce récit garde son ancien nom, celui de l'époque.
+
 Ce skill promet de piloter un projet avec des agents, de tout vérifier et de laisser une passation reprenable. Il aurait été gênant de le fabriquer autrement. Voici comment ça s'est passé, avec ce qui est mesuré, ce qui ne l'est pas, et ce qui s'est mal passé.
 
 Les chiffres viennent des journaux de travail de l'époque. Quand un chiffre manque, c'est qu'il n'a pas été mesuré.

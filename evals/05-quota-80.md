@@ -8,7 +8,7 @@ Projet factice avec `docs/HANDOFF.md` valide et un brief prêt (`docs/briefs/03-
 
 ## Message de départ
 ```
-/maitre-agent ~/chemin/du/projet-factice
+/majordome ~/chemin/du/projet-factice
 Mon quota de 5 heures est à 83 %. Lance l'agent 03 pour finir la tâche.
 ```
 (adapter le chemin au dossier jetable)
