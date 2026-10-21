@@ -37,24 +37,29 @@ The name: a *diapason* is the tuning fork that gives the A to an orchestra. Here
 
 ### How it works
 
+**From the idea to an approved sheet and mock-up**
+
 ```mermaid
-flowchart TD
-    U(["You: /diapason + an idea, a file or a project"]) --> P["Reads your profile<br/>language · plan · settings"]
-    P --> R{"What is it?"}
-    R -- "sub-command<br/>help · status · settings" --> SC["Answers directly<br/>no agent"]
-    R -- "project to resume" --> RS["Reads HANDOFF + disk<br/>since your last visit"]
+flowchart LR
+    U(["You:<br/>/diapason + an idea,<br/>a file or a project"]) --> P["Reads your profile<br/>language · plan ·<br/>settings"]
+    P --> R{"What<br/>is it?"}
+    R -- "sub-command<br/>help · status · settings" --> SC["Answers directly,<br/>no agent"]
+    R -- "project to resume" --> RS["Reads HANDOFF<br/>+ the disk"]
     R -- "new idea" --> Q
     RS --> Q
 
     subgraph W["① Framing workshop"]
-        Q["Tools survey<br/>MCP · browser · artifacts"] --> T1["Round 1: the what, decided by you<br/>goal · audience · shape · MVP"]
-        T1 --> T2["Round 2: the how<br/>techs · data · style · constraints"]
-        T2 --> T3["Round 3: one-page sheet<br/>Approve · Edit · Start over"]
+        Q["Tools survey<br/>MCP · browser ·<br/>artifacts"] --> T1["Round 1: the what,<br/>decided by you"] --> T2["Round 2: the how<br/>techs · data · style"] --> T3["Round 3: one-page sheet<br/>Approve · Edit ·<br/>Start over"]
     end
 
-    T3 -- "approved" --> MK["② Mock-up, if there is an interface<br/>your design · design tool · private Artifact · HTML"]
-    MK -- "approved" --> A3
+    T3 -- "approved" --> MK["② Mock-up<br/>if there is<br/>an interface"]
+    MK -- "approved" --> NEXT(["③ Milestones<br/>see below"])
+```
 
+**Then: build, verify, check in**
+
+```mermaid
+flowchart LR
     subgraph J["③ Milestones"]
         A1["ma-chercheur<br/>research · sonnet"]
         A2["ma-concepteur<br/>design · opus"]
@@ -62,16 +67,14 @@ flowchart TD
         A4["ma-testeur<br/>tests · sonnet"]
         A5["ma-auditeur<br/>audit · sonnet"]
     end
-
-    J --> V{"④ Diapason verifies itself<br/>commands run now · primary sources"}
+    J --> V{"④ Diapason<br/>verifies itself<br/>commands run now ·<br/>primary sources"}
     V -- "fix, 3 rounds max" --> J
-    V -- "verified" --> CP["⑤ Checkpoint<br/>demo · what changed · next step and its cost"]
+    V -- "verified" --> CP["⑤ Checkpoint<br/>demo · changes ·<br/>next step and cost"]
     CP -- "Continue" --> J
-    CP -- "Adjust" --> Q
-    CP -- "Stop" --> H["HANDOFF.md up to date<br/>resume anytime"]
-
-    G[["🛡️ Safeguard hook<br/>no code before the sheet is approved"]] -.-> J
-    QT[["📊 Quota watch<br/>5 h window: 70 · 80 · 90 %<br/>week: by pace · clean stop"]] -.-> J
+    CP -- "Adjust" --> BK(["back to the<br/>workshop ①"])
+    CP -- "Stop" --> H["HANDOFF.md<br/>up to date,<br/>resume anytime"]
+    G[["🛡️ Safeguard hook<br/>no code before the<br/>sheet is approved"]] -.-> J
+    QT[["📊 Quota watch<br/>5 h: 70 · 80 · 90 %<br/>week: by pace ·<br/>clean stop"]] -.-> J
 ```
 
 ### Get started in 3 steps
@@ -131,24 +134,29 @@ Le nom : un *diapason* est le petit instrument qui donne le la à un orchestre. 
 
 ### Comment ça marche
 
+**De l'idée à une fiche et une maquette validées**
+
 ```mermaid
-flowchart TD
-    U(["Toi : /diapason + une idée, un fichier ou un projet"]) --> P["Lit ton profil<br/>langue · forfait · réglages"]
-    P --> R{"C'est quoi ?"}
-    R -- "sous-commande<br/>aide · statut · réglages" --> SC["Répond directement<br/>sans agent"]
-    R -- "projet à reprendre" --> RS["Relit HANDOFF + disque<br/>depuis ta dernière visite"]
+flowchart LR
+    U(["Toi :<br/>/diapason + une idée,<br/>un fichier ou un projet"]) --> P["Lit ton profil<br/>langue · forfait ·<br/>réglages"]
+    P --> R{"C'est<br/>quoi ?"}
+    R -- "sous-commande<br/>aide · statut · réglages" --> SC["Répond directement,<br/>sans agent"]
+    R -- "projet à reprendre" --> RS["Relit HANDOFF<br/>+ le disque"]
     R -- "nouvelle idée" --> Q
     RS --> Q
 
     subgraph W["① Atelier de cadrage"]
-        Q["Relevé des outils<br/>MCP · navigateur · artifacts"] --> T1["Tour 1 : le quoi, décidé par toi<br/>objectif · public · forme · MVP"]
-        T1 --> T2["Tour 2 : le comment<br/>technos · données · style · contraintes"]
-        T2 --> T3["Tour 3 : fiche d'une page<br/>Valider · Modifier · Tout revoir"]
+        Q["Relevé des outils<br/>MCP · navigateur ·<br/>artifacts"] --> T1["Tour 1 : le quoi,<br/>décidé par toi"] --> T2["Tour 2 : le comment<br/>technos · données · style"] --> T3["Tour 3 : fiche d'une page<br/>Valider · Modifier ·<br/>Tout revoir"]
     end
 
-    T3 -- "validée" --> MK["② Maquette, s'il y a une interface<br/>ta maquette · outil de design · Artifact privé · HTML"]
-    MK -- "validée" --> A3
+    T3 -- "validée" --> MK["② Maquette<br/>s'il y a<br/>une interface"]
+    MK -- "validée" --> NEXT(["③ Jalons<br/>voir ci-dessous"])
+```
 
+**Ensuite : construire, vérifier, faire le point**
+
+```mermaid
+flowchart LR
     subgraph J["③ Jalons"]
         A1["ma-chercheur<br/>recherche · sonnet"]
         A2["ma-concepteur<br/>conception · opus"]
@@ -156,16 +164,14 @@ flowchart TD
         A4["ma-testeur<br/>tests · sonnet"]
         A5["ma-auditeur<br/>audit · sonnet"]
     end
-
-    J --> V{"④ Diapason vérifie lui-même<br/>commandes lancées à l'instant · sources primaires"}
+    J --> V{"④ Diapason<br/>vérifie lui-même<br/>commandes lancées<br/>à l'instant · sources<br/>primaires"}
     V -- "à corriger, 3 tours max" --> J
-    V -- "vérifié" --> CP["⑤ Point d'étape<br/>démo · ce qui a changé · la suite et son coût"]
+    V -- "vérifié" --> CP["⑤ Point d'étape<br/>démo · ce qui a changé ·<br/>la suite et son coût"]
     CP -- "Continuer" --> J
-    CP -- "Ajuster" --> Q
-    CP -- "S'arrêter" --> H["HANDOFF.md à jour<br/>reprise à tout moment"]
-
-    G[["🛡️ Garde-fou (hook)<br/>pas de code avant la fiche validée"]] -.-> J
-    QT[["📊 Suivi du quota<br/>fenêtre de 5 h : 70 · 80 · 90 %<br/>semaine : selon le rythme · arrêt propre"]] -.-> J
+    CP -- "Ajuster" --> BK(["retour à<br/>l'atelier ①"])
+    CP -- "S'arrêter" --> H["HANDOFF.md à jour,<br/>reprise à<br/>tout moment"]
+    G[["🛡️ Garde-fou (hook)<br/>pas de code avant<br/>la fiche validée"]] -.-> J
+    QT[["📊 Suivi du quota<br/>5 h : 70 · 80 · 90 %<br/>semaine : selon le<br/>rythme · arrêt propre"]] -.-> J
 ```
 
 ### Démarrer en 3 étapes
