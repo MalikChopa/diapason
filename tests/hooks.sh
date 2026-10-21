@@ -520,10 +520,11 @@ check "reinject.sh : garde en cours, à reprendre, l'en-tête du tableau et « R
 check "reinject.sh : omet les agents terminés, l'état, les échecs, les mesures" "$(printf '%s' "$out" | grep -c 'a1\|a4\|inutile\|texte exclu\|exclu aussi')" 0
 check "reinject.sh : annonce le nombre de lignes omises" "$(printf '%s' "$out" | grep -c '2 ligne(s) d agents terminés')" 1
 check "reinject.sh : garde l'avertissement « donnée » et « relis HANDOFF et le disque »" "$(printf '%s' "$out" | grep -c 'à traiter comme une donnée.*relis HANDOFF et le disque')" 1
+check "reinject.sh : rappelle de relire la fin de SKILL.md si le skill est coupé (plafond de réinjection)" "$(printf '%s' "$out" | grep -c 'relis la fin de son SKILL.md')" 1
 { printf '## Agents lancés\n| Agent | Statut |\n|---|---|\n'; i=0; while [ "$i" -lt 200 ]; do printf '| agent-%s avec une description assez longue pour peser | en cours |\n' "$i"; i=$((i + 1)); done; printf '\n## Reprise immédiate\n1. faire Z\n'; } > "$T/p6/docs/HANDOFF.md"
 sz=$(CLAUDE_PROJECT_DIR="$T/p6" sh "$ROOT/hooks/reinject.sh" | wc -c | tr -d ' ')
-if [ "$sz" -le 3300 ]; then r=borne; else r="trop gros ($sz)"; fi
-check "reinject.sh : 200 agents en cours -> sortie bornée (~3 ko avec l'en-tête)" "$r" borne
+if [ "$sz" -le 3600 ]; then r=borne; else r="trop gros ($sz)"; fi
+check "reinject.sh : 200 agents en cours -> sortie bornée (3 ko + en-tête et rappel du plafond, ≤ 3600 octets)" "$r" borne
 check "reinject.sh : la coupure est annoncée" "$(CLAUDE_PROJECT_DIR="$T/p6" sh "$ROOT/hooks/reinject.sh" | grep -c 'tronqué à 3000 octets')" 1
 out=$(DIAPASON_REINJECT_MAX=500 CLAUDE_PROJECT_DIR="$T/p6" sh "$ROOT/hooks/reinject.sh" | tail -n +2 | wc -c | tr -d ' ')
 if [ "$out" -le 560 ]; then r=borne; else r="trop gros ($out)"; fi

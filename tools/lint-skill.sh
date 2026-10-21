@@ -26,10 +26,33 @@ for f in "$S/SKILL.md" "$S"/agents/*.md "$ROOT"/agents/*.md; do
   yaml_ok "$f" && ok "YAML ${f#"$ROOT"/}" || ko "YAML ${f#"$ROOT"/}"
 done
 
-# 2. Taille de SKILL.md : < 500 lignes et < ~5000 tokens (limite gardée après un résumé)
-l=$(wc -l < "$S/SKILL.md"); t=$(( $(wc -c < "$S/SKILL.md") * 10 / 33 ))
+# 2. Taille de SKILL.md : < 500 lignes, et sous le plafond de réinjection après un résumé automatique
+#    (doc officielle : les 5 000 premiers tokens d'un skill invoqué). Mesuré le 2026-10-20 : ~2,4 à 2,5 octets
+#    par token pour ce texte (get_usage avant/après), pas 3,3 : plafond en octets = 5 000 x 2,4 = 12 000.
+#    Les règles critiques (§5 Permissions) doivent aussi commencer avant l'octet 11 000, et la dernière section avant 12 000.
+LINT_SKILL_MAX_BYTES="${LINT_SKILL_MAX_BYTES:-12000}"
+l=$(wc -l < "$S/SKILL.md"); b=$(wc -c < "$S/SKILL.md" | tr -d ' '); t=$(( b * 10 / 24 ))
 [ "$l" -lt 500 ] && ok "SKILL.md $l lignes" || ko "SKILL.md $l lignes (>= 500)"
-[ "$t" -lt 5000 ] && ok "SKILL.md ~$t tokens" || ko "SKILL.md ~$t tokens (>= 5000)"
+[ "$b" -le "$LINT_SKILL_MAX_BYTES" ] && ok "SKILL.md $b octets (~$t tokens, plafond de réinjection 5000 = $LINT_SKILL_MAX_BYTES octets)" || ko "SKILL.md $b octets (~$t tokens) > $LINT_SKILL_MAX_BYTES : la fin serait coupée après un résumé automatique"
+off5=$(grep -bo '^## 5\. ' "$S/SKILL.md" | head -n 1 | cut -d: -f1)
+offlast=$(grep -bo '^## ' "$S/SKILL.md" | tail -n 1 | cut -d: -f1)
+[ -n "$off5" ] && [ "$off5" -lt 11000 ] && ok "SKILL.md : §5 Permissions commence à l'octet $off5 (< 11000)" || ko "SKILL.md : §5 Permissions absente ou après l'octet 11000 (${off5:-?})"
+[ -n "$offlast" ] && [ "$offlast" -lt "$LINT_SKILL_MAX_BYTES" ] && ok "SKILL.md : dernière section à l'octet $offlast" || ko "SKILL.md : dernière section après l'octet $LINT_SKILL_MAX_BYTES"
+
+# 2c. Cohérence du corps avec les fichiers lus à la demande
+# (c) §5 de SKILL.md et les règles des agents (briefs/_entete.md) citent les mêmes interdits
+for kw in captcha anti-bot DRM paywall anti-cheat 'git push'; do
+  grep -q -- "$kw" "$S/SKILL.md" && grep -q -- "$kw" "$S/briefs/_entete.md" && ok "§5 et _entete.md citent « $kw »" || ko "§5 (SKILL.md) et briefs/_entete.md ne citent pas tous deux « $kw »"
+done
+# (d) chaque clé de réglage citée entre accents graves dans SKILL.md existe dans reglages.md
+for k in seuils budget-lot agents-paralleles autonomie modeles rapports prereglage; do
+  grep -q "\`$k\`" "$S/SKILL.md" || continue
+  grep -q "\`$k\`" "$S/reglages.md" && ok "clé de réglage $k connue de reglages.md" || ko "clé de réglage $k citée dans SKILL.md mais absente de reglages.md"
+done
+# (e) chaque renvoi « §N » de SKILL.md pointe une section existante
+for n in $(grep -o '§[0-9]' "$S/SKILL.md" | tr -d '§' | sort -u); do
+  grep -q "^## $n\. " "$S/SKILL.md" && ok "renvoi §$n" || ko "renvoi §$n sans section « ## $n. » dans SKILL.md"
+done
 
 # 2b. Le skill ne se charge que sur commande explicite
 grep -q '^disable-model-invocation: true' "$S/SKILL.md" && ko "SKILL.md : disable-model-invocation casse le lancement par une autre session" || ok "SKILL.md : lancement par l'outil Skill possible"

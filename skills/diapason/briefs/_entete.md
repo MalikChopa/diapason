@@ -9,6 +9,7 @@ Read first: <path>/CLAUDE.md, then <paths with sections or line ranges>. A whole
 Useful user context: <profile lines that matter for this task: machine, country and currency, uses, level; or "none">.
 You write ONLY: <files or folders>. Do not touch: <other agents' files, reference documents, the user's originals>. In parallel: <who does what, or "nobody">.
 Progress: create <file> early and complete it as you go; a cut must lose nothing.
+Budget: about <N k tokens or N pages read> (starting values: the profile's "Repères de coût"). Reached: write your file and report TERMINÉ AVEC RÉSERVES.
 Project dependencies allowed: <list, or "none">.
 Filter your commands' output (grep, tail, head): no full output in your context.
 <Only if the agent launches a server: ports in use <list>.>

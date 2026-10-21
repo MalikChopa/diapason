@@ -1,6 +1,6 @@
 # Installation: three routes, then optional settings
 
-Only with the user's explicit approval: this is persistent configuration. Read the existing files first and merge, never overwrite.
+Only with the user's explicit approval: this is persistent configuration. Read the existing files first and merge, never overwrite; never add a broad git exclusion (e.g. `docs/`) without checking what it hides.
 
 ## 0. Choose a route
 | Route | What you get | What it does not do |

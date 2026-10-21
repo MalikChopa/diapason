@@ -13,7 +13,7 @@ Read this file for any project **to build**: Medium, Large, and Small as soon as
 **Safeguard**: the hook `hooks/garde-fiche.sh` (`installation.md` §6) enforces this rule when installed. It triggers as soon as `docs/FICHE.md` exists with a "Status: …" line (FR: "Statut : …"): that is why the sheet is created in tour 1, as a draft. It does not replace the text above (writes made through Bash are not filtered).
 
 ## How to ask the questions
-- **Button question tool** (e.g. AskUserQuestion): up to **4 questions per call**, 2 to 4 options each. Where a recommendation makes sense (form, techs, hosting, MVP, approval): the **recommendation first**, followed by "(recommended)" (FR: "(recommandé)"), with **the why in one line** in the option (cost, difficulty, where it runs). A question of taste or fact (language, budget, name, preference, usage) has no recommended option. A "recommended" option never changes the user's configuration (SKILL §7). The user can always answer freely.
+- **Button question tool** (e.g. AskUserQuestion): up to **4 questions per call**, 2 to 4 options each. Where a recommendation makes sense (form, techs, hosting, MVP, approval): the **recommendation first**, followed by "(recommended)" (FR: "(recommandé)"), with **the why in one line** in the option (cost, difficulty, where it runs). A question of taste or fact (language, budget, name, preference, usage) has no recommended option. A "recommended" option never changes the user's configuration (settings, connectors, hooks, `~/.claude`). The user can always answer freely.
 - **Without that tool**: numbered list, 4 questions at most per message, same options (a, b, c), recommendation marked "(recommended)" and its why. The user answers "1a, 2c".
 - **Never ask what a survey or a file already says** (profile, `CLAUDE.md`, folder, supplied file): write "I saw X in Y" and start from there. One question fewer beats a confirmed question.
 - **Accompanying tone**: simple words, a technical term = a few words of explanation, an honest recommendation with its price to pay, alternatives, never imposing. If the user says "choose for me", put your full recommendation in the sheet and still ask "Approve".
@@ -37,6 +37,7 @@ In the tour 1 message, say "I saw X" (one sentence) and **then propose only what
 
 1. **Goal**: what problem it solves, or what you want to be able to do. Propose a one-sentence reformulation of the request (recommended) and other possible readings.
 2. **For whom**: you alone, family or friends, a public. This decides the account, the hosting and the level of finish.
+   If the user cites an existing work as a reference (a game, an app, a brand), say right away that it is an inspiration and never copied: no names, characters, interface, assets or text (`phases.md`, Inspiration).
 3. **Product form**: website, mobile app, desktop app, command-line tool, extension, document, game… with the recommendation first and why, based on the user's device, usage and level.
 4. **Priority features** (multiple choice): 4 proposals at most, with **an MVP proposal** (the smallest useful set) marked recommended; the rest goes into "later".
 

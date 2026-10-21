@@ -3,6 +3,36 @@
 Toutes les évolutions notables de ce projet sont notées ici.
 Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le projet suit le [versionnement sémantique](https://semver.org/lang/fr/).
 
+## [1.6.0] - 2026-10-20 (en préparation, non publiée)
+
+Le corps de `SKILL.md` devient assez court pour être réinjecté en entier après un résumé automatique, et le lot reprend les pistes issues d'une relecture des 10 simulations de la v1.3 et de quatre recherches (autres dépôts d'orchestration, tokens et quota, optimisation d'un gros skill). Valeurs et règles de ce lot : réglages de conception, non rejoués en vraie session.
+
+### Corrigé
+- **`SKILL.md` était trop long pour la réinjection** : après un résumé automatique, Claude Code ne rend à un skill que ses 5 000 premiers tokens (25 000 pour l'ensemble des skills), en gardant le début. `SKILL.md` pesait environ 6 400 tokens : les sections « Quota » et « Reporting » (paliers de quota, attente des réponses, plafond de HANDOFF) étaient perdues juste quand une reprise en a besoin. Il passe de 16 272 à **11 685 octets** (environ 4 270 tokens, une mesure) : « Permissions » est remontée juste après « Role », le numéro des sections ne change pas, et les détails vont dans des fichiers lus à la demande.
+- **L'estimation du lint était fausse** : « octets × 10 / 33 » annonçait 4 930 tokens pour un fichier qui en pesait environ 6 400. Mesure : 2,4 à 2,7 octets par token pour ce texte (et non 3,3).
+
+### Ajouté
+- **Lint en octets avec le vrai plafond** (`tools/lint-skill.sh`) : échec au-delà de 12 000 octets (`LINT_SKILL_MAX_BYTES` pour changer), « Permissions » avant l'octet 11 000, dernière section avant 12 000. Nouveaux contrôles de cohérence : les interdits de « Permissions » sont les mêmes dans `briefs/_entete.md`, les clés de réglage citées existent dans `reglages.md`, chaque renvoi « §N » pointe une section existante.
+- **Filet dans le hook de réinjection** (`reinject.sh`) : après un résumé, il rappelle de relire la fin de `SKILL.md` et `quota.md` si le texte du skill paraît coupé.
+- **`contrats.md`** : la liste des titres et clés que les scripts lisent (HANDOFF, profil, fiche, index), sortie de `SKILL.md`.
+- **Budget par agent** (`briefs/_entete.md`) : une ligne « Budget » dans chaque brief (tokens ou pages lues) ; budget atteint = l'agent écrit son fichier et rapporte « terminé avec réserves ». Un agent de recherche coûte environ 8 à 10 k tokens par page web lue.
+- **Reprise** (`reprise.md`) : si le `CLAUDE.md` du projet donne une commande de test ou de lancement, elle est lancée une fois avant tout nouvel agent d'implémentation ; un échec est dit avant de planifier.
+- **Jeu d'action ou temps réel** : le premier jalon (J0) est une boucle jouable, soumise à l'utilisateur pour juger la sensation (contrôles, rythme, difficulté) avant les jalons suivants ; la maquette ne peut pas la valider et un testeur non plus (`phases.md`, `matrice.md`).
+
+### Changé
+- **Vérificateurs sceptiques** : `ma-auditeur` et `ma-testeur` comptent une preuve manquante ou non concluante comme « non vérifié » ou « non réussi », et le rapport d'un autre agent comme une hypothèse. Le testeur n'émet aucun verdict sur la difficulté ou le plaisir de jeu (« non vérifié, à juger par l'utilisateur »).
+- **Audit** : ses critères sont ceux de la fiche et de la section du jalon, écrits avant le travail ; aucun critère ajouté sans le dire (`briefs/audit.md`, qui porte maintenant les tours d'audit).
+- **Aperçus et variantes en `econome`** : les aperçus de mise en page (2 par écran) sont le choix de variante ; plus de seconde question de variante après la maquette.
+- **Un seul chemin de maquette** : le brief du testeur lit le chemin noté dans la ligne « Maquette validée » de la fiche (`maquette/index.html` ou `maquette/<variante>/index.html`).
+- **Cadrage** : si tu cites une œuvre en référence, le tour 1 précise tout de suite qu'on s'en inspire sans la copier. Pour une décision ou un achat, les deux questions bloquantes sont celles qui changent le plus la réponse.
+- **Une seule règle de lecture du profil à la reprise** (`reprendre` ou chemin de projet) : lignes de langue et de ton, plus « Réglages ».
+- **`installation.md`** : pas d'exclusion git large (par exemple `docs/`) sans vérifier ce qu'elle cache.
+- Détails déplacés hors de `SKILL.md` : lecture de l'usage, palier 2+ au départ et coût d'un lot (`quota.md`), migration et relevé à refaire (`profil-modele.md`), piste abandonnée (`reprise.md`).
+- Tests : 379 vérifications sous `sh` et `dash` ; le test de taille du hook de réinjection passe de 3 300 à 3 600 octets (phrase de rappel ajoutée).
+
+### Pas encore fait
+- Les 11 scénarios de `evals/` n'ont jamais été joués en vraie session ; la coupe « garde le début » est lue dans la documentation de Claude Code mais n'a pas été observée.
+
 ## [1.5.0] - 2026-10-20
 
 Changement de nom : Majordome devient **Diapason** (nom choisi par l'utilisateur). Un diapason donne le la à l'orchestre ; ici, il donne le la à l'équipe d'agents. Aucun changement de fonctionnement.

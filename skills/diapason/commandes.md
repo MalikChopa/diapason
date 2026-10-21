@@ -1,6 +1,6 @@
 # Sub-commands of `/diapason`
 
-The first word of the argument decides (case and accents ignored). A sub-command launches no agent and creates no project, except `nouveau` and `reprendre`. `statut` and `diagnostic` change nothing; `reglages` changes only the settings. Profile (SKILL §0): `aide` checks only that it exists, `statut` reads only "Projets connus", `reglages`, `diagnostic` and `reprendre` only the language and tone lines. Answer in the profile's language.
+The first word of the argument decides (case and accents ignored). A sub-command launches no agent and creates no project, except `nouveau` and `reprendre`. `statut` and `diagnostic` change nothing; `reglages` changes only the settings. Profile (SKILL §0): `aide` checks only that it exists, `statut` reads only "Projets connus", `reglages` and `diagnostic` only the language and tone lines, `reprendre` those plus "Réglages" (same rule as a resume by project path). Answer in the profile's language.
 
 | Command | Alias | Effect |
 |---|---|---|

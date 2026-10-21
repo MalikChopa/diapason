@@ -92,8 +92,10 @@ Created: <YYYY-MM-DD> · Updated: <YYYY-MM-DD> · Automatic updates: <yes / no; 
 ```
 
 ## Keeping the profile (bounded)
+- **Migration** (SKILL §0): no profile but `~/.claude/majordome/` or `~/.claude/maitre-agent/` has one: run `sh SKILL_DIR/hooks/migrer.sh` (copy only; a proposed `settings.json` change: show the diff, apply on approval) and relay its message.
+- A command failing because of the environment, or a profile over 6 months old: redo the survey.
 - **Ceilings per section**, so that reading it does not grow with use: "Repères de coût" 8 lines, "Projets connus" 15, "Habitudes observées" 15, "Usages et équipement" 15. Past the ceiling, merge or remove the **oldest** line (costs: keep one median line per agent type plus the latest ones; projects: the most recent, the oldest dropped; habits: no duplicates, a new line that repeats an old one replaces it). Say so in one sentence.
-- **Read only the useful sections** when the task needs a few of them (`grep -n '^## ' <profile>`, then `sed -n '<from>,<to>p'`): a decision or purchase reads the equipment, a resume reads "Projets connus" and "Réglages", `statut` reads "Projets connus" alone. The whole file only for `profil`, the first use and a survey redo.
+- **Read only the useful sections** when the task needs a few of them (`grep -n '^## ' <profile>`, then `sed -n '<from>,<to>p'`): a decision or purchase reads the equipment, a resume (`reprendre` or a project path, `reprise.md`) reads the language and tone lines and "Réglages", `statut` reads "Projets connus" alone. The whole file only for `profil`, the first use and a survey redo.
 - The user corrects your way of working ("stop asking me X", "always test Y"): if "Automatic updates" is yes, add a dated line in "Habitudes observées" and say so in one sentence. Otherwise, propose it.
 - `/diapason profil`: shows the profile and applies the requested changes.
 - At the end of a project, add the measured costs to "Repères de coût" (tokens and % of window per agent), and the project to "Projets connus" (not a Small purchase or decision without agent).
