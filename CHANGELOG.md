@@ -8,6 +8,9 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 ### Ajouté
 - `CONTRIBUTING.md` : section « Revue de parcimonie » (5 règles de `SKILL.md` tirées à chaque version, origine et évaluation cherchées, retrait ou fusion proposés sans les deux).
 
+### Corrigé
+- `hooks/statusline.sh` : course dans les alertes de quota (5 h et 7 j). Un appel arrivant pendant qu'un autre marquait encore les seuils plus bas pouvait viser un seuil plus bas et envoyer une seconde alerte. Le seuil visé est maintenant toujours le plus haut franchi, et le verrou `mkdir` décide seul. Deux tests de régression ajoutés (`tests/hooks.sh`), qui échouent sur l'ancien code.
+
 ### Examiné, sans changement
 - Revue de parcimonie du 2026-10-21 (§0, §2, §3, §5) : 5 règles gardées (données de l'utilisateur sur sa machine, plus petit résultat utilisable, profil sans levée des interdits, chemins plutôt que résumés, modèle toujours explicite) ; 4 sans évaluation.
 - Champs d'agent `effort` et `omitClaudeMd` (recherche 08, n° 6) : essais sur `ma-chercheur`. `effort: medium` donne 8 à 17 % de tokens en moins et deux fois moins de temps sur une recherche factuelle (6 passages, 30 réponses justes sur 30) ; non mesuré sur une synthèse à plusieurs sources ni sur un audit, où la profondeur de lecture peut baisser. `omitClaudeMd` : non essayé, gain borné à environ 1,4 k tokens ici. Les agents restent inchangés.

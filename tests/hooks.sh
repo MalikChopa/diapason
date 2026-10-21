@@ -79,6 +79,13 @@ while [ "$i" -lt 12 ]; do
 done
 wait
 check "C10 12 appels simultanés à 85 % : une seule alerte" "$(awk '{s += $1} END {print s + 0}' "$T/par.out")" 1
+# État intermédiaire d'un autre appel (seuil haut déjà verrouillé, seuils bas pas encore marqués) : aucune alerte de plus
+reset2=$(( reset + 11 )); mkdir -p "$BASE/state/alerts/5h-$reset2-80"
+out=$(printf '%s\n' '{"session_id":"r1","cwd":"'"$T"'/p2","rate_limits":{"five_hour":{"used_percentage":85,"resets_at":'"$reset2"'}}}' | st 2>&1 >/dev/null | grep -c 'seuil')
+check "C10 5 h : seuil 80 verrouillé, 70 pas encore marqué : aucune alerte de plus" "$out" 0
+reset3=$(( $(date +%s) + 302400 )); mkdir -p "$BASE/state/alerts/7j-$reset3-p2"
+out=$(printf '%s\n' '{"session_id":"r2","cwd":"'"$T"'/p2","rate_limits":{"seven_day":{"used_percentage":90,"resets_at":'"$reset3"'}}}' | st 2>&1 >/dev/null | grep -c 'palier')
+check "C10 7 j : palier 2 verrouillé, palier 1 pas encore marqué : aucune alerte de plus" "$out" 0
 printf '%s\n' '{"session_id":"c1","agent_id":"a1","agent_type":"general-purpose"}' | sh "$ROOT/hooks/agent-count.sh" start
 out=$(printf '%s\n' '{"session_id":"c1","cwd":"'"$T"'/p2"}' | st)
 check "C10 le compteur compte aussi un agent hors ma-*" "$out" "🛎️ p2 · J2 plugin en cours · 1 agent · quota ?"

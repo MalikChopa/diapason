@@ -160,9 +160,11 @@ alerte() { # $1 nom de fenêtre (5h|7j)  $2 pourcentage entier  $3 resets_at  $4
   [ -n "$2" ] || return 0
   key=$(printf '%s' "${3:-0}" | tr -c '0-9' '_')
   ad="$BASE/state/alerts"
+  # Le seuil visé est le plus haut franchi (SEUILS est croissant), qu'il soit déjà marqué ou non : un appel
+  # qui arrive pendant que l'autre marque encore les seuils plus bas ne doit pas viser un seuil plus bas.
   top=0
   for s in $SEUILS; do
-    if [ "$2" -ge "$s" ] 2>/dev/null && [ ! -e "$ad/$1-$key-$s" ]; then top=$s; fi
+    if [ "$2" -ge "$s" ] 2>/dev/null; then top=$s; fi
   done
   [ "$top" -gt 0 ] || return 0
   mkdir -p "$ad" 2>/dev/null || return 0
@@ -207,9 +209,7 @@ alerte_h() { # $1 pourcentage entier  $2 resets_at : une alerte par palier et pa
   palier_h "$1" "$2"
   [ "$PH" -gt 0 ] || return 0
   key=$(printf '%s' "${2:-0}" | tr -c '0-9' '_')
-  ad="$BASE/state/alerts"; top=0; pp=1
-  while [ "$pp" -le "$PH" ]; do [ -e "$ad/7j-$key-p$pp" ] || top=$pp; pp=$(( pp + 1 )); done
-  [ "$top" -gt 0 ] || return 0
+  ad="$BASE/state/alerts"; top=$PH; pp=1   # palier visé = le plus haut atteint, même raison que dans alerte
   mkdir -p "$ad" 2>/dev/null || return 0
   mkdir "$ad/7j-$key-p$top" 2>/dev/null || return 0
   pp=1; while [ "$pp" -lt "$top" ]; do mkdir "$ad/7j-$key-p$pp" 2>/dev/null; pp=$(( pp + 1 )); done
