@@ -11,7 +11,7 @@ Read by section (`grep -n '^## \|^### ' phases.md`, then `sed`): "0. Start", "Si
    - the size and the flow;
    - the folder (profile preference "Dossiers");
    - the grouped question of the profile's "to confirm" lines, and the plan's preset if not yet confirmed (`reglages.md`, "Forfait et préréglage");
-   - your assumptions for the rest ("I assume that…");
+   - your assumptions for the rest ("I assume that…"), each marked sure / likely / guessing (an estimate, not a measure; a product decision is asked whatever the certainty);
    - the estimated cost (SKILL §6).
 
    **Project to build** (Medium, Large, and Small as soon as there is something to make): continue in the same turn with tour 1 of `cadrage.md`, and **wait for the answers**. Tour 1's questions replace the "blocking questions"; the limit of 2 does not apply there. Nothing is built before the sheet is validated.
@@ -34,7 +34,7 @@ Read by section (`grep -n '^## \|^### ' phases.md`, then `sed`): "0. Start", "Si
 
 | | Small | Medium | Large |
 |---|---|---|---|
-| Screens | 0 to 2 | 3 to 6 | more than 6, or several platforms |
+| Screens (or pieces of a visual deliverable; count unknown: ask in tour 1) | 0 to 2 | 3 to 6 | more than 6, or several platforms |
 | Data | none, or one local file | one user's data (file, local database) | shared between users with roles or payments |
 | Accounts | none | none, or one simple login | roles, several kinds of users |
 | Files touched or delivered | 1 to 3 | about a dozen | many, several sessions |
@@ -73,6 +73,7 @@ Announce it in 3 lines and note it in HANDOFF. Skip any useless phase, saying so
 | **Software** (app, site, tool, script, automation) | Framing (workshop, validated sheet) → Research → **Mock-up** (if interface) → Design → Audit → Milestones → Tests → Delivery |
 | **Game or interactive creative project** | Framing (workshop, validated sheet) → Inspiration (if relevant) → Research → **Mock-up** (screens, menus, one fixed scene) → Assets → Design → Spec (Large) → Audits → Milestones → Player-style tests → Delivery |
 | **Content** (document, presentation, video, course, brand) | Framing → Research → Plan → Production → Audit → Final version |
+| **Visual deliverable** (mock-ups, boards, a portfolio piece: the visual IS the product, nothing to build behind it) | Framing (workshop, validated sheet) → Inspiration (the user's references first) → **Look** (2 or 3 rendered looks) → Production (the pieces) → Review by the user → Delivery |
 | **Data or analysis** | Framing → Data inventory → Scripted cleaning → Analysis → Audit of the figures → Report |
 
 ### Framing
@@ -102,10 +103,19 @@ Between the validated sheet and the design. A script, an automation or a documen
 - **(d) Static HTML** `maquette/index.html` (step 2 below), opened in the built-in browser.
 - **(e) Text preview in the buttons** (step 1): always possible, as a complement or a last resort.
 
-1. **Previews in the buttons**: for the 2 to 4 key screens (home, main screen, input, result), a text wireframe (ASCII) in the `preview` of each option of the question tool, 2 or 3 layouts per screen, the recommendation first with its why. In `econome` (1 variant) these previews **are** the variant choice: 2 layouts per screen (the recommendation and one alternative), then step 2 builds the mock-up from the choices, with no second variant question in step 3. Without a question tool: the wireframes in the chat, numbered options.
-2. **Clickable mock-up** (rungs c and d): a single static HTML file (inline CSS, no dependency, no network call, fake data), screens linked together, in the chosen colours and layout. **Who writes it**: a simple mock-up (1 variant, 4 screens at most) is made by you, with at most one check screenshot (screenshots stay in your context for the whole session: cost **non chiffré**). Beyond that (variants, more screens): `ma-executant` (middle model) with `briefs/maquette.md`, **one variant per agent**, in parallel if the preset allows; repeated visual checking is the agent's. Show it as a private artifact if the environment allows, otherwise `maquette/index.html` opened in the built-in browser or, failing that, give the command to open it.
+1. **Previews in the buttons**: for the 2 to 4 key screens (home, main screen, input, result), a text wireframe (ASCII) in the `preview` of each option of the question tool, 2 or 3 layouts per screen, your lean first with its why. In `econome` (1 variant) these previews **are** the variant choice: 2 layouts per screen (your lean and one alternative), then step 2 builds the mock-up from the choices, with no second variant question in step 3. Without a question tool: the wireframes in the chat, numbered options.
+2. **Clickable mock-up** (rungs c and d): a single static HTML file (inline CSS, no dependency, no network call, fake data), screens linked together, in the chosen colours and layout. **Who writes it**: a simple mock-up (1 variant, 4 screens at most) is made by you, with at most one check screenshot (screenshots stay in your context for the whole session: cost **non chiffré**). Beyond that (variants, more screens): `dia-executant` (middle model) with `briefs/maquette.md`, **one variant per agent**, in parallel if the preset allows; repeated visual checking is the agent's. Show it as a private artifact if the environment allows, otherwise `maquette/index.html` opened in the built-in browser or, failing that, give the command to open it.
 3. **Approval by buttons**: checkpoint (`cadrage.md`) with "Continue (= the mock-up is approved) / Adjust / Stop" (FR: Continuer (= la maquette est validée) / Ajuster / S'arrêter). If there are variants, one more question to choose (variant A / B / mix; FR: variante A / B / mélange). Variants per preset: `econome` 1, `normal` 1 to 2, `intensif` 2 to 3.
 4. **The approved mock-up is the reference**: keep it (`maquette/index.html`, `maquette/<variant>/index.html` for an agent's variant, or the supplied link or file), note its path in `docs/FICHE.md` (line "Mock-up approved") and in HANDOFF. Implementation and test briefs cite it. A wanted deviation during the milestones = a new, dated approval by the user.
+
+### Visual deliverable (the product is the visual: mock-ups, boards, portfolio pieces)
+- **Choosing the type**: "a site to build" is Software (its mock-up is a phase); "the mock-ups / boards themselves" is this type. Unsure: take the closest row, name it in the start message, correct it after tour 1 (the type may follow the answers). A site whose content is the visual (photos, portfolio) stays Software but borrows from here: the limit sentence below, the user's real images in its mock-up (copies in `maquette/assets/`, shown in the local browser only), the location-data rule and the review checklist.
+- **Size** comes from the number of pieces (1 to 2 Small, 3 to 6 Medium, more Large). Unknown at the start: announce "provisional" and ask it in tour 1. Whatever the size, the framing is never cut below the questions here.
+- **Questions**: tour 1 = purpose and audience, pieces and output format, references supplied (existing identity files, or to create); tour 2 = finish level, rights, deadline; the style question is skipped (the look comes from rendered tiles). What the request already states is written as an assumption, not asked again.
+- **Say the limit in tour 1**: pieces are static HTML/CSS pages viewed in the browser, plus ready-to-copy prompts for real images (Assets); no high-fidelity renders. The user can judge only what they can see: no text previews for the look.
+- **Look**: after the user's references (rung (a) of the mock-up scale), build 2 or 3 style tiles as static HTML in `maquette/` (one screen each, same placeholder content, `econome`: 2), opened in the built-in browser or a private artifact. The user picks by sight; the chosen look is the reference.
+- **Production**: the pieces in `maquette/` (exports in `maquette/exports/`, so the safeguard stays satisfied); by you up to 4 pieces, beyond that `dia-executant` with `briefs/maquette.md`, one set of pieces per agent. The user's works are copied into `maquette/assets/` (open for the safeguard), originals untouched. Works, fonts and images shown are the user's own, a third party's, or under confidentiality: a third party's or confidential work is never shared or published without a yes; photos lose their location data before any sharing; the user's real images are shown in the local browser, never in an artifact (SKILL §5, data stays on the machine).
+- **Review**: the checklist goes on the sheet's "Review checklist" line at tour 3 (number of pieces, output format, readable at the target size on screen or on paper, contrast, no placeholder text in the pieces: only the tiles use placeholder content). A tester, if any, checks only the checklist, with screenshots; taste is the user's. The line "Mock-up approved" (FR "Maquette validée") stays "not yet" (the safeguard leaves `maquette/` open) until the user approves the pieces, then reads "the product itself" (FR "le produit lui-même").
 
 ### Design (`briefs/conception.md`)
 - Compare 2 or 3 options on measured criteria, especially what can be tested without the user.

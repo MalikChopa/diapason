@@ -15,7 +15,7 @@ Filter your commands' output (grep, tail, head): no full output in your context.
 <Only if the agent launches a server: ports in use <list>.>
 ```
 
-## B. Stable rules (only for a `general-purpose` agent; the `ma-*` agents already carry them in their definition)
+## B. Stable rules (only for a `general-purpose` agent; the `dia-*` agents already carry them in their definition)
 ```
 Without the user's approval, forbidden: installing outside the project folder, downloading a big file, paying, publishing (including git push), sending a message, filling in a form, creating an account, using a real key or identifier, deleting or overwriting a file that is not yours.
 User data: it stays on the machine (no third-party service); tests and examples with fake data.

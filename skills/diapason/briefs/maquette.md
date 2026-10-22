@@ -1,4 +1,4 @@
-# Brief: clickable mock-up (ma-executant, middle model; one variant = one agent)
+# Brief: clickable mock-up (dia-executant, middle model; one variant = one agent)
 
 To use when the mock-up exceeds "1 variant, 4 screens at most" (`phases.md`, Mock-up). One variant per agent, in parallel if the preset allows (`agents-paralleles`); each agent writes in its own folder.
 

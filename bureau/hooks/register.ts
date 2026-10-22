@@ -2,7 +2,7 @@
 // dans l'onglet Code de l'app Claude de bureau.
 //   1. ligne d'état (quota, agents en cours, jalon),
 //   2. alertes de quota aux seuils du réglage `seuils` (70, 80 et 90 % par défaut),
-//   3. toast à la fin d'un sous-agent ma-*.
+//   3. toast à la fin d'un sous-agent dia-*.
 // Les réglages `seuils` et `notifications` viennent du profil et du CLAUDE.md du projet (voir loadSettings).
 // Rien ne sort de la machine : tout passe par `$` (affichage, session, fichier local, store du mod).
 import type { EngineInterface, Register } from 'claude-code'
@@ -12,7 +12,7 @@ import {
   alertText,
   decideAlerts,
   formatStatus,
-  isMaAgent,
+  isDiaAgent,
   parseMilestone,
   projectName,
   resolveSettings,
@@ -186,7 +186,7 @@ export const register: Register = on => {
     return next(e)
   })
 
-  // Fin d'un tour de sous-agent (pas d'événement « agent.end » dans l'API) : toast pour les ma-*.
+  // Fin d'un tour de sous-agent (pas d'événement « agent.end » dans l'API) : toast pour les dia-*.
   on('turn.complete', async ($, e, next) => {
     const result = await next(e)
     const id = e.agentId
@@ -199,7 +199,7 @@ export const register: Register = on => {
         type = undefined
       }
       type = type ?? spawnedTypes.get(id)
-      if (isMaAgent(type) && wantsAgentDone((await loadSettings($)).notifications)) {
+      if (isDiaAgent(type) && wantsAgentDone((await loadSettings($)).notifications)) {
         await say($, agentDoneText(type as string, e.answer, e.reason), 'Agent terminé')
       }
     } catch {

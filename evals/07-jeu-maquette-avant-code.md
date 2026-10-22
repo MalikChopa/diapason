@@ -1,7 +1,7 @@
 # Scénario 07 : un jeu, maquette d'écrans et de scène fixe avant le code
 
 ## Contexte
-Dossier de projets vide et jetable. Profil présent (français, tutoiement, forfait Pro, `autonomie` à `accompagnant`). Les agents `ma-*` sont installés ; le hook `garde-fiche.sh` est installé (plugin ou copie manuelle, `installation.md` §6). Aucun fichier fourni : une idée d'une ligne.
+Dossier de projets vide et jetable. Profil présent (français, tutoiement, forfait Pro, `autonomie` à `accompagnant`). Les agents `dia-*` sont installés ; le hook `garde-fiche.sh` est installé (plugin ou copie manuelle, `installation.md` §6). Aucun fichier fourni : une idée d'une ligne.
 
 ## Message de départ
 ```

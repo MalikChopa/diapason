@@ -56,15 +56,24 @@ elif [ -f "$HOME/.claude/skills/maitre-agent/SKILL.md" ]; then
   row 3 "ancien skill maitre-agent encore installé (/maitre-agent, v1.3 ou avant)" info "installe diapason (installation.md), puis : rm -r ~/.claude/skills/maitre-agent"
 else row 3 "skill en double" OK; fi
 
-# 4. agents en double (~/.claude/agents/ma-*.md ET agents du plugin)
+# 4. anciens agents ma-*.md (avant la v1.7), puis agents en double (~/.claude/agents/dia-*.md ET agents du plugin)
 set -- "$HOME"/.claude/agents/ma-*.md
-if [ -f "$1" ]; then
-  case "$PLUG" in
-    oui) row 4 "agents en double : ~/.claude/agents/ma-*.md ET agents du plugin" KO "rm ~/.claude/agents/ma-*.md   (si le plugin est gardé)" ;;
-    non) row 4 "agents en double" OK ;;
-    *) row 4 "agents en double : copies présentes, plugin non vérifiable (commande claude absente du PATH)" "non vérifié" ;;
-  esac
-else row 4 "agents en double" OK; fi
+if [ -f "$BASE/garde-fiche.sh" ] && ! grep -q 'dia-executant' "$BASE/garde-fiche.sh"; then
+  row 4 "copie périmée du garde-fou ($BASE/garde-fiche.sh) : elle ne connaît pas dia-executant" KO "recopie hooks/garde-fiche.sh du skill dans $BASE/ (installation.md §8)"
+elif [ -f "$HOME/.claude/settings.json" ] && grep -q '"\^ma-"' "$HOME/.claude/settings.json"; then
+  row 4 "settings.json : la notification de fin d'agent vise encore ^ma-" info "remplace par ^dia- (installation.md §8, diff montré d'abord)"
+elif [ -f "$1" ]; then
+  row 4 "anciens agents ma-* encore installés (remplacés par dia-* depuis la v1.7)" info "installe les dia-* (installation.md §1), puis : rm ~/.claude/agents/ma-*.md"
+else
+  set -- "$HOME"/.claude/agents/dia-*.md
+  if [ -f "$1" ]; then
+    case "$PLUG" in
+      oui) row 4 "agents en double : ~/.claude/agents/dia-*.md ET agents du plugin" KO "rm ~/.claude/agents/dia-*.md   (si le plugin est gardé)" ;;
+      non) row 4 "agents en double" OK ;;
+      *) row 4 "agents en double : copies présentes, plugin non vérifiable (commande claude absente du PATH)" "non vérifié" ;;
+    esac
+  else row 4 "agents en double" OK; fi
+fi
 
 # 5. quota lisible
 Q=""; for c in "$SELF_DIR/quota.sh" "$SELF_DIR/../tools/quota.sh"; do [ -f "$c" ] && { Q="$c"; break; }; done

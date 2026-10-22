@@ -135,9 +135,9 @@ export function alertText(a: Alert): string {
   return reset ? `${base}, reset ${reset}` : base
 }
 
-/** Vrai si le type d'agent est un agent de Diapason : `ma-*`, `diapason:ma-*` ou, avant la v1.5, `majordome:ma-*` / `maitre-agent:ma-*`. */
-export function isMaAgent(type: string | undefined): boolean {
-  return !!type && /^(diapason:|majordome:|maitre-agent:)?ma-/.test(type)
+/** Vrai si le type d'agent est un agent de Diapason : `dia-*`, `diapason:dia-*` ou, avant la v1.7, `ma-*` (et les préfixes de plugin `majordome:` / `maitre-agent:` d'avant la v1.5). */
+export function isDiaAgent(type: string | undefined): boolean {
+  return !!type && /^(diapason:|majordome:|maitre-agent:)?(dia|ma)-/.test(type)
 }
 
 /** Nom court d'un type d'agent : sans préfixe de plugin. */
@@ -254,7 +254,7 @@ export function wantsQuotaAlerts(mode: NotifyMode): boolean {
   return mode !== 'rien'
 }
 
-/** La fin d'un sous-agent ma-* doit-elle prévenir ? */
+/** La fin d'un sous-agent dia-* doit-elle prévenir ? */
 export function wantsAgentDone(mode: NotifyMode): boolean {
   return mode === 'agent+quota' || mode === 'tout'
 }

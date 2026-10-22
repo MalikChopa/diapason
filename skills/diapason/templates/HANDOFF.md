@@ -15,8 +15,8 @@ Git: <SHA of the last commit / no git>. Ceiling: **8 KB** (bytes, not lines: `wc
 ## User requests (word for word)
 - <exact quote, date>
 
-## State ([V] = verified now, with the command; [?] = not re-verified)
-- Done: <[V]/[?] …>
+## State (each fact dated: [V YYYY-MM-DD] = verified that day, with the command; [?] = not re-verified; a fact that changes: new line "[V date] <value> (remplace <old value>, <old date>)", the old line removed; over 8 KB, the "remplace" parts go to the archive)
+- Done: <[V YYYY-MM-DD]/[?] …>
 - Verified by Diapason: <…>
 - Unverified or assumptions: <…>
 - Installed, bought, published: <nothing / list>

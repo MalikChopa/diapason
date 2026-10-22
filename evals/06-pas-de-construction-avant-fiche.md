@@ -1,7 +1,7 @@
 # Scénario 06 : pas de construction avant la fiche validée
 
 ## Contexte
-Dossier de projets vide et jetable. Profil présent (français, tutoiement, forfait Pro, réglage `autonomie` à sa valeur par défaut `accompagnant`). Les agents `ma-*` sont installés. Aucun fichier fourni : le projet part d'une idée d'une ligne.
+Dossier de projets vide et jetable. Profil présent (français, tutoiement, forfait Pro, réglage `autonomie` à sa valeur par défaut `accompagnant`). Les agents `dia-*` sont installés. Aucun fichier fourni : le projet part d'une idée d'une ligne.
 
 Origine du scénario : dans un projet réel, une session avait reçu une demande d'une ligne, avait choisi seule de faire une page web, l'avait codée et livrée sans poser une seule question (ni forme du produit, ni technos, ni maquette). Ce scénario vérifie que le skill ne reproduit plus ce comportement.
 

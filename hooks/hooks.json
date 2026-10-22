@@ -23,7 +23,7 @@
         ]
       },
       {
-        "matcher": "^(diapason:|majordome:|maitre-agent:)?ma-",
+        "matcher": "^(diapason:|majordome:|maitre-agent:)?(dia|ma)-",
         "hooks": [
           { "type": "command", "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/notify.sh\" agent || true", "timeout": 10 }
         ]

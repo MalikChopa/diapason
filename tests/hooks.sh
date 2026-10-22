@@ -40,7 +40,7 @@ mkdir -p "$T/$(printf 'q\033[2Jz')"
 out=$(printf '%s\n' '{"cwd":"'"$T"'/q\u001b[2Jz\u009bw"}' | st)
 if clean_of_ctrl "$out"; then r=propre; else r=sale; fi
 check "C5 barre d'état : nom de dossier sans caractère de contrôle (ESC, U+009B)" "$r" propre
-out=$(printf '%s\n' '{"agent_type":"ma-x","last_assistant_message":"OK \u001b]0;PWN\u0007\u001b[2J \u009b fin"}' | nt agent)
+out=$(printf '%s\n' '{"agent_type":"dia-x","last_assistant_message":"OK \u001b]0;PWN\u0007\u001b[2J \u009b fin"}' | nt agent)
 if clean_of_ctrl "$out"; then r=propre; else r=sale; fi
 check "C5 notify.sh agent : sans caractère de contrôle" "$r" propre
 
@@ -58,10 +58,10 @@ check "M1 blocked désactivé par défaut" "$out" ""
 mkdir -p "$BASE"; : > "$BASE/notifications-on"
 out=$(printf '%s\n' '{"message":"-x attend"}' | nt blocked)
 check "M1 blocked actif avec notifications-on ; C8 texte qui commence par «-»" "$out" "[notification] Diapason : Claude attend | -x attend"
-out=$(printf '%s\n' '{"agent_type":"ma-x","last_assistant_message":"- **BLOQUÉ** car il manque X"}' | nt agent)
-check "C8 ** retirés" "$out" "[notification] Diapason : agent terminé | ma-x : BLOQUÉ car il manque X"
+out=$(printf '%s\n' '{"agent_type":"dia-x","last_assistant_message":"- **BLOQUÉ** car il manque X"}' | nt agent)
+check "C8 ** retirés" "$out" "[notification] Diapason : agent terminé | dia-x : BLOQUÉ car il manque X"
 : > "$BASE/notifications-off"
-out=$(printf '%s\n' '{"message":"x"}' | nt blocked; nt quota "Quota 5 h à 85 %"; printf '%s\n' '{"agent_type":"ma-x","last_assistant_message":"fini"}' | nt agent)
+out=$(printf '%s\n' '{"message":"x"}' | nt blocked; nt quota "Quota 5 h à 85 %"; printf '%s\n' '{"agent_type":"dia-x","last_assistant_message":"fini"}' | nt agent)
 check "M1 notifications-off coupe tout" "$out" ""
 rm -f "$BASE/notifications-off" "$BASE/notifications-on"
 out=$(nt quota "Quota 5 h à 85 %")
@@ -88,10 +88,10 @@ out=$(printf '%s\n' '{"session_id":"r2","cwd":"'"$T"'/p2","rate_limits":{"seven_
 check "C10 7 j : palier 2 verrouillé, palier 1 pas encore marqué : aucune alerte de plus" "$out" 0
 printf '%s\n' '{"session_id":"c1","agent_id":"a1","agent_type":"general-purpose"}' | sh "$ROOT/hooks/agent-count.sh" start
 out=$(printf '%s\n' '{"session_id":"c1","cwd":"'"$T"'/p2"}' | st)
-check "C10 le compteur compte aussi un agent hors ma-*" "$out" "🛎️ p2 · J2 plugin en cours · 1 agent · quota ?"
+check "C10 le compteur compte aussi un agent hors dia-*" "$out" "🛎️ p2 · J2 plugin en cours · 1 agent · quota ?"
 printf '%s\n' '{"session_id":"c1","agent_id":"a1"}' | sh "$ROOT/hooks/agent-count.sh" stop
-if jq -e '(.hooks.SubagentStart[0] | has("matcher") | not) and (.hooks.SubagentStop[0] | has("matcher") | not) and (.hooks.SubagentStop[1].matcher | test("ma-"))' "$ROOT/hooks/hooks.json" >/dev/null 2>&1; then r=ok; else r=ko; fi
-check "C10 hooks.json : compteur sans matcher, notification de fin limitée aux ma-*" "$r" ok
+if jq -e '(.hooks.SubagentStart[0] | has("matcher") | not) and (.hooks.SubagentStop[0] | has("matcher") | not) and (.hooks.SubagentStop[1].matcher | contains("(dia|ma)-"))' "$ROOT/hooks/hooks.json" >/dev/null 2>&1; then r=ok; else r=ko; fi
+check "C10 hooks.json : compteur sans matcher, notification de fin limitée aux dia-*" "$r" ok
 # dossiers d'état vides depuis plus de 5 h : purgés au prochain appel
 i=0; while [ "$i" -lt 5 ]; do mkdir -p "$BASE/state/old$i/agents"; i=$((i + 1)); done
 mkdir -p "$BASE/state/alerts/7j-123-70"   # marqueur d'alerte 7 j : doit survivre à la purge des dossiers vides
@@ -159,7 +159,7 @@ R3=$(( R1 + 200 ))
 out=$(alerts 72 "$R3" "$T/p4"); check "réglages : profil absent -> défauts (alerte à 70)" "$(printf '%s' "$out" | grep -c 'seuil 70 % franchi')" 1
 
 # notifications : agent+quota | tout | quota | rien
-J='{"agent_type":"ma-x","last_assistant_message":"fini","cwd":"'"$T"'/p5"}'
+J='{"agent_type":"dia-x","last_assistant_message":"fini","cwd":"'"$T"'/p5"}'
 setprof() { printf '# Profil\n\n## Réglages\n- notifications : %s\n' "$1" > "$BASE/profil.md"; }
 setprof rien
 out=$(printf '%s\n' "$J" | nt agent; printf '%s\n' '{"message":"x"}' | nt blocked; nt quota "Quota 5 h à 85 %")
@@ -169,7 +169,7 @@ out=$(printf '%s\n' "$J" | nt agent; printf '%s\n' '{"message":"x"}' | nt blocke
 check "réglages : notifications quota -> ni fin d'agent ni « bloqué »" "$out" ""
 out=$(nt quota "Quota 5 h à 85 %"); check "réglages : notifications quota -> l'alerte de quota passe" "$out" "[notification] Diapason : quota | Quota 5 h à 85 %"
 setprof agent+quota
-out=$(printf '%s\n' "$J" | nt agent); check "réglages : notifications agent+quota -> fin d'agent notifiée" "$out" "[notification] Diapason : agent terminé | ma-x : fini"
+out=$(printf '%s\n' "$J" | nt agent); check "réglages : notifications agent+quota -> fin d'agent notifiée" "$out" "[notification] Diapason : agent terminé | dia-x : fini"
 out=$(printf '%s\n' '{"message":"x"}' | nt blocked); check "réglages : notifications agent+quota -> « bloqué » muet" "$out" ""
 setprof tout
 out=$(printf '%s\n' '{"message":"x"}' | nt blocked); check "réglages : notifications tout -> « bloqué » notifié" "$out" "[notification] Diapason : Claude attend | x"
@@ -184,9 +184,9 @@ out=$(alerts 45 "$R4" "$T/p5"); check "réglages du projet : notifications rien 
 mkdir -p "$T/p7"; printf '# P\n\n## Réglages du projet\n- seuils : 40 50 60\n' > "$T/p7/CLAUDE.md"
 out=$(alerts 45 "$((R4 + 100))" "$T/p7"); check "réglages du projet : seuils 40 50 60 -> alerte à 40 (45 %)" "$(printf '%s' "$out" | grep -c 'seuil 40 % franchi')" 1
 printf '# P\n\n## Réglages du projet\n- notifications : peut-etre\n' > "$T/p5/CLAUDE.md"
-out=$(printf '%s\n' "$J" | nt agent); check "réglages du projet : valeur invalide -> retombe sur le profil" "$out" "[notification] Diapason : agent terminé | ma-x : fini"
+out=$(printf '%s\n' "$J" | nt agent); check "réglages du projet : valeur invalide -> retombe sur le profil" "$out" "[notification] Diapason : agent terminé | dia-x : fini"
 rm -f "$T/p5/CLAUDE.md" "$BASE/profil.md"
-out=$(printf '%s\n' "$J" | nt agent); check "réglages : sans profil, défaut agent+quota (fin d'agent notifiée)" "$out" "[notification] Diapason : agent terminé | ma-x : fini"
+out=$(printf '%s\n' "$J" | nt agent); check "réglages : sans profil, défaut agent+quota (fin d'agent notifiée)" "$out" "[notification] Diapason : agent terminé | dia-x : fini"
 
 # quota.sh : seuils du profil, puis du projet, puis arguments
 now=$(date +%s)
@@ -266,15 +266,15 @@ cat > "$T/p8/docs/HANDOFF.md" <<'EOT'
 ## Agents lancés
 | Agent | Tâche | Modèle | Fichier de travail | Statut | Brief | Coût (tokens · durée · % fenêtre) |
 |---|---|---|---|---|---|---|
-| ma-chercheur | rech | sonnet | a.md | terminé | `b` | 180 k · 9 min · 6 % |
-| ma-executant | code | sonnet | src | terminé | `b` | 400 k · 20 min |
-| ma-testeur | tests | haiku | x | en cours | `b` |  |
+| dia-chercheur | rech | sonnet | a.md | terminé | `b` | 180 k · 9 min · 6 % |
+| dia-executant | code | sonnet | src | terminé | `b` | 400 k · 20 min |
+| dia-testeur | tests | haiku | x | en cours | `b` |  |
 | <nom court> | <tâche> | <modèle> | <fichier> | en cours | b | <…> |
 
 ## Suite
 EOT
 out=$(sh "$ROOT/tools/recap.sh" "$T/p8/docs/HANDOFF.md" | tr '\n' ';')
-check "recap.sh : tableau agents / modèle / tokens / durée / part du quota, « non mesuré » si absent, gabarit ignoré" "$out" "| Agent | Modèle | Tokens | Durée | Part du quota |;|---|---|---|---|---|;| ma-chercheur | sonnet | 180 k | 9 min | 6 % |;| ma-executant | sonnet | 400 k | 20 min | non mesuré |;| ma-testeur | haiku | non mesuré | non mesuré | non mesuré |;"
+check "recap.sh : tableau agents / modèle / tokens / durée / part du quota, « non mesuré » si absent, gabarit ignoré" "$out" "| Agent | Modèle | Tokens | Durée | Part du quota |;|---|---|---|---|---|;| dia-chercheur | sonnet | 180 k | 9 min | 6 % |;| dia-executant | sonnet | 400 k | 20 min | non mesuré |;| dia-testeur | haiku | non mesuré | non mesuré | non mesuré |;"
 sh "$ROOT/tools/recap.sh" "$T/inexistant.md" >/dev/null; check "recap.sh : fichier absent -> 2" "$?" 2
 
 # --- v1.3 : garde-fiche.sh (PreToolUse) : pas de construction avant la fiche validée ---------------------------
@@ -304,7 +304,7 @@ gcheck() { # nom  attendu  dossier  outil  chemin  sous-agent
 }
 # sans fiche : tout passe
 gcheck "sans FICHE : écriture de code permise" 0 "$G/vide" Write "$G/vide/src/app.js"
-gcheck "sans FICHE : agent exécutant permis" 0 "$G/vide" Agent "" ma-executant
+gcheck "sans FICHE : agent exécutant permis" 0 "$G/vide" Agent "" dia-executant
 # brouillon : refus hors des dossiers ouverts
 gcheck "brouillon : Write de code refusé" 2 "$G/brouillon" Write "$G/brouillon/src/app.js"
 gcheck "brouillon : Edit refusé" 2 "$G/brouillon" Edit "$G/brouillon/index.html"
@@ -320,12 +320,14 @@ gcheck "brouillon : docs/../src refusé (remontée de dossier)" 2 "$G/brouillon"
 gcheck "brouillon : ../autre-projet permis (hors du projet)" 0 "$G/brouillon" Write "$G/brouillon/docs/../../vide/a.js"
 gcheck "brouillon : chemin relatif src/a.js refusé" 2 "$G/brouillon" Write "src/a.js"
 gcheck "brouillon : chemin relatif docs/a.md permis" 0 "$G/brouillon" Write "docs/a.md"
-gcheck "brouillon : Agent ma-executant refusé" 2 "$G/brouillon" Agent "" ma-executant
-gcheck "brouillon : Agent diapason:ma-executant refusé" 2 "$G/brouillon" Agent "" diapason:ma-executant
-gcheck "brouillon : Task ma-executant refusé" 2 "$G/brouillon" Task "" ma-executant
-gcheck "brouillon : Agent ma-chercheur permis" 0 "$G/brouillon" Agent "" ma-chercheur
-gcheck "brouillon : Agent diapason:ma-chercheur permis" 0 "$G/brouillon" Agent "" diapason:ma-chercheur
-gcheck "brouillon : Agent ma-concepteur permis" 0 "$G/brouillon" Agent "" ma-concepteur
+gcheck "brouillon : Agent dia-executant refusé" 2 "$G/brouillon" Agent "" dia-executant
+gcheck "brouillon : Agent ma-executant (ancien nom, avant la v1.7) refusé" 2 "$G/brouillon" Agent "" ma-executant
+gcheck "brouillon : Agent diapason:ma-executant (ancien nom) refusé" 2 "$G/brouillon" Agent "" diapason:ma-executant
+gcheck "brouillon : Agent diapason:dia-executant refusé" 2 "$G/brouillon" Agent "" diapason:dia-executant
+gcheck "brouillon : Task dia-executant refusé" 2 "$G/brouillon" Task "" dia-executant
+gcheck "brouillon : Agent dia-chercheur permis" 0 "$G/brouillon" Agent "" dia-chercheur
+gcheck "brouillon : Agent diapason:dia-chercheur permis" 0 "$G/brouillon" Agent "" diapason:dia-chercheur
+gcheck "brouillon : Agent dia-concepteur permis" 0 "$G/brouillon" Agent "" dia-concepteur
 gcheck "brouillon : un autre outil (Bash) n'est pas filtré" 0 "$G/brouillon" Bash "$G/brouillon/src/a.js"
 gcheck "gabarit non rempli (Statut : <brouillon / validée…>) : refus" 2 "$G/gabarit" Write "$G/gabarit/src/a.js"
 gcheck "« non validée » : refus" 2 "$G/non" Write "$G/non/src/a.js"
@@ -337,23 +339,27 @@ check "garde-fiche message : sans chemin personnel (/Users, /home)" "$(grep -cE 
 gcheck "validée + maquette « pas encore » : Write de code refusé" 2 "$G/pasmaq" Write "$G/pasmaq/src/app.js"
 gcheck "validée + maquette « pas encore » : maquette/ permise" 0 "$G/pasmaq" Write "$G/pasmaq/maquette/index.html"
 gcheck "validée + maquette « pas encore » : docs/ permis" 0 "$G/pasmaq" Write "$G/pasmaq/docs/HANDOFF.md"
-gcheck "validée + maquette « pas encore » : agent exécutant permis (il écrit la maquette)" 0 "$G/pasmaq" Agent "" ma-executant
+gcheck "livrable visuel : maquette/exports/ permis tant que la maquette est « pas encore »" 0 "$G/pasmaq" Write "$G/pasmaq/maquette/exports/planche.html"
+gcheck "validée + maquette « pas encore » : agent exécutant permis (il écrit la maquette)" 0 "$G/pasmaq" Agent "" dia-executant
 gj Write "$G/pasmaq/src/app.js" "" "$G/pasmaq" | CLAUDE_PROJECT_DIR="$G/pasmaq" sh "$ROOT/hooks/garde-fiche.sh" 2>"$T/gerr" >/dev/null
 check "garde-fiche message maquette : parle de la maquette (Mock-up approved) et de « no interface » (anglais)" "$(grep -c 'Mock-up approved' "$T/gerr")|$(grep -c 'no interface' "$T/gerr")|$(grep -c 'not validated yet' "$T/gerr")" "1|1|0"
+mkdir -p "$G/produit/docs"; fiche "$G/produit" "Statut : validée le 2026-10-22 par l'utilisateur" "- Maquette validée (référence du testeur) : le produit lui-même"
+gcheck "livrable visuel : « le produit lui-même » compte comme maquette validée (écriture permise)" 0 "$G/produit" Write "$G/produit/maquette/index.html"
 mkdir -p "$G/maqgab/docs"; fiche "$G/maqgab" "Statut : validée le 2026-10-19" "- Maquette validée (référence du testeur) : <chemin, ou « pas encore » ; « sans interface » le cas échéant>"
 gcheck "validée + ligne maquette en gabarit non rempli : refus" 2 "$G/maqgab" Write "$G/maqgab/src/a.js"
 # décision changée après validation (cadrage.md) : le statut repasse à « brouillon (modifiée le …, à re-valider) »
 mkdir -p "$G/revalider/docs" "$G/refaire/docs" "$G/vrai/docs"
 fiche "$G/revalider" "Statut : brouillon (modifiée le 2026-10-20, à re-valider) · Dernière modification : 2026-10-20" "- Maquette validée (référence du testeur) : maquette/index.html"
 gcheck "re-validation : « brouillon (modifiée le …) » même avec maquette : refus" 2 "$G/revalider" Write "$G/revalider/src/a.js"
-gcheck "re-validation : agent exécutant refusé" 2 "$G/revalider" Agent "" ma-executant
+gcheck "re-validation : agent exécutant refusé" 2 "$G/revalider" Agent "" dia-executant
 fiche "$G/refaire" "Statut : validée le 2026-10-19 par l'utilisateur" "- Maquette validée (référence du testeur) : pas encore (à refaire)"
 gcheck "maquette « pas encore (à refaire) » : refus" 2 "$G/refaire" Write "$G/refaire/src/a.js"
 cp "$ROOT/skills/diapason/templates/FICHE.md" "$G/vrai/docs/FICHE.md"
 gcheck "le vrai templates/FICHE.md non rempli : refus" 2 "$G/vrai" Write "$G/vrai/src/a.js"
 # validée et maquette faite, ou sans interface, ou lien
 gcheck "validée + maquette validée (chemin) : code permis" 0 "$G/validee" Write "$G/validee/src/app.js"
-gcheck "validée + maquette validée : agent exécutant permis" 0 "$G/validee" Agent "" ma-executant
+gcheck "validée + maquette validée : agent exécutant permis" 0 "$G/validee" Agent "" dia-executant
+gcheck "validée + maquette validée : ancien ma-executant permis" 0 "$G/validee" Agent "" ma-executant
 gcheck "validée + « sans interface » : code permis" 0 "$G/sansint" Write "$G/sansint/tools/run.py"
 gcheck "validée (« Validée ») + lien de maquette : code permis" 0 "$G/lien" Write "$G/lien/src/a.js"
 gcheck "Statut en gras (**Statut :** validée), sans ligne maquette : code permis" 0 "$G/gras" Write "$G/gras/src/a.js"
@@ -381,23 +387,23 @@ gcheck "EN brouillon (Status: draft) : Write de code refusé" 2 "$G/en-brouillon
 gcheck "EN brouillon : Edit refusé" 2 "$G/en-brouillon" Edit "$G/en-brouillon/index.html"
 gcheck "EN brouillon : docs/ permis" 0 "$G/en-brouillon" Write "$G/en-brouillon/docs/FICHE.md"
 gcheck "EN brouillon : maquette/ permise" 0 "$G/en-brouillon" Write "$G/en-brouillon/maquette/index.html"
-gcheck "EN brouillon : Agent ma-executant refusé" 2 "$G/en-brouillon" Agent "" ma-executant
-gcheck "EN brouillon : Agent diapason:ma-executant refusé" 2 "$G/en-brouillon" Agent "" diapason:ma-executant
-gcheck "EN brouillon : Agent ma-chercheur permis" 0 "$G/en-brouillon" Agent "" ma-chercheur
+gcheck "EN brouillon : Agent dia-executant refusé" 2 "$G/en-brouillon" Agent "" dia-executant
+gcheck "EN brouillon : Agent diapason:dia-executant refusé" 2 "$G/en-brouillon" Agent "" diapason:dia-executant
+gcheck "EN brouillon : Agent dia-chercheur permis" 0 "$G/en-brouillon" Agent "" dia-chercheur
 gcheck "EN gabarit non rempli (Status: <draft / validated…>) : refus" 2 "$G/en-gabarit" Write "$G/en-gabarit/src/a.js"
 gcheck "EN « Status: not validated » : refus" 2 "$G/en-non" Write "$G/en-non/src/a.js"
 gcheck "EN validated + Mock-up approved « not yet » : Write de code refusé" 2 "$G/en-pasmaq" Write "$G/en-pasmaq/src/app.js"
 gcheck "EN validated + « not yet » : maquette/ permise" 0 "$G/en-pasmaq" Write "$G/en-pasmaq/maquette/index.html"
 gcheck "EN validated + « not yet » : docs/ permis" 0 "$G/en-pasmaq" Write "$G/en-pasmaq/docs/HANDOFF.md"
-gcheck "EN validated + « not yet » : agent exécutant permis" 0 "$G/en-pasmaq" Agent "" ma-executant
+gcheck "EN validated + « not yet » : agent exécutant permis" 0 "$G/en-pasmaq" Agent "" dia-executant
 gj Write "$G/en-pasmaq/src/app.js" "" "$G/en-pasmaq" | CLAUDE_PROJECT_DIR="$G/en-pasmaq" sh "$ROOT/hooks/garde-fiche.sh" 2>"$T/gerr" >/dev/null
 check "garde-fiche message EN (fiche anglaise, maquette) : Mock-up approved et no interface" "$(grep -c 'Mock-up approved' "$T/gerr")|$(grep -c 'no interface' "$T/gerr")" "1|1"
 gcheck "EN validated + ligne maquette en gabarit non rempli : refus" 2 "$G/en-maqgab" Write "$G/en-maqgab/src/a.js"
 gcheck "EN re-validation (draft, to re-approve) même avec maquette : refus" 2 "$G/en-revalider" Write "$G/en-revalider/src/a.js"
-gcheck "EN re-validation : agent exécutant refusé" 2 "$G/en-revalider" Agent "" ma-executant
+gcheck "EN re-validation : agent exécutant refusé" 2 "$G/en-revalider" Agent "" dia-executant
 gcheck "EN « not yet (to redo) » : refus" 2 "$G/en-refaire" Write "$G/en-refaire/src/a.js"
 gcheck "EN validated + maquette (chemin) : code permis" 0 "$G/en-validee" Write "$G/en-validee/src/app.js"
-gcheck "EN validated + maquette : agent exécutant permis" 0 "$G/en-validee" Agent "" ma-executant
+gcheck "EN validated + maquette : agent exécutant permis" 0 "$G/en-validee" Agent "" dia-executant
 gcheck "EN validated + « no interface » : code permis" 0 "$G/en-sansint" Write "$G/en-sansint/tools/run.py"
 gcheck "EN Validated + lien de maquette : code permis" 0 "$G/en-lien" Write "$G/en-lien/src/a.js"
 gcheck "EN **Status:** validated, sans ligne maquette : code permis" 0 "$G/en-gras" Write "$G/en-gras/src/a.js"
@@ -545,7 +551,7 @@ check "statusline.sh et quota.sh : copies identiques au skill" "$r" identiques
 DH="$T/dh"; mkdir -p "$DH/.claude/diapason" "$DH/.claude/agents"
 printf '# Profil\n' > "$DH/.claude/diapason/profil.md"
 printf '{"statusLine":{"type":"command","command":"%s/.claude/diapason/statusline.sh"}}\n' "$DH" > "$DH/.claude/settings.json"
-: > "$DH/.claude/agents/ma-x.md"
+: > "$DH/.claude/agents/dia-x.md"
 before=$(cd "$DH" && find . -type f -exec cksum {} + | sort)
 out=$(HOME="$DH" sh "$ROOT/skills/diapason/hooks/diagnostic.sh"); rc=$?
 after=$(cd "$DH" && find . -type f -exec cksum {} + | sort)
@@ -612,12 +618,12 @@ check "v1.5 ancienne variable MAITRE_AGENT_DRY_RUN toujours lue" "$(env -u DIAPA
 # préfixes d'agent (diapason: v1.5, majordome: v1.4, maitre-agent: v1.3) reconnus par le garde-fou et par hooks.json
 mkdir -p "$T/pg/docs"; printf 'Statut : brouillon\n' > "$T/pg/docs/FICHE.md"
 for pre in diapason majordome maitre-agent; do
-  printf '%s\n' '{"tool_name":"Agent","cwd":"'"$T"'/pg","tool_input":{"subagent_type":"'"$pre"':ma-executant"}}' | CLAUDE_PROJECT_DIR="$T/pg" sh "$ROOT/hooks/garde-fiche.sh" >/dev/null 2>&1
-  check "v1.5 garde-fou : l'agent $pre:ma-executant est refusé sur une fiche en brouillon" "$?" 2
+  printf '%s\n' '{"tool_name":"Agent","cwd":"'"$T"'/pg","tool_input":{"subagent_type":"'"$pre"':dia-executant"}}' | CLAUDE_PROJECT_DIR="$T/pg" sh "$ROOT/hooks/garde-fiche.sh" >/dev/null 2>&1
+  check "v1.5 garde-fou : l'agent $pre:dia-executant est refusé sur une fiche en brouillon" "$?" 2
 done
 mt=$(jq -r '.hooks.SubagentStop[1].matcher' "$ROOT/hooks/hooks.json")
-if printf 'ma-x' | grep -Eq "$mt" && printf 'diapason:ma-x' | grep -Eq "$mt" && printf 'majordome:ma-x' | grep -Eq "$mt" && printf 'maitre-agent:ma-x' | grep -Eq "$mt" && ! printf 'autre:ma-x' | grep -Eq "$mt"; then r=ok; else r=ko; fi
-check "v1.5 hooks.json : la notification de fin accepte les trois préfixes de plugin" "$r" ok
+if printf 'dia-x' | grep -Eq "$mt" && printf 'diapason:dia-x' | grep -Eq "$mt" && printf 'majordome:dia-x' | grep -Eq "$mt" && printf 'maitre-agent:dia-x' | grep -Eq "$mt" && printf 'ma-x' | grep -Eq "$mt" && ! printf 'autre:dia-x' | grep -Eq "$mt"; then r=ok; else r=ko; fi
+check "v1.5 hooks.json : la notification de fin accepte les trois préfixes de plugin et l'ancien nom ma-*" "$r" ok
 # diagnostic : ancien skill encore installé -> information, pas de KO
 hm diag d - -; mkdir -p "$H/.claude/skills/majordome"; : > "$H/.claude/skills/majordome/SKILL.md"
 out=$(HOME="$H" sh "$ROOT/hooks/diagnostic.sh")
@@ -625,6 +631,15 @@ check "v1.5 diagnostic.sh : l'ancien skill majordome est signalé (info)" "$(pri
 hm diag2 d - -; mkdir -p "$H/.claude/skills/maitre-agent"; : > "$H/.claude/skills/maitre-agent/SKILL.md"
 out=$(HOME="$H" sh "$ROOT/hooks/diagnostic.sh")
 check "v1.5 diagnostic.sh : l'ancien skill maitre-agent est signalé (info)" "$(printf '%s\n' "$out" | grep -c '^3 | ancien skill maitre-agent encore installé.*| info |')" 1
+hm diag3 d - -; mkdir -p "$H/.claude/agents"; : > "$H/.claude/agents/ma-chercheur.md"
+out=$(HOME="$H" sh "$ROOT/hooks/diagnostic.sh")
+check "v1.7 diagnostic.sh : les anciens agents ma-* sont signalés (info)" "$(printf '%s\n' "$out" | grep -c '^4 | anciens agents ma-\* encore installés.*| info |')" 1
+hm diag4 d - -; printf 'case "$sub" in ma-executant) exit 2 ;; esac\n' > "$H/.claude/diapason/garde-fiche.sh"
+out=$(HOME="$H" sh "$ROOT/hooks/diagnostic.sh")
+check "v1.7 diagnostic.sh : une copie périmée du garde-fou (sans dia-executant) est signalée (KO)" "$(printf '%s\n' "$out" | grep -c '^4 | copie périmée du garde-fou.*| KO |')" 1
+hm diag5 d - -; printf '{"hooks":{"SubagentStop":[{"matcher":"^ma-"}]}}\n' > "$H/.claude/settings.json"
+out=$(HOME="$H" sh "$ROOT/hooks/diagnostic.sh")
+check "v1.7 diagnostic.sh : le réglage de notification restant sur ^ma- est signalé (info)" "$(printf '%s\n' "$out" | grep -c '^4 | settings.json : la notification de fin d.agent vise encore .ma-.*| info |')" 1
 # migration : migrer.sh copie sans écraser ni supprimer, ne copie pas les sauvegarde-skill-*, n'écrit jamais settings.json
 hm mig - m -; printf '# Profil\n' > "$H/.claude/majordome/profil.md"; mkdir -p "$H/.claude/majordome/sous" "$H/.claude/majordome/sauvegarde-skill-v1.3.0"; echo ancien > "$H/.claude/majordome/sous/a.txt"; echo ancien > "$H/.claude/majordome/notifications-on"; echo lourd > "$H/.claude/majordome/sauvegarde-skill-v1.3.0/SKILL.md"
 printf '{"hooks":{"SessionStart":[{"command":"~/.claude/majordome/hooks/reinject.sh 2>/dev/null || true"}]}}\n' > "$H/.claude/settings.json"

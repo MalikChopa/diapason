@@ -7,6 +7,7 @@ One page, in simple words. Written with the user in the framing workshop (`cadra
 - Goal, problem solved: <one or two sentences>
 - For whom: <you alone / a small group / a public>
 - Success criteria: <2 to 4 verifiable criteria: "I can…, in under…, on…">
+- Review checklist (visual deliverable only): <pieces, output format, readable at the target size, contrast, no placeholder text>
 
 ## 2. What
 - Product form and platform: <website, mobile app, desktop app, tool, document, game…; target devices>
@@ -23,7 +24,7 @@ One page, in simple words. Written with the user in the framing workshop (`cadra
 ## 4. Decisions
 | Topic | Choice | Decided by you on… |
 |---|---|---|
-| <form, techs, style…> | <…> | <YYYY-MM-DD, or "assumption to confirm"> |
+| <form, techs, style…> | <…> | <YYYY-MM-DD, or "assumption to confirm" + sure / likely / guessing> |
 
 Changes after validation: <YYYY-MM-DD: what, why, re-validated on YYYY-MM-DD; or "none">
 

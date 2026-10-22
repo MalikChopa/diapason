@@ -11,7 +11,7 @@
 #   « not yet » ; « sans interface »/« no interface » (tout ce qui n'est ni vide, ni un gabarit « <…>, ni « pas encore »/« not yet » est permis).
 # Le message de refus (lu par le modèle, pas par l'utilisateur) est en anglais court.
 # - Fiche non « validée » : refuse Write / Edit / MultiEdit / NotebookEdit hors de docs/, maquette/, CLAUDE.md,
-#   .claude/ et hors du dossier du projet ; refuse aussi l'agent d'implémentation (ma-executant, avec ou sans
+#   .claude/ et hors du dossier du projet ; refuse aussi l'agent d'implémentation (dia-executant, avec ou sans
 #   préfixe « diapason: » ou, avant la v1.5, « majordome: » ou « maitre-agent: »).
 # - Fiche validée mais ligne « Maquette validée » à « pas encore » : mêmes écritures refusées (« sans interface »,
 #   un chemin ou un lien = permis). L'agent d'implémentation reste permis : il peut écrire la maquette dans maquette/.
@@ -71,10 +71,10 @@ if [ "$kind" = agent ]; then
   sub="${sub#maitre-agent:}"   # ancien préfixe du plugin (v1.3)
   sub="${sub#majordome:}"      # ancien préfixe du plugin (v1.4)
   case "${sub#diapason:}" in
-    ma-executant)
+    dia-executant|ma-executant)   # ma-executant : ancien nom (avant la v1.7), toujours refusé
       # la maquette peut être écrite par l'agent d'implémentation : permis tant que la fiche est validée
       [ "$statut" = validee ] && exit 0
-      printf '%s\n' "diapason safeguard: launching the implementation agent (ma-executant) is refused. $raison" >&2
+      printf '%s\n' "diapason safeguard: launching the implementation agent (dia-executant) is refused. $raison" >&2
       exit 2 ;;
     *) exit 0 ;;
   esac

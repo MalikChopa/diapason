@@ -67,7 +67,7 @@ function backdrop(
 }
 
 test('session.measure : ligne d\'état avec projet, agents et quota', async ($, on) => {
-  const seen = backdrop(on, { agents: [info('a1', 'ma-chercheur'), info('a2', 'Explore', 'completed')] })
+  const seen = backdrop(on, { agents: [info('a1', 'dia-chercheur'), info('a2', 'Explore', 'completed')] })
   await $.session.measure({ context: CONTEXT, rateLimits: limits(42), changed: ['rateLimits'] })
   expect(seen.status.at(-1)).toBe('🛎️ projet-factice · 1 agent · 5 h 42 % (reset 18:30) · 7 j 12 %')
 })
@@ -113,13 +113,13 @@ test('notification impossible : le toast suffit, rien ne casse', async ($, on) =
 })
 
 test('agent.spawn : le compteur monte', async ($, on) => {
-  const seen = backdrop(on, { agents: [info('n1', 'ma-chercheur')] })
+  const seen = backdrop(on, { agents: [info('n1', 'dia-chercheur')] })
   on('agent.spawn', () => ({ model: 'sonnet', agentId: 'n1' }))
   await $.agent.spawn({
     tool_use_id: 't1',
     prompt: 'lire',
     description: 'lecture',
-    subagentType: 'ma-chercheur',
+    subagentType: 'dia-chercheur',
   } as never)
   expect(seen.status.at(-1)).toBe('🛎️ projet-factice · 1 agent · quota ?')
 })
@@ -132,8 +132,8 @@ test('agent.spawn : sans agentId ni type, le lancement passe quand même', async
   expect(seen.status.length).toBe(0) // rien à compter, rien d'affiché, aucune exception
 })
 
-test('fin d\'un sous-agent ma-* : toast avec le statut', async ($, on) => {
-  const seen = backdrop(on, { agents: [info('n1', 'diapason:ma-executant')] })
+test('fin d\'un sous-agent dia-* : toast avec le statut', async ($, on) => {
+  const seen = backdrop(on, { agents: [info('n1', 'diapason:dia-executant')] })
   on('turn.complete', () => ({ text: '' }))
   await $.turn.complete({
     answer: '**TERMINÉ AVEC RÉSERVES**\nle détail est dans le journal',
@@ -143,11 +143,11 @@ test('fin d\'un sous-agent ma-* : toast avec le statut', async ($, on) => {
     agentId: 'n1',
     reason: 'answer',
   })
-  expect(seen.toasts).toEqual(['ma-executant : TERMINÉ AVEC RÉSERVES'])
+  expect(seen.toasts).toEqual(['dia-executant : TERMINÉ AVEC RÉSERVES'])
   expect(seen.status.at(-1)).toBe('🛎️ projet-factice · 0 agents · quota ?')
 })
 
-test('fin d\'un sous-agent hors ma-* ou du fil principal : pas de toast', async ($, on) => {
+test('fin d\'un sous-agent hors dia-* ou du fil principal : pas de toast', async ($, on) => {
   const seen = backdrop(on, { agents: [info('n2', 'Explore')] })
   on('turn.complete', () => ({ text: '' }))
   const base = { answer: 'TERMINÉ', durationMs: 1, isAborted: false, reason: 'answer' as const }
@@ -190,7 +190,7 @@ test('réglage notifications rien : aucun toast ni notification de quota, la lig
 
 test('réglage notifications quota : pas de toast de fin d\'agent', async ($, on) => {
   const seen = backdrop(on, {
-    agents: [info('n1', 'ma-executant')],
+    agents: [info('n1', 'dia-executant')],
     profile: '## Réglages\n- notifications : quota\n',
   })
   on('turn.complete', () => ({ text: '' }))

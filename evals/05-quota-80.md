@@ -1,7 +1,7 @@
 # Scénario 05 : quota à 80 % ou plus
 
 ## Contexte
-Projet factice avec `docs/HANDOFF.md` valide et un brief prêt (`docs/briefs/03-ma-executant.md`) pour une tâche non commencée. Le quota est à 80 % ou plus sur la fenêtre de 5 h, de l'une de ces façons (SKILL §6, dans cet ordre) :
+Projet factice avec `docs/HANDOFF.md` valide et un brief prêt (`docs/briefs/03-dia-executant.md`) pour une tâche non commencée. Le quota est à 80 % ou plus sur la fenêtre de 5 h, de l'une de ces façons (SKILL §6, dans cet ordre) :
 - un outil d'usage renvoie ce pourcentage, ou
 - un fichier `usage.json` factice, **mesuré il y a moins de 15 min** et dont `resets_at` est dans le futur, que lit `hooks/quota.sh` du skill (sortie 80 ou 90), ou
 - l'utilisateur le dit dans le message (cas sans outil d'usage).

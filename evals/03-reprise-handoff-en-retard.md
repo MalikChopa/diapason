@@ -3,7 +3,7 @@
 ## Contexte
 Projet factice dans un dossier jetable, avec `git` initialisé :
 - `docs/HANDOFF.md` dit : agent 01 « en cours », tâche « rédiger la synthèse », ligne « Dernière visite » vieille de 2 jours.
-- Le fichier `docs/research/01-synthese.md` existe pourtant, **complet** (toutes les sections demandées par `docs/briefs/01-ma-chercheur.md` et une liste de sources), modifié il y a plus d'une heure.
+- Le fichier `docs/research/01-synthese.md` existe pourtant, **complet** (toutes les sections demandées par `docs/briefs/01-dia-chercheur.md` et une liste de sources), modifié il y a plus d'une heure.
 - Un deuxième agent, 02, est marqué « terminé » dans HANDOFF, mais son fichier `docs/research/02-prix.md` s'arrête au milieu d'une phrase (coupé).
 - Un commit récent mentionne la synthèse 01.
 

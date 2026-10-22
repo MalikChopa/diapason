@@ -21,7 +21,7 @@
 
 Diapason is a skill for [Claude Code](https://code.claude.com/docs/en/skills). You give it an idea, a file to process or a project to resume. It asks you the product questions, splits the work, hands it to sub-agents running the right model, **checks the decisive facts itself**, watches your quota, and keeps a handoff file so anything can be resumed later.
 
-The name: a *diapason* is the tuning fork that gives the A to an orchestra. Here it sets the pitch for your team of agents: same goal, same rules, same checks, before anyone plays a note. The `ma-*` agents keep their names.
+The name: a *diapason* is the tuning fork that gives the A to an orchestra. Here it sets the pitch for your team of agents: same goal, same rules, same checks, before anyone plays a note. The agents are named `dia-*` (they were `ma-*` before v1.7).
 
 **For whom:** anyone who uses Claude Code on work that lasts longer than one conversation (an app, a game, a piece of research, a purchase to compare) and wants to stay in control.
 
@@ -61,11 +61,11 @@ flowchart LR
 ```mermaid
 flowchart LR
     subgraph J["③ Milestones"]
-        A1["ma-chercheur<br/>research · sonnet"]
-        A2["ma-concepteur<br/>design · opus"]
-        A3["ma-executant<br/>code · sonnet or haiku"]
-        A4["ma-testeur<br/>tests · sonnet"]
-        A5["ma-auditeur<br/>audit · sonnet"]
+        A1["dia-chercheur<br/>research · sonnet"]
+        A2["dia-concepteur<br/>design · opus"]
+        A3["dia-executant<br/>code · sonnet or haiku"]
+        A4["dia-testeur<br/>tests · sonnet"]
+        A5["dia-auditeur<br/>audit · sonnet"]
     end
     J --> V{"④ Diapason<br/>verifies itself<br/>commands run now ·<br/>primary sources"}
     V -- "fix, 3 rounds max" --> J
@@ -98,7 +98,7 @@ A real excerpt from a trial, resuming a project that had been built without a sh
 
 ```text
 Question: how do we resume this project?
-1. Adapt (recommended): I write the sheet from what exists and ask you 2 or 3 questions. […]
+1. Adapt (my lean: likely): I write the sheet from what exists and ask you 2 or 3 questions. […]
 2. Keep as is: we carry on with J3 right away, without a sheet. I note it, dated, in CLAUDE.md […]
 3. Start from scratch: full framing, with a mock-up before any code. The existing work is first copied into a dated folder […]
 ```
@@ -118,7 +118,7 @@ Question: how do we resume this project?
 
 Diapason est un skill pour [Claude Code](https://code.claude.com/docs/en/skills). Tu lui donnes une idée, un fichier à traiter ou un projet à reprendre. Il te pose les questions de produit, découpe le travail, le confie à des sous-agents du bon modèle, **vérifie lui-même les faits qui décident de tout**, surveille ton quota, et tient un fichier de passation pour tout reprendre plus tard.
 
-Le nom : un *diapason* est le petit instrument qui donne le la à un orchestre. Ici, il donne le la à ton équipe d'agents : même but, mêmes règles, mêmes vérifications, avant que quiconque joue la première note. Les agents `ma-*` gardent leur nom.
+Le nom : un *diapason* est le petit instrument qui donne le la à un orchestre. Ici, il donne le la à ton équipe d'agents : même but, mêmes règles, mêmes vérifications, avant que quiconque joue la première note. Les agents s'appellent `dia-*` (ils s'appelaient `ma-*` avant la v1.7).
 
 **Pour qui :** toute personne qui utilise Claude Code sur un travail qui dure plus d'une conversation (une appli, un jeu, une recherche, un achat à comparer) et qui veut garder la main.
 
@@ -158,11 +158,11 @@ flowchart LR
 ```mermaid
 flowchart LR
     subgraph J["③ Jalons"]
-        A1["ma-chercheur<br/>recherche · sonnet"]
-        A2["ma-concepteur<br/>conception · opus"]
-        A3["ma-executant<br/>code · sonnet ou haiku"]
-        A4["ma-testeur<br/>tests · sonnet"]
-        A5["ma-auditeur<br/>audit · sonnet"]
+        A1["dia-chercheur<br/>recherche · sonnet"]
+        A2["dia-concepteur<br/>conception · opus"]
+        A3["dia-executant<br/>code · sonnet ou haiku"]
+        A4["dia-testeur<br/>tests · sonnet"]
+        A5["dia-auditeur<br/>audit · sonnet"]
     end
     J --> V{"④ Diapason<br/>vérifie lui-même<br/>commandes lancées<br/>à l'instant · sources<br/>primaires"}
     V -- "à corriger, 3 tours max" --> J
@@ -195,7 +195,7 @@ Extrait réel d'un essai, à la reprise d'un projet construit sans fiche :
 
 ```text
 Question : comment on reprend ce projet ?
-1. Adapter (recommandé) : j'écris la fiche à partir de ce qui existe et je te pose 2 ou 3 questions. […]
+1. Adapter (mon penchant : probable) : j'écris la fiche à partir de ce qui existe et je te pose 2 ou 3 questions. […]
 2. Garder tel quel : on enchaîne J3 tout de suite, sans fiche. Je le note daté dans CLAUDE.md […]
 3. Repartir de zéro : cadrage complet, avec une maquette avant tout code. L'existant est d'abord copié dans un dossier daté […]
 ```

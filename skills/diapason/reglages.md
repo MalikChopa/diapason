@@ -68,7 +68,7 @@ At first launch, then at each launch where the profile has no `prereglage` line,
 | `status: not_applicable` (API key) | `intensif` |
 | other value, missing field or no usage tool | ask once, with buttons (Pro / Max 5x / Max 20x / API) |
 
-The Max values are **not verified** (only "Pro" was seen): the table recognises whatever contains "Max", and a surprising value is asked, not guessed. Offer the preset with buttons ("recommended" first, the others as alternatives), **confirmed once**, write it with `reglages.sh preset`, then note the plan in the profile's "Forfait / quota" line. If a `prereglage` is already written, do not ask again: propose a change only if `plan.plan` no longer matches the profile's "Forfait" line.
+The Max values are **not verified** (only "Pro" was seen): the table recognises whatever contains "Max", and a surprising value is asked, not guessed. Offer the preset with buttons (your lean first, the others as alternatives), **confirmed once**, write it with `reglages.sh preset`, then note the plan in the profile's "Forfait / quota" line. If a `prereglage` is already written, do not ask again: propose a change only if `plan.plan` no longer matches the profile's "Forfait" line.
 
 ## Next time (Pour la prochaine fois)
 In the end-of-project recap, propose **a single** setting: more economical if quota went past the 2nd threshold or if an agent went past 40% of the window; wider (`intensif`, or a larger `agents-paralleles`) if quota stayed under the 1st threshold and no batch was delayed. Otherwise: "keep your settings".

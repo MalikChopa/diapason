@@ -1,5 +1,5 @@
 ---
-name: ma-concepteur
+name: dia-concepteur
 description: "Designer of the Diapason method (architecture, spec, synthesis, post-audit fix): use only when a Diapason brief asks for it."
 tools: Read, Grep, Glob, Write, Edit, Bash, WebSearch, WebFetch
 disallowedTools: Agent

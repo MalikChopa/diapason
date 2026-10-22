@@ -30,7 +30,7 @@ if git rev-parse --git-dir >/dev/null 2>&1; then
 else
   list=$(find . -type f | sed 's|^\./||')
 fi
-list=$(printf '%s\n' "$list" | grep -vE '^(\.git/|dist/|\.claude/|docs/briefs/|docs/journal/|docs/research/|docs/README_AUDIT_|docs/CRITIQUE_|docs/chantiers/|docs/AMELIORATIONS\.md$|CLAUDE\.md$|docs/HANDOFF\.md$|docs/HANDOFF-archive\.md$)|(^|/)\.DS_Store$|(^|/)node_modules/' | sort)
+list=$(printf '%s\n' "$list" | grep -vE '^(\.git/|dist/|\.claude/|docs/briefs/|docs/journal/|docs/research/|docs/essais/|docs/V[0-9]+_|docs/README_AUDIT_|docs/CRITIQUE_|docs/chantiers/|docs/AMELIORATIONS\.md$|CLAUDE\.md$|docs/HANDOFF\.md$|docs/HANDOFF-archive\.md$)|(^|/)\.DS_Store$|(^|/)node_modules/' | sort)
 printf '%s\n' "$list" | while IFS= read -r f; do [ -f "$f" ] && printf '%s\n' "$f"; done | zip -q -X "$plugin_zip" -@
 
 for z in "$skill_zip" "$plugin_zip"; do

@@ -1,7 +1,7 @@
 # Scénario 01 : un petit projet
 
 ## Contexte
-Dossier vide et jetable. Profil présent (français, tutoiement). Aucun `docs/HANDOFF.md`. Les agents `ma-*` sont installés.
+Dossier vide et jetable. Profil présent (français, tutoiement). Aucun `docs/HANDOFF.md`. Les agents `dia-*` sont installés.
 
 ## Message de départ
 ```

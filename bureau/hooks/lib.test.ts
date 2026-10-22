@@ -7,7 +7,7 @@ import {
   firstLine,
   formatReset,
   formatStatus,
-  isMaAgent,
+  isDiaAgent,
   levelOf,
   parseMilestone,
   parseNotifications,
@@ -125,16 +125,18 @@ describe('alertes de quota', () => {
   })
 })
 
-describe('sous-agents ma-*', () => {
+describe('sous-agents dia-*', () => {
   test('reconnaissance du type', async () => {
-    expect(isMaAgent('ma-chercheur')).toBe(true)
-    expect(isMaAgent('diapason:ma-executant')).toBe(true)
-    expect(isMaAgent('majordome:ma-executant')).toBe(true) // ancien préfixe du plugin (v1.4)
-    expect(isMaAgent('maitre-agent:ma-executant')).toBe(true) // ancien préfixe du plugin (v1.3)
-    expect(isMaAgent('general-purpose')).toBe(false)
-    expect(isMaAgent('autre:ma-x')).toBe(false)
-    expect(isMaAgent('maman')).toBe(false)
-    expect(isMaAgent(undefined)).toBe(false)
+    expect(isDiaAgent('dia-chercheur')).toBe(true)
+    expect(isDiaAgent('diapason:dia-executant')).toBe(true)
+    expect(isDiaAgent('ma-chercheur')).toBe(true) // ancien nom des agents (avant la v1.7)
+    expect(isDiaAgent('diapason:ma-executant')).toBe(true)
+    expect(isDiaAgent('majordome:dia-executant')).toBe(true) // ancien préfixe du plugin (v1.4)
+    expect(isDiaAgent('maitre-agent:dia-executant')).toBe(true) // ancien préfixe du plugin (v1.3)
+    expect(isDiaAgent('general-purpose')).toBe(false)
+    expect(isDiaAgent('autre:ma-x')).toBe(false)
+    expect(isDiaAgent('maman')).toBe(false)
+    expect(isDiaAgent(undefined)).toBe(false)
   })
 
   test('première ligne du rapport', async () => {
@@ -144,11 +146,11 @@ describe('sous-agents ma-*', () => {
   })
 
   test('texte du toast : 80 caractères au plus', async () => {
-    expect(agentDoneText('diapason:ma-chercheur', 'TERMINÉ\nsuite')).toBe('ma-chercheur : TERMINÉ')
-    const long = agentDoneText('ma-executant', 'TERMINÉ ' + 'x'.repeat(200))
+    expect(agentDoneText('diapason:dia-chercheur', 'TERMINÉ\nsuite')).toBe('dia-chercheur : TERMINÉ')
+    const long = agentDoneText('dia-executant', 'TERMINÉ ' + 'x'.repeat(200))
     expect(Array.from(long).length).toBe(80)
     expect(long.endsWith('…')).toBe(true)
-    expect(agentDoneText('ma-auditeur', '', 'aborted')).toBe('ma-auditeur : interrompu')
+    expect(agentDoneText('dia-auditeur', '', 'aborted')).toBe('dia-auditeur : interrompu')
     expect(truncate('court', 80)).toBe('court')
   })
 })

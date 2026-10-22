@@ -5,7 +5,7 @@ Only with the user's explicit approval: this is persistent configuration. Read t
 ## 0. Choose a route
 | Route | What you get | What it does not do |
 |---|---|---|
-| A. Plugin (GitHub marketplace) | skill (launched only by `/diapason`), 5 `ma-*` agents, agent counter, agent-end notifications, re-injection after a summary, "validated sheet" safeguard (§6); updates by version | no status bar and no `permissions.ask` (see §4 and §2) |
+| A. Plugin (GitHub marketplace) | skill (launched only by `/diapason`), 5 `dia-*` agents, agent counter, agent-end notifications, re-injection after a summary, "validated sheet" safeguard (§6); updates by version | no status bar and no `permissions.ask` (see §4 and §2) |
 | B. Skill copy | the skill alone in `~/.claude/skills/`; everything else by hand (§1 to §5) | nothing automatic |
 | C. Release zip | `diapason-skill-v<version>.zip` (skill alone, like B) or `diapason-plugin-v<version>.zip` (full plugin) | same as A or B depending on the zip |
 
@@ -28,10 +28,10 @@ Only with the user's explicit approval: this is persistent configuration. Read t
 - A personal skill and a plugin skill of the same name both load: do not install the skill by both routes.
 
 ## 1. Sub-agents (`SKILL_DIR/agents/` → `~/.claude/agents/`), routes B and C only
-- `ma-chercheur` (middle), `ma-auditeur` (middle, read-only except its file), `ma-testeur` (middle), `ma-concepteur` (most capable), `ma-executant` (inherits the requested model).
+- `dia-chercheur` (middle), `dia-auditeur` (middle, read-only except its file), `dia-testeur` (middle), `dia-concepteur` (most capable), `dia-executant` (inherits the requested model).
 - In common: no Agent tool (no nested sub-agents), a turn ceiling, and the stable rules of `briefs/_entete.md` in the body.
 - Copy them into `~/.claude/agents/`. If a file of the same name already exists, compare it and ask before replacing it.
-- They are available in new sessions. With the plugin, they are called `diapason:ma-chercheur`, etc., and are already supplied: do not copy them as well.
+- They are available in new sessions. With the plugin, they are called `diapason:dia-chercheur`, etc., and are already supplied: do not copy them as well.
 - A plugin agent ignores `permissionMode` and `hooks` (official doc): these agents have none.
 
 ## 2. Ask before risky commands (`~/.claude/settings.json`, `permissions.ask`)
@@ -69,17 +69,17 @@ The plugin brings them (`hooks/hooks.json`). Without the plugin, copy `SKILL_DIR
   "SubagentStart": [{ "hooks": [{ "type": "command", "command": "~/.claude/diapason/agent-count.sh start || true", "timeout": 5 }] }],
   "SubagentStop": [
     { "hooks": [{ "type": "command", "command": "~/.claude/diapason/agent-count.sh stop || true", "timeout": 5 }] },
-    { "matcher": "^ma-", "hooks": [{ "type": "command", "command": "~/.claude/diapason/notify.sh agent || true", "timeout": 10 }] }],
+    { "matcher": "^dia-", "hooks": [{ "type": "command", "command": "~/.claude/diapason/notify.sh agent || true", "timeout": 10 }] }],
   "Notification": [{ "matcher": "permission_prompt|idle_prompt", "hooks": [{ "type": "command", "command": "~/.claude/diapason/notify.sh blocked || true", "timeout": 10 }] }]
 }
 ```
-- The counter counts **all** sub-agents (also the `general-purpose` fallback); only the end notification is limited to `ma-*`.
-- Notifications: `osascript` on macOS, `notify-send` on Linux if present, nothing elsewhere. **`ma-*` agent end and quota alerts: on by default. "Claude is waiting" notification (hook `Notification`): off by default**, as it would fire in all sessions; to enable it, create `~/.claude/diapason/notifications-on` (or set `notifications : tout`). To cut everything: create `~/.claude/diapason/notifications-off` (cuts all, always; or set `notifications : rien`; useful on the desktop, where the app already notifies a task's end: possible duplicate). To test without displaying anything: `DIAPASON_DRY_RUN=1`.
+- The counter counts **all** sub-agents (also the `general-purpose` fallback); only the end notification is limited to `dia-*`.
+- Notifications: `osascript` on macOS, `notify-send` on Linux if present, nothing elsewhere. **`dia-*` agent end and quota alerts: on by default. "Claude is waiting" notification (hook `Notification`): off by default**, as it would fire in all sessions; to enable it, create `~/.claude/diapason/notifications-on` (or set `notifications : tout`). To cut everything: create `~/.claude/diapason/notifications-off` (cuts all, always; or set `notifications : rien`; useful on the desktop, where the app already notifies a task's end: possible duplicate). To test without displaying anything: `DIAPASON_DRY_RUN=1`.
 - None of these scripts blocks: short timeout, `|| true`, exit 0. They need `jq`.
 - The counters live in `~/.claude/diapason/state/` and are purged after 5 h (the quota window), empty folders included.
 
 ## 6. "Validated sheet" safeguard (hook `PreToolUse`)
-What it does: if `docs/FICHE.md` exists in the project folder **and** carries a "Status: …" line (FR: "Statut : …"; both languages are read), it refuses to write code (`Write`, `Edit`, `MultiEdit`, `NotebookEdit`) and to launch the implementation agent `ma-executant` as long as the status is not "validated" (FR: "validée"). Once the sheet is validated, it still refuses code writing as long as the "Mock-up approved" line (FR: "Maquette validée") says "not yet" (FR: "pas encore") ("no interface" (FR: "sans interface"), a path or a link = allowed). Still open for writing: `docs/`, `maquette/`, `CLAUDE.md`, `.claude/` and any file outside the project. Without a sheet (projects from before v1.3), it does nothing. The refusal message says what to do (finish the workshop, have the sheet or the mock-up approved).
+What it does: if `docs/FICHE.md` exists in the project folder **and** carries a "Status: …" line (FR: "Statut : …"; both languages are read), it refuses to write code (`Write`, `Edit`, `MultiEdit`, `NotebookEdit`) and to launch the implementation agent `dia-executant` as long as the status is not "validated" (FR: "validée"). Once the sheet is validated, it still refuses code writing as long as the "Mock-up approved" line (FR: "Maquette validée") says "not yet" (FR: "pas encore") ("no interface" (FR: "sans interface"), a path or a link = allowed). Still open for writing: `docs/`, `maquette/`, `CLAUDE.md`, `.claude/` and any file outside the project. Without a sheet (projects from before v1.3), it does nothing. The refusal message says what to do (finish the workshop, have the sheet or the mock-up approved).
 - **With the plugin (route A)**: already wired in `hooks/hooks.json`. Nothing to do.
 - **Without the plugin**: copy `SKILL_DIR/hooks/garde-fiche.sh` into `~/.claude/diapason/` (make it executable), then merge into `~/.claude/settings.json` (diff shown first):
 ```json
@@ -94,9 +94,14 @@ What it does: if `docs/FICHE.md` exists in the project folder **and** carries a 
 - Test (fake data): `mkdir -p /tmp/t/docs && printf 'Status: draft\n' > /tmp/t/docs/FICHE.md && echo '{"tool_name":"Write","cwd":"/tmp/t","tool_input":{"file_path":"/tmp/t/src/a.js"}}' | CLAUDE_PROJECT_DIR=/tmp/t sh ~/.claude/diapason/garde-fiche.sh; echo $?` prints the message then `2`.
 
 ## 7. Upgrading from v1.3 or v1.4 (the skill was called maitre-agent, then majordome)
-- **Command**: `/maitre-agent` (v1.3) and `/majordome` (v1.4) become `/diapason`; no alias skill is shipped. A project whose `CLAUDE.md` says `/maitre-agent` or `/majordome` resumes with `/diapason <project path>`. The agents keep their `ma-*` names.
+- **Command**: `/maitre-agent` (v1.3) and `/majordome` (v1.4) become `/diapason`; no alias skill is shipped. A project whose `CLAUDE.md` says `/maitre-agent` or `/majordome` resumes with `/diapason <project path>`. The agents were then called `ma-*` (renamed `dia-*` in v1.7: §8).
 - **Data folder**: the new one is `~/.claude/diapason/`. Every script uses it if it exists, else `~/.claude/majordome/` (v1.4), else `~/.claude/maitre-agent/` (v1.3), else the new one. At the first `/diapason`, if `~/.claude/diapason/profil.md` is missing and an old profile exists, `hooks/migrer.sh` copies the old folder (`majordome`, else `maitre-agent`) into the new one **without overwriting anything and without deleting anything** (profile, usage, state, notification switches); the `sauvegarde-skill-*` folders are not copied. It refuses to run if `~/.claude/diapason/profil.md` already exists, exits non-zero if a copy fails, and tells the user in one line. Deleting the old folder afterwards is their choice, never done by the skill.
 - **`settings.json` is never written by the script.** If a hook there points into the old folder (typically `~/.claude/majordome/hooks/reinject.sh`), `migrer.sh` only prints the proposed lines (`-` old, `+` new): show that diff to the user and edit only after approval.
 - **Old copies**: the status bar, `notify.sh` and the other scripts that you copied by hand into the old folder (and named in `settings.json`) keep working but write in the old folder; to switch, copy the new scripts (§3 to §6) into `~/.claude/diapason/` and change the paths in `settings.json` (diff shown first). `/diapason diagnostic` flags an old status-bar path and an old `~/.claude/skills/majordome` or `~/.claude/skills/maitre-agent`.
 - **Plugin**: uninstall `majordome@majordome` (or `maitre-agent@maitre-agent`), install `diapason@diapason` (and `diapason-bureau@diapason` on the desktop, replacing `majordome-bureau`). The old repo URLs are expected to redirect after the rename (GitHub behaviour; not verified for Claude Code marketplaces).
 - **Environment variables**: `DIAPASON_PROJECT_DIR`, `DIAPASON_DRY_RUN`, `DIAPASON_REINJECT_MAX`, `DIAPASON_PROFIL` replace the `MAJORDOME_*` (v1.4) and `MAITRE_AGENT_*` (v1.3) ones, which are still read.
+
+## 8. Upgrading from v1.6 (agents renamed `ma-*` to `dia-*`)
+- **Plugin (route A)**: update the plugin; the `dia-*` agents, the hooks and the safeguard come with it. Then delete the old copies, if any: `rm ~/.claude/agents/ma-*.md` (after the user's approval; `diagnostic` lists them).
+- **Manual (routes B and C)**: (1) copy the new agents (§1) and the new `garde-fiche.sh` (§6) over the old ones: an old safeguard copy only knows `ma-executant` and would let `dia-executant` through on a draft sheet; (2) in `~/.claude/settings.json` change the end-of-agent `"matcher": "^ma-"` to `"^dia-"` (diff shown first), otherwise that notification goes silent; (3) delete `~/.claude/agents/ma-*.md` after approval. `diagnostic` flags the old agents and an outdated safeguard copy.
+- The safeguard, the hooks and the desktop mod still accept the old `ma-*` names, so a half-finished migration does not break anything silently.

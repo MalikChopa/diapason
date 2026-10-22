@@ -13,7 +13,7 @@ Sources to favour for this domain: <list>.
 In the "Application to the project" section of the template: concrete decisions and starting values, with a verdict.
 ```
 
-Method rules (source-based conclusions, findings written after each pair of searches, start broad then narrow, "no evidence" is a result): already in the `ma-chercheur` definition and in `_BRIEF.md`: **do not copy them into the brief**. Only for a `general-purpose` agent, add: the project context says **what to look for**, never what is true; a conclusion requires a source consulted during this task.
+Method rules (source-based conclusions, findings written after each pair of searches, start broad then narrow, "no evidence" is a result): already in the `dia-chercheur` definition and in `_BRIEF.md`: **do not copy them into the brief**. Only for a `general-purpose` agent, add: the project context says **what to look for**, never what is true; a conclusion requires a source consulted during this task.
 
 Good practice:
 - Freshness by type of claim (put it in the brief if it matters): prices and versions, a few months; how software works, 12 months; history, unlimited.
