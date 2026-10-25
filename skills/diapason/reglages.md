@@ -25,6 +25,7 @@
 | `langue` | `profil` or a code (`fr`, `en`, `pt-BR`…) | `profil` | language of everything you write |
 | `ton` | `profil`, `tutoiement`, `vouvoiement`, `neutre` | `profil` | how to address the user |
 | `rapports` | `court`, `detaille` | `detaille` | `court`: agent report of 5 lines at most (write it in the brief in place of "10 lines"), your reports and decision answers of 8 lines at most. `detaille`: the skill's rules (10 lines, 15 for a decision) |
+| `verif-maj` | `oui`, `non` | `oui` | `oui`: `maj.sh` asks GitHub once a day whether a newer release exists (one GET to api.github.com, nothing sent) and tells the user in one line; installs nothing. `non`: no network call. Not part of the presets |
 | `prereglage` | `econome`, `normal`, `intensif`, `personnalise` | none | written by `reglages.sh preset`; a starting point, a key written beside it overrides it. When a key is set by hand to a value different from the preset's, the script writes `personnalise`: the preset's extra rules (below) then stop applying, only the written keys count. Each preset also adds rules (below). The v1.3 spec calls the middle preset "standard": its name stays `normal` |
 
 ## Presets

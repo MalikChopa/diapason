@@ -17,6 +17,9 @@ Il vérifie le YAML des agents et du skill, la taille de `SKILL.md`, les renvois
 
 Si tu modifies un script de `hooks/`, la copie dans `skills/diapason/hooks/` doit rester identique (le lint le vérifie). Les scripts restent en `sh` POSIX, sans bashisme, et doivent marcher sous macOS et Linux.
 
+## Numéro de version (mainteneur)
+Un numéro de version se change à deux endroits qui doivent rester égaux : `.claude-plugin/plugin.json` et `skills/diapason/VERSION` (lue par `maj.sh`, seule trace de version d'une copie du skill). Le lint refuse s'ils diffèrent. Après un changement de `tools/maj.sh`, recopie-le dans `skills/diapason/hooks/`.
+
 ## Revue de parcimonie (à chaque version)
 Des consignes en plus ont un coût (tokens, attention) et ne valent que si elles ont servi. Avant de publier une version :
 1. Tire 5 règles du corps de `skills/diapason/SKILL.md`, de préférence dans les sections les plus lourdes en octets (note la graine ou la méthode du tirage).
@@ -33,5 +36,6 @@ Dans la documentation, n'écris « ça marche » que pour ce que tu as essayé, 
 ## In English (short)
 - Open an issue first, then a pull request: one topic per PR, say what changed and how you checked it.
 - Run `LINT_SKIP_LOCAL=1 sh tools/lint-skill.sh` before pushing; it must print no `ERR` (the variable skips the checks of your local `~/.claude` installation).
+- A version number lives in two places that must match: `.claude-plugin/plugin.json` and `skills/diapason/VERSION` (the lint enforces it).
 - Each release: review 5 rules of `SKILL.md` (prefer the heaviest sections), trace each to its origin and eval, propose removing or merging those with neither, and record the 5 decisions in the CHANGELOG.
 - No personal data in the repository (names, emails, home paths, private project names); use dummy data for examples. Say "not tested" when something was not tested.

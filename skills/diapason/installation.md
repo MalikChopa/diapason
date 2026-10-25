@@ -10,9 +10,9 @@ Only with the user's explicit approval: this is persistent configuration. Read t
 | C. Release zip | `diapason-skill-v<version>.zip` (skill alone, like B) or `diapason-plugin-v<version>.zip` (full plugin) | same as A or B depending on the zip |
 
 ### Route A: plugin
-- In a session: `/plugin marketplace add MalikMoussaoui/diapason`, then `/plugin install diapason@diapason`. In one go: `/plugin install diapason --marketplace MalikMoussaoui/diapason` (Claude Code 2.1.275 or later).
-- In a shell: `claude plugin marketplace add MalikMoussaoui/diapason`, then `claude plugin install diapason@diapason`. To pin a version: `MalikMoussaoui/diapason#v1.1.0`.
-- Desktop app: + > Plugins > Add plugin, on the marketplaces already configured. How to add a GitHub source there is not documented (non vérifié); fallback, in `~/.claude/settings.json`, `"extraKnownMarketplaces": { "diapason": { "source": { "source": "github", "repo": "MalikMoussaoui/diapason" } } }`.
+- In a session: `/plugin marketplace add MalikChopa/diapason`, then `/plugin install diapason@diapason`. In one go: `/plugin install diapason --marketplace MalikChopa/diapason` (Claude Code 2.1.275 or later).
+- In a shell: `claude plugin marketplace add MalikChopa/diapason`, then `claude plugin install diapason@diapason`. To pin a version: `MalikChopa/diapason#v1.1.0`.
+- Desktop app: + > Plugins > Add plugin, on the marketplaces already configured. How to add a GitHub source there is not documented (non vérifié); fallback, in `~/.claude/settings.json`, `"extraKnownMarketplaces": { "diapason": { "source": { "source": "github", "repo": "MalikChopa/diapason" } } }`.
 - No plugins in cloud sessions.
 - The plugin's hooks are active as soon as it loads, in all sessions (see §3 to avoid a duplicate, §5 for notifications). Prerequisites of the hooks and scripts: macOS or Linux, and `jq`.
 
@@ -105,3 +105,7 @@ What it does: if `docs/FICHE.md` exists in the project folder **and** carries a 
 - **Plugin (route A)**: update the plugin; the `dia-*` agents, the hooks and the safeguard come with it. Then delete the old copies, if any: `rm ~/.claude/agents/ma-*.md` (after the user's approval; `diagnostic` lists them).
 - **Manual (routes B and C)**: (1) copy the new agents (§1) and the new `garde-fiche.sh` (§6) over the old ones: an old safeguard copy only knows `ma-executant` and would let `dia-executant` through on a draft sheet; (2) in `~/.claude/settings.json` change the end-of-agent `"matcher": "^ma-"` to `"^dia-"` (diff shown first), otherwise that notification goes silent; (3) delete `~/.claude/agents/ma-*.md` after approval. `diagnostic` flags the old agents and an outdated safeguard copy.
 - The safeguard, the hooks and the desktop mod still accept the old `ma-*` names, so a half-finished migration does not break anything silently.
+
+## 9. Knowing when a new version is out (`maj.sh`)
+- `SKILL_DIR/hooks/maj.sh` compares `SKILL_DIR/VERSION` with the latest GitHub release (one GET a day to `api.github.com`, nothing sent, cache `~/.claude/diapason/maj.cache`) and prints one line when a newer one exists. `SKILL.md` §0 runs it at each `/diapason`; the resume hook (`reinject.sh`, route A or §3) runs it at most once a day in projects with a HANDOFF. It installs nothing: updating stays the user's yes (route A: `claude plugin update diapason@diapason`; routes B and C: the new zip, then §8 if the agents or hooks changed).
+- Off: `- verif-maj : non` under `## Réglages` (`reglages.sh set verif-maj non`), or `DIAPASON_VERIF_MAJ=non`. Check now: `sh SKILL_DIR/hooks/maj.sh --force`.

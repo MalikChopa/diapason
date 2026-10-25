@@ -5,9 +5,9 @@
 **Your project, run by a team of Claude Code sub-agents — you decide, it does the work and checks it.**<br/>
 **Ton projet mené par une équipe de sous-agents Claude Code : tu décides, il fait le travail et le vérifie.**
 
-[![Latest release](https://img.shields.io/github/v/release/MalikMoussaoui/diapason)](https://github.com/MalikMoussaoui/diapason/releases)
-[![MIT license](https://img.shields.io/github/license/MalikMoussaoui/diapason)](LICENSE)
-[![Lint](https://img.shields.io/github/actions/workflow/status/MalikMoussaoui/diapason/lint.yml?branch=main&label=lint)](https://github.com/MalikMoussaoui/diapason/actions/workflows/lint.yml)
+[![Latest release](https://img.shields.io/github/v/release/MalikChopa/diapason)](https://github.com/MalikChopa/diapason/releases)
+[![MIT license](https://img.shields.io/github/license/MalikChopa/diapason)](LICENSE)
+[![Lint](https://img.shields.io/github/actions/workflow/status/MalikChopa/diapason/lint.yml?branch=main&label=lint)](https://github.com/MalikChopa/diapason/actions/workflows/lint.yml)
 
 **[🇬🇧 English](#english)** · **[🇫🇷 Français](#francais)**
 
@@ -34,6 +34,7 @@ The name: a *diapason* is the tuning fork that gives the A to an orchestra. Here
 | ✅ **It checks, not just reports** | "The tests pass" means a command run just now, not an agent's word. |
 | 📊 **Quota-aware** | Reads your plan (Pro, Max), suggests a preset, follows the week's pace and stops cleanly before the wall. |
 | 🔁 **Resumable** | A `HANDOFF.md` lets you pick up after a cut, in a new session or from another account. |
+| 🆕 **Tells you about updates** | At most one request a day to this repository's GitHub releases, nothing sent; if a newer version exists it says so in one line and installs nothing. Off with one setting. |
 
 ### How it works
 
@@ -81,7 +82,7 @@ flowchart LR
 
 1. **Install** (in a Claude Code session):
    ```text
-   /plugin marketplace add MalikMoussaoui/diapason
+   /plugin marketplace add MalikChopa/diapason
    /plugin install diapason@diapason
    ```
 2. **Run it** with your idea:
@@ -131,6 +132,7 @@ Le nom : un *diapason* est le petit instrument qui donne le la à un orchestre. 
 | ✅ **Il vérifie, il ne fait pas que rapporter** | « Les tests passent » veut dire une commande lancée à l'instant, pas la parole d'un agent. |
 | 📊 **Attentif à ton quota** | Il lit ton forfait (Pro, Max), propose un préréglage, suit le rythme de la semaine et s'arrête proprement avant le mur. |
 | 🔁 **Tout se reprend** | Un `HANDOFF.md` permet de reprendre après une coupure, dans une nouvelle session ou depuis un autre compte. |
+| 🆕 **Te prévient des mises à jour** | Au plus une requête par jour vers les releases GitHub de ce dépôt, rien d'envoyé ; s'il existe une version plus récente, il te le dit en une ligne et n'installe rien. Se coupe avec un réglage. |
 
 ### Comment ça marche
 
@@ -178,7 +180,7 @@ flowchart LR
 
 1. **Installer** (dans une session Claude Code) :
    ```text
-   /plugin marketplace add MalikMoussaoui/diapason
+   /plugin marketplace add MalikChopa/diapason
    /plugin install diapason@diapason
    ```
 2. **Lancer** avec ton idée :

@@ -72,7 +72,7 @@ Depuis la v1.3.0, le skill t'accompagne au lieu de foncer. Ce qui a motivé ce c
 
 **Un préréglage selon ton forfait** (`reglages.md`, « Forfait et préréglage »). Au premier lancement, il lit le forfait dans l'outil d'usage et te propose, confirmé une fois : `econome` pour un forfait Pro (1 ou 2 agents en parallèle, le modèle le plus capable pour la conception seulement, une seule recherche regroupée, un tour d'audit, une variante de maquette), `normal` pour Max 5x (3 ou 4 agents), `intensif` pour Max 20x ou une clé d'API (5 agents, le modèle le plus capable aussi pour les audits, 2 à 3 variantes de maquette). **Seule la valeur « Pro » a été vue** ; les valeurs Max sont déduites et ne sont pas vérifiées : une valeur inattendue, il te la demande. Les réglages de chaque préréglage (nombre de recherches, tours d'audit, variantes) sont des choix de conception, non mesurés à l'usage.
 
-**Ce qui est vérifié, et ce qui ne l'est pas.** Les scripts (réglages, quota, diagnostic, garde-fou) sont testés avec des JSON factices : 394 vérifications sous `sh` et sous `dash` à la v1.4.0, 0 échec. **Vu deux fois, le 2026-10-19, dans deux sessions de test neuves** (pilotées par Diapason, qui jouait l'utilisateur par messages). **Premier essai** (skill en français) : les tours 1 et 2 de l'atelier posés en liste numérotée, chacun avec une recommandation (le tour 1 a posé 5 questions au lieu de 4 : un écart) ; un « go » refusé avant « Valider » ; le garde-fou refusant un `Write` hors de `docs/` tant que la fiche était en brouillon ; la fiche validée ; une maquette HTML de 3 écrans, testée dans le navigateur par la session ; un point d'étape « Étape 2/7 » avec le coût de la suite et « Continuer / Ajuster / S'arrêter » ; un arrêt propre. **Second essai** (skill interne en anglais, réponses en français) : tout en français ; 4 questions par tour au plus ; la question des connecteurs posée ; un point d'étape « Étape 2/5 » ; une maquette en Artifact privé et `maquette/index.html`, une seule capture ; aucun code sur le disque ; arrêt après la maquette. **Pas vu** : les boutons de l'outil de questions (le premier essai les remplaçait par une liste ; le second ne les note pas), les sous-agents sous le garde-fou. Les évaluations 06 à 10 qui décrivent ces situations sont écrites, **pas lancées**.
+**Ce qui est vérifié, et ce qui ne l'est pas.** Les scripts (réglages, quota, diagnostic, garde-fou) sont testés avec des JSON factices : 424 vérifications sous `sh` et sous `dash` (mesuré le 2026-10-25), 0 échec. **Vu deux fois, le 2026-10-19, dans deux sessions de test neuves** (pilotées par Diapason, qui jouait l'utilisateur par messages). **Premier essai** (skill en français) : les tours 1 et 2 de l'atelier posés en liste numérotée, chacun avec une recommandation (le tour 1 a posé 5 questions au lieu de 4 : un écart) ; un « go » refusé avant « Valider » ; le garde-fou refusant un `Write` hors de `docs/` tant que la fiche était en brouillon ; la fiche validée ; une maquette HTML de 3 écrans, testée dans le navigateur par la session ; un point d'étape « Étape 2/7 » avec le coût de la suite et « Continuer / Ajuster / S'arrêter » ; un arrêt propre. **Second essai** (skill interne en anglais, réponses en français) : tout en français ; 4 questions par tour au plus ; la question des connecteurs posée ; un point d'étape « Étape 2/5 » ; une maquette en Artifact privé et `maquette/index.html`, une seule capture ; aucun code sur le disque ; arrêt après la maquette. **Pas vu** : les boutons de l'outil de questions (le premier essai les remplaçait par une liste ; le second ne les note pas), les sous-agents sous le garde-fou. Les évaluations 06 à 10 qui décrivent ces situations sont écrites, **pas lancées**.
 
 ## Fonctions
 
@@ -98,6 +98,7 @@ Colonne « Statut » : **utilisé en réel** = servi pendant la fabrication de c
 | Réglages (v1.2, étendus en v1.3) | Une rubrique `## Réglages` du profil (et `## Réglages du projet` dans le `CLAUDE.md`) règle seuils de quota, taille de lot, autonomie (4 valeurs depuis la v1.3), modèles, agents en parallèle, notifications, barre d'état, git, langue, ton, rapports. Trois préréglages : `econome`, `normal`, `intensif`. Voir « Réglages » plus bas. | script `tools/reglages.sh` et lecture par les scripts : testés avec des JSON factices (`tests/hooks.sh`) ; application des réglages par le modèle : écrit, jamais vu en réel |
 | Barre d'état du terminal | `🛎️ <projet> · <jalon> · <n> agents · 5 h <x> % (reset HH:MM) · 7 j <y> %`. Écrit aussi le quota dans `~/.claude/diapason/usage.json`. Alertes 7 j, une par palier et par remise. | testé avec des JSON factices à chaque push (`tests/hooks.sh`) ; pas vu dans un vrai terminal |
 | Mod de bureau | La même idée pour l'onglet Code de l'app Claude de bureau : ligne d'état, alertes de quota, toast de fin d'agent. Il ne lit pas les seuils hebdomadaires. | testé : 41 tests sur 41 à la v1.5.0 (`claude plugin test bureau`, CLI 2.1.299 de l'app, HOME factice ; dont les réglages `seuils` et `notifications` et les trois dossiers de profil) ; ligne d'état et toast de fin d'agent vus en réel (v1.1.x) |
+| Contrôle de version | `maj.sh` compare la version installée (fichier `skills/diapason/VERSION`) à la dernière release GitHub : au plus une requête GET par jour, rien d'envoyé, une annonce par version puis un rappel à 7 jours, lancé à chaque `/diapason` et à la reprise d'un projet qui a un HANDOFF. N'installe rien. Se coupe avec `verif-maj non`. | testé avec une release factice (tag piégé, réponse illisible, échec réseau, rappel à 7 jours) et un appel réel à l'API GitHub le 2026-10-22 ; le message affiché à l'utilisateur dans une vraie session n'a pas été vu |
 | Notifications | Notification système quand un agent `dia-*` finit et aux seuils de quota (70 / 80 / 90 % par défaut), actives par défaut ; « Claude attend » (permission, attente) **désactivée par défaut**. Le réglage `notifications` (`agent+quota`, `tout`, `quota`, `rien`) choisit ; sans lui, le fichier `~/.claude/diapason/notifications-on` active « Claude attend » et `notifications-off` coupe tout. macOS et Linux. Les alertes de quota exigent la barre d'état (terminal) ou le mod (bureau). | commande macOS testée en réel ; scripts testés avec des JSON factices (`tests/hooks.sh`) ; hooks non testés de bout en bout par Claude Code |
 | Boutons | Les questions passent par l'outil de questions de l'environnement (4 questions au plus par appel, 2 à 4 options, ton penchant en premier, marqué « (mon penchant : …) » avec sa certitude). Sans cet outil : liste numérotée. | écrit |
 | Chapitres | Un chapitre par phase (cadrage, recherche, maquette, conception, jalons, livraison) si l'environnement a un outil de chapitres. Sinon, rien. | écrit |
@@ -113,7 +114,7 @@ Trois voies. Choisis-en **une seule** : le skill installé par deux voies se cha
 Dans une session Claude Code :
 
 ```text
-/plugin marketplace add MalikMoussaoui/diapason
+/plugin marketplace add MalikChopa/diapason
 /plugin install diapason@diapason
 ```
 
@@ -123,7 +124,7 @@ Pour l'app de bureau (onglet Code), ajoute aussi le mod, qui remplace la barre d
 /plugin install diapason-bureau@diapason
 ```
 
-En shell : `claude plugin marketplace add https://github.com/MalikMoussaoui/diapason`, puis `claude plugin install diapason@diapason` (forme essayée avec succès depuis GitHub, CLI 2.1.299, HOME factice, **sous l'ancien nom du plugin** : sous le nom Diapason, non réessayée). La forme abrégée `MalikMoussaoui/diapason` n'a pas été essayée (elle peut passer par SSH). Pour une version précise : `MalikMoussaoui/diapason#v1.5.0` (le tag n'existe qu'une fois la v1.4.0 publiée).
+En shell : `claude plugin marketplace add https://github.com/MalikChopa/diapason`, puis `claude plugin install diapason@diapason` (forme essayée avec succès depuis GitHub, CLI 2.1.299, HOME factice, **sous l'ancien nom du plugin** : sous le nom Diapason, non réessayée). La forme abrégée `MalikChopa/diapason` n'a pas été essayée (elle peut passer par SSH). Pour une version précise : `MalikChopa/diapason#v1.5.0` (le tag n'existe qu'une fois la v1.4.0 publiée).
 
 Ce que tu obtiens : le skill (lancé seulement par `/diapason`), les 5 agents `dia-*`, le compteur d'agents, la notification de fin d'agent, la réinjection de l'état après un résumé automatique, et (depuis la v1.3.0) le garde-fou « fiche validée ». **Les hooks sont actifs dans toutes tes sessions Claude Code**, pas seulement quand le skill tourne : la réinjection ne fait rien hors d'un projet qui a un `docs/HANDOFF.md`, le garde-fou ne fait rien hors d'un projet dont `docs/FICHE.md` porte une ligne « Statut : … » (dans un tel projet, il refuse d'écrire du code tant que la fiche n'est pas validée), et la notification « Claude attend » est désactivée par défaut. Les alertes de quota n'en font pas partie : elles viennent de la barre d'état (terminal) ou du mod (bureau). Ce que le plugin **ne peut pas** installer : la barre d'état du terminal et les règles `permissions.ask` (voir plus bas). Pas de plugins dans les sessions cloud.
 
@@ -132,7 +133,7 @@ Taille mesurée avec `claude plugin details` (CLI 2.1.299, 2026-10-19, estimatio
 ### Voie B : copie du skill
 
 ```sh
-git clone https://github.com/MalikMoussaoui/diapason.git
+git clone https://github.com/MalikChopa/diapason.git
 cd diapason
 mkdir -p ~/.claude/skills && cp -R skills/diapason ~/.claude/skills/
 ```
@@ -141,14 +142,14 @@ Ouvre une nouvelle session. Les hooks (compteur d'agents, notifications, réinje
 
 ### Voie C : zip de release
 
-Sur la [page des releases](https://github.com/MalikMoussaoui/diapason/releases), deux zips (même remarque que pour la voie B : le zip du skill seul n'apporte pas les hooks) :
+Sur la [page des releases](https://github.com/MalikChopa/diapason/releases), deux zips (même remarque que pour la voie B : le zip du skill seul n'apporte pas les hooks) :
 
 ```sh
 # le skill seul (comme la voie B) : le zip contient le dossier diapason/
-unzip diapason-skill-v1.7.0.zip -d ~/.claude/skills/
+unzip diapason-skill-v1.8.0.zip -d ~/.claude/skills/
 
 # le plugin complet (fichiers à la racine du zip), pour l'essayer
-unzip diapason-plugin-v1.7.0.zip -d diapason-plugin
+unzip diapason-plugin-v1.8.0.zip -d diapason-plugin
 claude --plugin-dir diapason-plugin
 ```
 
@@ -156,6 +157,11 @@ claude --plugin-dir diapason-plugin
 - Via le plugin : `/diapason:diapason`. Le nom court `/diapason` marche aussi tant qu'aucun autre skill ne le prend.
 - Via la copie du skill (voies B et C) : `/diapason`.
 - **À lancer par `/diapason`.** Le skill peut consommer une bonne part d'une fenêtre de quota : sa description et son `when_to_use` limitent son chargement à une demande explicite (la commande, ou une session qui demande la méthode). On a écarté `disable-model-invocation: true`, qui empêcherait une autre session de le lancer par l'outil Skill.
+
+### Mises à jour
+- **Plugin (voie A)** : `claude plugin update diapason@diapason`. **Copie ou zip (voies B et C)** : recopie le dossier `diapason/` du nouveau zip dans `~/.claude/skills/`.
+- Le skill te dit lui-même quand une version plus récente est publiée (ligne unique, jamais d'installation sans toi) ; `sh ~/.claude/skills/diapason/hooks/maj.sh --force` vérifie tout de suite (copie du skill ; avec le plugin, le script est dans son cache). Détail, données échangées et coupe-circuit : réglage `verif-maj` et section « Tes données » plus bas.
+- Venir de la v1.6 : `installation.md` §8 du skill (les agents s'appellent `dia-*`, le garde-fou doit être recopié).
 
 ### Configuration manuelle (facultative, avec ton accord et en fusionnant)
 
@@ -205,7 +211,7 @@ Le skill s'est appelé `maitre-agent` jusqu'à la v1.3, puis `majordome` en v1.4
 - **Variables d'environnement** : `DIAPASON_PROJECT_DIR`, `DIAPASON_DRY_RUN`, `DIAPASON_REINJECT_MAX`, `DIAPASON_PROFIL` ; les anciennes `MAJORDOME_*` (v1.4) et `MAITRE_AGENT_*` (v1.3) restent lues.
 - Les agents s'appellent `dia-*` depuis la v1.7 (avant : `ma-*`). Si tes anciens `ma-*` traînent dans `~/.claude/agents/`, supprime-les : `diagnostic` les signale.
 
-Dépôt : GitHub redirige en principe les anciennes adresses vers `github.com/MalikMoussaoui/diapason` une fois le dépôt renommé (comportement de GitHub, non vérifié pour les marketplaces de Claude Code). Détail : `skills/diapason/installation.md`, §7.
+Dépôt : GitHub redirige en principe les anciennes adresses vers `github.com/MalikChopa/diapason` une fois le dépôt renommé (comportement de GitHub, non vérifié pour les marketplaces de Claude Code). Détail : `skills/diapason/installation.md`, §7.
 
 ## Sous-commandes
 
@@ -241,6 +247,7 @@ Un seul endroit : la rubrique `## Réglages` de ton profil (`~/.claude/diapason/
 | `git` | `commit-local`, `aucun`, `push-branche` | `commit-local` | `push-branche` pousse une branche de travail (jamais la principale) sans redemander ; accord permanent, daté |
 | `langue`, `ton` | `profil`, un code de langue ; `tutoiement`, `vouvoiement`, `neutre` | `profil` | comment il écrit |
 | `rapports` | `court`, `detaille` | `detaille` | longueur des rapports d'agents et des réponses |
+| `verif-maj` | `oui`, `non` | `oui` | une fois par jour au plus, regarde si une version plus récente est publiée et te le dit en une ligne (rien n'est installé sans ton accord) ; `non` : aucun appel réseau. Hors préréglages |
 
 Préréglages (`/diapason reglages econome|normal|intensif`). Ce que le script `reglages preset` écrit :
 
@@ -287,7 +294,7 @@ Ton profil ne lève jamais ces interdits, sauf instruction explicite et datée d
 
 **Quota :** 70 % (plus d'agent du modèle le plus capable : la conception passe sur le modèle intermédiaire, et il le dit), 80 % (aucun nouvel agent de sa propre initiative : il propose, coût annoncé, et attend ton oui explicite), 90 % (arrêt propre, HANDOFF à jour, heure de remise à zéro donnée). Sur la semaine (7 j), même logique avec `seuils-hebdo` et `plafonds-hebdo` : règle de rythme, plafonds seuls à moins de 12 h de la remise. Il ne lit le quota que quand un agent va tourner.
 
-**Tes données :** les scripts et le mod ne contactent aucun service tiers. Ton profil, tes projets et ton quota restent dans `~/.claude/` et dans le dossier de ton projet. Le travail de recherche passe par le web quand une question l'exige ; la règle du skill est que tes données, elles, restent sur ta machine (ni service tiers, ni publication, ni artifact partagé).
+**Tes données :** les scripts et le mod ne contactent aucun service tiers, à une exception près : le contrôle de version (`maj.sh`), qui fait au plus une requête GET par jour vers l'API des releases GitHub du dépôt pour savoir si une version plus récente existe. Il n'envoie rien, n'installe rien, et se coupe avec `- verif-maj : non` dans `## Réglages` (ou `DIAPASON_VERIF_MAJ=non`). Ton profil, tes projets et ton quota restent dans `~/.claude/` et dans le dossier de ton projet. Le travail de recherche passe par le web quand une question l'exige ; la règle du skill est que tes données, elles, restent sur ta machine (ni service tiers, ni publication, ni artifact partagé).
 
 ## FAQ
 
@@ -363,6 +370,7 @@ Le récit, court, drôle et vérifiable :
 - **La v1.5.0** est le changement de nom en Diapason (nom choisi par l'utilisateur) : renommage, migration des données et tests étendus, sans changement de fonctionnement. Les 41 tests du mod de bureau passent (`claude plugin test`, CLI 2.1.299).
 - **La v1.6.0** garde le corps de `SKILL.md` sous le plafond de réinjection de Claude Code (les 5 000 premiers tokens d'un skill après un résumé automatique) : de 16 272 à 11 685 octets, soit environ 4,3 k tokens mesurés contre environ 6,4 k avant (mesure par différence de `get_usage`, une seule mesure ; la sortie de `claude plugin details` n'a pas été relancée). Elle ajoute un budget par agent, des vérificateurs sceptiques, des contrôles de cohérence dans le lint et un rappel dans le hook de réinjection. **Deux évaluations réelles ont été jouées le 2026-10-21** : la reprise avec HANDOFF en retard (03, réussie) et le cadrage d'une idée d'une ligne (06 et un complément : aucun code avant la fiche et la maquette validées, techno non recommandée respectée ; la forme non recommandée, « Modifier » et « go » n'ont pas été testés).
 - **La v1.7.0** renomme les agents en `dia-*`, remplace l'étiquette « recommandé » par « mon penchant » avec sa certitude, date les faits de HANDOFF, marque les hypothèses (sûr / probable / je devine) et ajoute le type de projet « livrable visuel ». Elle vient d'une veille (recherches sur d'autres skills, essais à un seul sujet, tests sur papier) ; les essais « défauts plantés » et « carte de projet » n'ont rien montré et n'ont rien changé au skill.
+- **La v1.8.0** ajoute un contrôle de version : le skill dit, en une ligne, quand une version plus récente est publiée (au plus une requête par jour, rien d'envoyé, désactivable avec `verif-maj non`), et le dépôt suit le nouveau nom du compte GitHub (`MalikChopa/diapason`).
 - **Pas encore fait :** les neuf autres évaluations (`evals/`), et l'observation d'un vrai résumé automatique après la découpe de `SKILL.md`.
 
 L'histoire complète, avec les agents, leurs modèles, leurs coûts mesurés, les décisions et les erreurs : [`docs/fabrication.md`](docs/fabrication.md).

@@ -23,7 +23,7 @@ PROJ="${DIAPASON_PROJECT_DIR:-$PWD}"
 CMD="$PROJ/CLAUDE.md"
 T_PROFIL="Réglages"
 T_PROJET="Réglages du projet"
-KEYS="seuils seuils-hebdo plafonds-hebdo budget-lot autonomie modeles agents-paralleles notifications barre git langue ton rapports prereglage"
+KEYS="seuils seuils-hebdo plafonds-hebdo budget-lot autonomie modeles agents-paralleles notifications barre git langue ton rapports verif-maj prereglage"
 
 default_of() {
   case "$1" in
@@ -39,6 +39,7 @@ default_of() {
     git) echo "commit-local" ;;
     langue|ton) echo "profil" ;;
     rapports) echo "detaille" ;;
+    verif-maj) echo "oui" ;;
     prereglage) echo "-" ;;
   esac
 }
@@ -57,6 +58,7 @@ expect_of() {
     langue) echo "profil, ou un code de langue (fr, en, es, pt-BR…)" ;;
     ton) echo "profil | tutoiement | vouvoiement | neutre" ;;
     rapports) echo "court | detaille" ;;
+    verif-maj) echo "oui | non" ;;
     prereglage) echo "econome | normal | intensif | personnalise" ;;
   esac
 }
@@ -130,6 +132,7 @@ norm() {
         git:commit-local|git:aucun|git:push-branche) echo "$_v" ;;
         ton:profil|ton:tutoiement|ton:vouvoiement|ton:neutre) echo "$_v" ;;
         rapports:court|rapports:detaille) echo "$_v" ;;
+        verif-maj:oui|verif-maj:non) echo "$_v" ;;
         rapports:détaillé|rapports:détaille|rapports:detaillé) echo detaille ;;
         prereglage:econome|prereglage:normal|prereglage:intensif|prereglage:personnalise) echo "$_v" ;;
         prereglage:économe) echo econome ;;

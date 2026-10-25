@@ -1,6 +1,6 @@
 {
   "name": "diapason-bureau",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Mod pour l'app Claude de bureau (onglet Code) : ligne d'état avec quota et agents en cours, alertes de quota aux seuils réglés (70, 80 et 90 % par défaut), toast à la fin d'un sous-agent dia-*.",
   "author": { "name": "Chopa" },
   "license": "MIT"

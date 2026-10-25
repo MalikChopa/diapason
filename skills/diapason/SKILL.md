@@ -47,6 +47,7 @@ Read `~/.claude/diapason/profil.md`, only the sections the task needs (sub-comma
   - Lines marked "(défaut, à confirmer)" that concern the task: ask once at most, within tour 1's 4 questions (`cadrage.md`). Never re-ask what the user just chose.
   - **Settings**: `sh SKILL_DIR/hooks/reglages.sh actifs` in the project folder (new project: `DIAPASON_PROJECT_DIR=<folder>`); anything but "défauts" → read the active keys in `reglages.md`; else the defaults below (in parentheses). Skip for a Small without agent.
   - **Plan**: with no preset written, read "Plan and preset" of `reglages.md`: offer the plan's preset, confirmed once.
+  - **Update**: `sh SKILL_DIR/hooks/maj.sh` (silent unless a newer release exists, once a day): relay its line in one sentence; install nothing without a yes.
 
 ## 1. Routing
 1. **The first word is a sub-command** (see `argument-hint`; English alias or `?` too), or a request to change the profile → `commandes.md`.

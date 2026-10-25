@@ -154,6 +154,13 @@ for h in "$S"/hooks/*.sh; do
   cmp -s "$h" "$src" && ok "${src#"$ROOT"/} identique au skill" || ko "${src#"$ROOT"/} différent du skill"
 done
 
+# 7b. VERSION du skill (lue par maj.sh, seule trace de version d'un « skill seul ») = version de plugin.json
+if [ "$S" = "$ROOT/skills/diapason" ]; then
+  pv=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$ROOT/.claude-plugin/plugin.json" | head -n 1)
+  sv=$(head -n 1 "$S/VERSION" 2>/dev/null | tr -d ' \r')
+  [ -n "$pv" ] && [ "$pv" = "$sv" ] && ok "VERSION du skill ($sv) = plugin.json" || ko "VERSION du skill [${sv:-absent}] différente de plugin.json [${pv:-?}]"
+fi
+
 # 8. Workflows GitHub : YAML valide
 if command -v ruby >/dev/null 2>&1; then
   for w in "$ROOT"/.github/workflows/*.yml; do

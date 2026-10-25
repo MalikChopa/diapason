@@ -94,16 +94,25 @@ elif [ -e "$BASE/notifications-off" ]; then row 6 "notifications : toutes coupé
 elif [ -e "$BASE/notifications-on" ]; then row 6 "notifications : fin d'agent, alertes de quota et notification « bloqué » (fichier notifications-on)" info
 else row 6 "notifications : défaut (fin d'agent et alertes de quota)" info; fi
 
-# 7. version (information ; la dernière version publiée n'est pas vérifiée : pas de réseau)
+# 7. version (information ; lit seulement le cache de maj.sh, aucun appel réseau : pour vérifier maintenant,
+#    sh maj.sh --force)
 V=""
 if [ -n "$PV" ]; then V="plugin $PV"
 else
-  for pj in "$SELF_DIR/../../../.claude-plugin/plugin.json" "$SELF_DIR/../.claude-plugin/plugin.json"; do
-    [ -f "$pj" ] && [ "$HAS_JQ" -eq 1 ] && { V="skill copié $(jq -r '.version // empty' "$pj" 2>/dev/null)"; break; }
-  done
+  [ -f "$SELF_DIR/../VERSION" ] && V="skill copié $(head -n 1 "$SELF_DIR/../VERSION" | tr -d ' \r')"
+  if [ -z "$V" ]; then
+    for pj in "$SELF_DIR/../../../.claude-plugin/plugin.json" "$SELF_DIR/../.claude-plugin/plugin.json"; do
+      [ -f "$pj" ] && [ "$HAS_JQ" -eq 1 ] && { V="skill copié $(jq -r '.version // empty' "$pj" 2>/dev/null)"; break; }
+    done
+  fi
   [ -n "$V" ] || V="inconnue"
 fi
-row 7 "version : $V (dernière version publiée non vérifiée, pas de réseau)" info "claude plugin update diapason@diapason"
+LAST=$(sed -n 's/^derniere=//p' "$BASE/maj.cache" 2>/dev/null | head -n 1)
+if printf '%s' "$LAST" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+  row 7 "version : $V (dernière version publiée connue : $LAST, au dernier contrôle ; à vérifier maintenant : sh maj.sh --force)" info "claude plugin update diapason@diapason"
+else
+  row 7 "version : $V (dernière version publiée pas encore contrôlée ; sh maj.sh --force le fait)" info "claude plugin update diapason@diapason"
+fi
 
 # 8. profil
 if [ -f "$BASE/profil.md" ]; then row 8 "profil" OK; else row 8 "profil absent" KO "/diapason profil"; fi
