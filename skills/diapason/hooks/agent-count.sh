@@ -29,7 +29,7 @@ dir="$STATE/$sid/agents"
 umask 077
 if [ "$mode" = start ]; then
   mkdir -p "$dir" 2>/dev/null || exit 0
-  { : > "$dir/$aid"; } 2>/dev/null || true   # les accolades : l'erreur de la redirection elle-même (nom trop long) ne sort pas
+  { printf '' > "$dir/$aid"; } 2>/dev/null || true   # printf et non « : » : sous dash, une redirection ratée sur un « : » (commande spéciale) arrête tout le script avec le code 2
 else
   rm -f "$dir/$aid" 2>/dev/null || true
 fi

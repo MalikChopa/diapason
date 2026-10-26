@@ -757,12 +757,16 @@ notifications|tout
 barre|projet jalon"
 par_sets() { # $1 fichier de sortie ; lance les 11 « set » en même temps ; $2 = "projet" pour le CLAUDE.md du projet
   _opt=""; [ "${2:-}" = projet ] && _opt="--projet"
+  _n=0; rm -rf "$T/prc"; mkdir -p "$T/prc"
   while IFS='|' read -r _k _v; do
-    ( HOME="$H" DIAPASON_PROJECT_DIR="$T/pp" sh "$ROOT/tools/reglages.sh" set $_opt "$_k" $_v >/dev/null 2>&1 ) &
+    _n=$((_n + 1))
+    ( HOME="$H" DIAPASON_PROJECT_DIR="$T/pp" sh "$ROOT/tools/reglages.sh" set $_opt "$_k" $_v >/dev/null 2>&1; echo $? > "$T/prc/$_n" ) &
   done <<EOL
 $PKV
 EOL
   wait
+  # nombre d'écritures réussies : sous forte charge un « set » peut renoncer (« verrou occupé », code 3) sans rien écrire ni rien perdre
+  PAR_OK=$(grep -l '^0$' "$T"/prc/* 2>/dev/null | wc -l | tr -d ' ')
 }
 mkdir -p "$T/pp"
 badr=0; r=1
@@ -770,19 +774,19 @@ while [ "$r" -le 20 ]; do
   printf '# P\n- x : y\n\n## Autre\n- nom : Fake Person\n\n## Réglages\n' > "$P"
   par_sets
   nl=$(grep -c '^- ' "$P"); keep=$(grep -c '^- x : y$' "$P")$(grep -c '^## Autre$' "$P")$(grep -c '^- nom : Fake Person$' "$P")
-  [ "$nl" -eq 13 ] && [ "$keep" = 111 ] || badr=$((badr + 1))
+  [ "$nl" -eq $((2 + PAR_OK)) ] && [ "$keep" = 111 ] && [ "$PAR_OK" -ge 9 ] || badr=$((badr + 1))
   r=$((r + 1))
 done
-check "v1.8.1 reglages.sh : 11 « set » en parallèle, 20 tours -> toutes les lignes à chaque tour (13 lignes « - », reste du profil intact)" "$badr" 0
+check "v1.8.1 reglages.sh : 11 « set » en parallèle, 20 tours -> aucune perte silencieuse (lignes = 2 + écritures réussies, au moins 9 sur 11, reste du profil intact)" "$badr" 0
 check "v1.8.1 reglages.sh : profil.md.bak gardé, verrou retiré, aucun temporaire laissé" "$([ -s "$P.bak" ] && echo bak)|$([ -e "$P.lock" ] && echo verrou || echo libre)|$(ls "$H/.claude/diapason" | grep -c 'tmp')" "bak|libre|0"
 badr=0; r=1
 while [ "$r" -le 8 ]; do
   printf '# Projet\n- x : y\n\n## Autre\ntexte\n' > "$T/pp/CLAUDE.md"
   par_sets "$T/pp" projet
-  [ "$(grep -c '^- ' "$T/pp/CLAUDE.md")" -eq 12 ] && [ "$(grep -c '^texte$' "$T/pp/CLAUDE.md")" -eq 1 ] || badr=$((badr + 1))
+  [ "$(grep -c '^- ' "$T/pp/CLAUDE.md")" -eq $((1 + PAR_OK)) ] && [ "$PAR_OK" -ge 9 ] && [ "$(grep -c '^texte$' "$T/pp/CLAUDE.md")" -eq 1 ] || badr=$((badr + 1))
   r=$((r + 1))
 done
-check "v1.8.1 reglages.sh set --projet : 11 « set » en parallèle, 8 tours -> toutes les lignes (CLAUDE.md du projet)" "$badr" 0
+check "v1.8.1 reglages.sh set --projet : 11 « set » en parallèle, 8 tours -> aucune perte silencieuse (CLAUDE.md du projet)" "$badr" 0
 rm -rf "$T/pp"
 # preset + set en même temps : le fichier reste un profil complet
 printf '# P\n- x : y\n\n## Réglages\n' > "$P"

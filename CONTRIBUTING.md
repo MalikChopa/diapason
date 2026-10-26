@@ -28,9 +28,9 @@ Il vérifie le YAML des agents et du skill, la taille de `SKILL.md`, les renvois
 Puis lance les tests, sous les deux interpréteurs :
 ```sh
 sh tests/hooks.sh
-dash tests/hooks.sh
+sh tools/test-dash.sh
 ```
-Ils demandent `jq` (sans lui, ils sont sautés avec un avertissement). Les deux doivent afficher `0 échec(s)`. Ajoute un test pour chaque comportement que tu modifies, et vérifie qu'il échoue sur l'ancien code.
+Ils demandent `jq` (sans lui, ils sont sautés avec un avertissement). Les deux doivent afficher `0 échec(s)`. Le second compte : `dash tests/hooks.sh` ne change que l'interpréteur qui lance la suite, alors que les scripts testés tournent avec le `sh` du système (bash sur macOS, dash sur Debian et Ubuntu, donc sur le runner GitHub). `tools/test-dash.sh` met un lien `sh -> dash` en tête du `PATH`, ce que fait réellement la CI. Un défaut de cette espèce (une redirection ratée sur `:` arrête dash avec le code 2) passait sur macOS et n'a été vu que par la CI. Ajoute un test pour chaque comportement que tu modifies, et vérifie qu'il échoue sur l'ancien code.
 
 Les scripts restent en `sh` POSIX : pas de bashisme (`[[ ]]`, tableaux, `$((10#08))`), et ils doivent marcher sous macOS et Linux (attention à `sed -i`, `date -d` / `date -r`, `mktemp`).
 

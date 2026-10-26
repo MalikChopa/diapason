@@ -28,9 +28,9 @@ It checks the YAML of the agents and of the skill, the size of `SKILL.md`, the c
 Then run the tests, under both shells:
 ```sh
 sh tests/hooks.sh
-dash tests/hooks.sh
+sh tools/test-dash.sh
 ```
-They need `jq` (without it they are skipped with a warning). Both must print `0 échec(s)`. Add a test for every behaviour you change, and check that it fails on the old code.
+They need `jq` (without it they are skipped with a warning). Both must print `0 échec(s)`. The second one matters: `dash tests/hooks.sh` would only change the shell that runs the suite, while the scripts it tests run with the system `sh` (bash on macOS, dash on Debian and Ubuntu, so on the GitHub runner). `tools/test-dash.sh` puts a `sh -> dash` link first in the `PATH`, which is what the CI really does. A bug of exactly this kind (a failed redirection on `:` stops dash with code 2) passed on macOS and was caught only by the CI. Add a test for every behaviour you change, and check that it fails on the old code.
 
 Scripts stay in POSIX `sh`: no bashisms (`[[ ]]`, arrays, `$((10#08))`), and they must work on macOS and Linux (watch `sed -i`, `date -d` / `date -r`, `mktemp`).
 

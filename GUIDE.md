@@ -146,10 +146,10 @@ Sur la [page des releases](https://github.com/MalikChopa/diapason/releases), deu
 
 ```sh
 # le skill seul (comme la voie B) : le zip contient le dossier diapason/
-unzip diapason-skill-v1.8.1.zip -d ~/.claude/skills/
+unzip diapason-skill-v1.8.2.zip -d ~/.claude/skills/
 
 # le plugin complet (fichiers à la racine du zip), pour l'essayer
-unzip diapason-plugin-v1.8.1.zip -d diapason-plugin
+unzip diapason-plugin-v1.8.2.zip -d diapason-plugin
 claude --plugin-dir diapason-plugin
 ```
 
@@ -372,6 +372,7 @@ Le récit, court, drôle et vérifiable :
 - **La v1.7.0** renomme les agents en `dia-*`, remplace l'étiquette « recommandé » par « mon penchant » avec sa certitude, date les faits de HANDOFF, marque les hypothèses (sûr / probable / je devine) et ajoute le type de projet « livrable visuel ». Elle vient d'une veille (recherches sur d'autres skills, essais à un seul sujet, tests sur papier) ; les essais « défauts plantés » et « carte de projet » n'ont rien montré et n'ont rien changé au skill.
 - **La v1.8.0** ajoute un contrôle de version : le skill dit, en une ligne, quand une version plus récente est publiée (au plus une requête par jour en temps normal, aucune donnée de toi envoyée, désactivable avec `verif-maj non`), et le dépôt suit le nouveau nom du compte GitHub (`MalikChopa/diapason`).
 - **La v1.8.1** vient d'un audit du skill par lui-même (deux auditeurs indépendants, 43 points, aucun bloquant), puis d'un re-audit des correctifs : écritures de réglages sûres en parallèle (verrou, écriture atomique, copie `.bak`), nombres à zéro initial et virgule décimale, interrupteur du contrôle de version plus tolérant, textes qui se contredisaient, plus `ARCHITECTURE.md` et un CONTRIBUTING complet en anglais.
+- **La v1.8.2** corrige un défaut que la CI de GitHub a vu juste après la v1.8.1 (un hook sortait avec le code 2 sous Linux avec un identifiant d'agent de 400 caractères) et ajoute `tools/test-dash.sh` : tester « sous dash » exige que dash soit le `sh` des scripts testés, pas seulement l'interpréteur de la suite.
 - **Pas encore fait :** les neuf autres évaluations (`evals/`), et l'observation d'un vrai résumé automatique après la découpe de `SKILL.md`.
 
 L'histoire complète, avec les agents, leurs modèles, leurs coûts mesurés, les décisions et les erreurs : [`docs/fabrication.md`](docs/fabrication.md).

@@ -5,6 +5,24 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ## [Non publié]
 
+## [1.8.2] - 2026-10-26
+
+Corrige un défaut que la CI de GitHub a trouvé juste après la publication de la v1.8.1 (le lint de `main` et du tag était resté rouge à cause d'un seul test sous Linux).
+
+### Corrigé
+- **`agent-count.sh` sous dash** : une redirection ratée sur `:` (commande spéciale) arrête dash avec le code 2 ; avec un `agent_id` de 400 caractères, le hook sortait avec 2 au lieu de 0 sous Linux (le hook est enveloppé dans `|| true`, donc sans effet visible, mais la promesse « sort toujours avec 0 » était fausse). `printf ''` remplace `:`.
+- **Les comptes « sous `sh` et sous `dash` » de la 1.8.1 étaient trompeurs** : `dash tests/hooks.sh` ne change que l'interpréteur de la suite, les scripts testés tournaient avec le `sh` de macOS. C'est la CI (Ubuntu : `sh` = dash) qui a vu le défaut.
+- Les deux tests d'écritures parallèles de `reglages.sh` vérifiaient « 11 écritures sur 11 » : sous forte charge, un `set` peut renoncer avec « verrou occupé » (code 3) sans rien écrire ni rien perdre, ce qui rendait le test instable. Ils vérifient maintenant l'absence de perte silencieuse (lignes = lignes de départ + écritures réussies, avec au moins 9 sur 11).
+
+### Ajouté
+- `tools/test-dash.sh` : lance `tests/hooks.sh` avec un lien `sh -> dash` en tête du `PATH`, donc avec dash comme `sh` des scripts testés, ce que fait la CI. 581 vérifications, 0 échec, sous `sh` et avec ce lanceur (mesuré le 2026-10-26).
+
+### Documentation
+- `CONTRIBUTING.md` et `CONTRIBUTING.en.md` : la commande de test sous dash devient `sh tools/test-dash.sh`, avec l'explication.
+
+### Examiné, sans changement
+- Revue de parcimonie du 2026-10-26 (tirage `awk` à graine 20261027 dans les puces de `SKILL.md`, en écartant les 10 règles déjà revues en 1.8.0 et 1.8.1 ; trace : fiche 30) : 5 règles gardées, aucune retirée. §7 chapitres : origine v1.2, **aucune éval**. §7 « attendre une question bloquante, un accord §5 ou un lot au-delà de `budget-lot` » : évals 01, 02 et 04, couverture partielle. §7 points d'étape : origine v1.3, évals 06 et 09. §6 « ≥ 1er palier : plus d'agent du modèle le plus capable » : origine v1.2, l'éval 05 ne joue que le 2e palier : **éval à écrire**. §0 « le profil ne lève jamais un Never » : éval 04.
+
 ## [1.8.1] - 2026-10-26
 
 Correctifs issus d'un audit du skill par lui-même (2 auditeurs indépendants, 43 points, 0 bloquant ; les faits décisifs ont été rejoués à la main).

@@ -148,10 +148,10 @@ On the [releases page](https://github.com/MalikChopa/diapason/releases), two zip
 
 ```sh
 # the skill alone (same as route B): the zip contains the diapason/ folder
-unzip diapason-skill-v1.8.1.zip -d ~/.claude/skills/
+unzip diapason-skill-v1.8.2.zip -d ~/.claude/skills/
 
 # the full plugin (files at the zip root), to try it out
-unzip diapason-plugin-v1.8.1.zip -d diapason-plugin
+unzip diapason-plugin-v1.8.2.zip -d diapason-plugin
 claude --plugin-dir diapason-plugin
 ```
 
@@ -374,6 +374,7 @@ The story, short, funny and checkable:
 - **v1.7.0** renames the agents `dia-*`, replaces the "recommended" label with "my lean" plus its certainty, dates HANDOFF facts, marks assumptions (sure / likely / guessing) and adds the "visual deliverable" project type. It comes from a watch (research on other skills, one-subject trials, paper tests); the "planted defects" and "project map" trials showed nothing and changed nothing in the skill.
 - **v1.8.0** adds a version check: the skill says, in one line, when a newer version is published (at most one request a day in normal times, none of your data sent, off with `verif-maj non`), and the repository follows the renamed GitHub account (`MalikChopa/diapason`).
 - **v1.8.1** comes from an audit of the skill by itself (two independent auditors, 43 points, none blocking), then a re-audit of the fixes: safe parallel settings writes (lock, atomic write, `.bak` copy), numbers with a leading zero and decimal commas, a more tolerant version-check switch, texts that contradicted each other, plus `ARCHITECTURE.en.md` and a full English CONTRIBUTING.
+- **v1.8.2** fixes a defect the GitHub CI saw right after v1.8.1 (a hook exited with code 2 on Linux with a 400-character agent identifier) and adds `tools/test-dash.sh`: testing "under dash" requires dash to be the `sh` of the scripts under test, not only the interpreter of the suite.
 - **Not done yet:** the other nine evaluations (`evals/`), and watching a real automatic summary after the `SKILL.md` split.
 
 The full story, with the agents, their models, measured costs, decisions and mistakes: [`docs/fabrication.md`](docs/fabrication.md) (in French).
