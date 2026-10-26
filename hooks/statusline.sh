@@ -20,6 +20,8 @@
 # lance les alertes de quota une seule fois par seuil et par resets_at : fenêtre de 5 h aux seuils du réglage
 # (70 / 80 / 90 % par défaut) ; fenêtre de 7 j aux paliers 1 à 3 de la variante C (écart de rythme ou plafond,
 # même calcul que `quota.sh hebdo`, recopié ici car la barre peut être installée seule : un test compare les deux).
+# Les nombres des réglages sont lus en décimal (« 08 20 40 » vaut 8 20 40). Un pourcentage ou une remise du JSON qui n'est pas
+# un nombre sensible (0 à 100 pour le pourcentage ; 1e300, négatif, géant) est traité comme absent.
 # Jamais bloquant : sort toujours avec 0.
 # Dossier des données : ~/.claude/diapason s'il existe, sinon l'ancien ~/.claude/majordome (v1.4), sinon ~/.claude/maitre-agent (v1.3 et avant), sinon ~/.claude/diapason
 if [ -d "$HOME/.claude/diapason" ]; then BASE="$HOME/.claude/diapason"
@@ -53,6 +55,13 @@ IFS="$SEP" read -r sid p5 p5raw r5 p7 p7raw r7 costraw dir <<EOT
 $fields
 EOT
 [ -n "$dir" ] || dir="$PWD"
+# Valeurs extrêmes (1e300, négatif, géant) : traitées comme absentes, la barre s'affiche quand même
+okp() { case "$1" in ""|*[!0-9]*|????*) return 1 ;; esac; [ "$1" -le 100 ]; }
+okr() { case "$1" in ""|*[!0-9]*) return 1 ;; esac; [ "${#1}" -le 15 ]; }
+okp "$p5" || { p5=""; p5raw=""; }
+okp "$p7" || { p7=""; p7raw=""; }
+okr "$r5" || r5=""
+okr "$r7" || r7=""
 proj=$(basename "$dir" 2>/dev/null) || proj="$dir"
 
 # --- Réglages : projet (CLAUDE.md du dossier courant) puis profil ; première valeur valide, sinon défaut --
@@ -65,24 +74,29 @@ rg() { # $1 fichier  $2 titre de la rubrique  $3 clé -> valeur (sans commentair
       if (i > 1) { n = substr(l, 1, i - 1); gsub(/[ \t*`]+/, "", n)
         if (tolower(n) == k) { v = substr(l, i + 1); sub(/^[ \t*`]+/, "", v); sub(/[ \t\r*`]+$/, "", v); sub(/[ \t]*\(.*\)$/, "", v); print v; exit } } }' "$1" 2>/dev/null
 }
-setting() { # $1 clé  $2 fonction de contrôle -> première valeur valide (projet puis profil) ; « , » et « / » valent un espace
-  _k="$1"; _f="$2"
+dec() { _d="$1"; while :; do case "$_d" in 0?*) _d="${_d#0}" ;; *) break ;; esac; done; printf '%s' "$_d"; }
+setting() { # $1 clé  $2 fonction de contrôle  $3 « num » si la valeur est faite d'entiers (zéros de tête retirés : $(( 08 )) est une erreur en sh)
+           # -> première valeur valide (projet puis profil) ; « , » et « / » valent un espace
+  _k="$1"; _f="$2"; _num="${3:-}"
   for _s in "$PROJ/CLAUDE.md|Réglages du projet" "$BASE/profil.md|Réglages"; do
     _v=$(rg "${_s%%|*}" "${_s#*|}" "$_k" | tr ',/' '  ')
     set -f; set -- $_v; set +f; _v="$*"
-    if [ -n "$_v" ] && "$_f" "$_v"; then printf '%s' "$_v"; return 0; fi
+    if [ -n "$_v" ] && "$_f" "$_v"; then
+      if [ "$_num" = num ]; then set -- $_v; printf '%s %s %s' "$(dec "$1")" "$(dec "$2")" "$(dec "$3")"; else printf '%s' "$_v"; fi
+      return 0
+    fi
   done
   return 1
 }
-ok_seuils() { set -- $1; [ "$#" -eq 3 ] || return 1; for x in "$1" "$2" "$3"; do case "$x" in ""|*[!0-9]*) return 1 ;; esac; done
+ok_seuils() { set -- $1; [ "$#" -eq 3 ] || return 1; for x in "$1" "$2" "$3"; do case "$x" in ""|*[!0-9]*|????*) return 1 ;; esac; done
   [ "$1" -ge 10 ] && [ "$1" -lt "$2" ] && [ "$2" -lt "$3" ] && [ "$3" -le 99 ]; }
 ok_barre() { b=" "; for w in $1; do case "$w" in projet|jalon|agents|quota|cout) ;; *) return 1 ;; esac
   case "$b" in *" $w "*) return 1 ;; esac; b="$b$w "; done; [ "$b" != " " ]; }
-ok_trio() { set -- $1; [ "$#" -eq 3 ] || return 1; for x in "$1" "$2" "$3"; do case "$x" in ""|*[!0-9]*) return 1 ;; esac; done
+ok_trio() { set -- $1; [ "$#" -eq 3 ] || return 1; for x in "$1" "$2" "$3"; do case "$x" in ""|*[!0-9]*|????*) return 1 ;; esac; done
   [ "$1" -ge 1 ] && [ "$1" -lt "$2" ] && [ "$2" -lt "$3" ] && [ "$3" -le 99 ]; }
-SEUILS=$(setting seuils ok_seuils) || SEUILS="70 80 90"
-SEUILS_H=$(setting seuils-hebdo ok_trio) || SEUILS_H="20 40 60"
-PLAFONDS_H=$(setting plafonds-hebdo ok_trio) || PLAFONDS_H="85 92 97"
+SEUILS=$(setting seuils ok_seuils num) || SEUILS="70 80 90"
+SEUILS_H=$(setting seuils-hebdo ok_trio num) || SEUILS_H="20 40 60"
+PLAFONDS_H=$(setting plafonds-hebdo ok_trio num) || PLAFONDS_H="85 92 97"
 BARRE=$(setting barre ok_barre) || BARRE="projet jalon agents quota"
 
 # Texte venant du JSON ou d'un fichier du projet : on retire les caractères de contrôle, qui pourraient
@@ -149,7 +163,7 @@ if [ -n "$p5raw" ] || [ -n "$p7raw" ]; then
     + (if $p7 != "" then {seven_day: win($p7; $r7)} else {} end)
     + {updated_at: ($now | todate)}' 2>/dev/null) || new=""
   if [ -n "$new" ]; then
-    printf '%s\n' "$new" > "$BASE/usage.json.tmp.$$" 2>/dev/null && mv -f "$BASE/usage.json.tmp.$$" "$BASE/usage.json" 2>/dev/null
+    { printf '%s\n' "$new" > "$BASE/usage.json.tmp.$$"; } 2>/dev/null && mv -f "$BASE/usage.json.tmp.$$" "$BASE/usage.json" 2>/dev/null
     rm -f "$BASE/usage.json.tmp.$$" 2>/dev/null
   fi
 fi

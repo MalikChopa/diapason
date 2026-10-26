@@ -47,16 +47,22 @@ rg() { # $1 fichier  $2 titre de la rubrique  $3 clé -> valeur (sans commentair
       if (i > 1) { n = substr(l, 1, i - 1); gsub(/[ \t*`]+/, "", n)
         if (tolower(n) == k) { v = substr(l, i + 1); sub(/^[ \t*`]+/, "", v); sub(/[ \t\r*`]+$/, "", v); sub(/[ \t]*\(.*\)$/, "", v); print v; exit } } }' "$1" 2>/dev/null
 }
-ok_seuils() { set -- $1; [ "$#" -eq 3 ] || return 1; for x in "$1" "$2" "$3"; do case "$x" in ""|*[!0-9]*) return 1 ;; esac; done
+# dec <entier> : retire les zéros de tête (« 08 » -> « 8 », « 000 » -> « 0 ») : en POSIX sh $(( 08 )) serait une erreur d'octal
+dec() { _d="$1"; while :; do case "$_d" in 0?*) _d="${_d#0}" ;; *) break ;; esac; done; printf '%s\n' "$_d"; }
+# dec3 <trois entiers> : les trois en décimal, séparés par un espace
+dec3() { set -- $1; printf '%s %s %s\n' "$(dec "$1")" "$(dec "$2")" "$(dec "$3")"; }
+ok_seuils() { set -- $1; [ "$#" -eq 3 ] || return 1; for x in "$1" "$2" "$3"; do case "$x" in ""|*[!0-9]*|????*) return 1 ;; esac; done
+  set -- $(dec3 "$*")
   [ "$1" -ge 10 ] && [ "$1" -lt "$2" ] && [ "$2" -lt "$3" ] && [ "$3" -le 99 ]; }
-ok_trio() { set -- $1; [ "$#" -eq 3 ] || return 1; for x in "$1" "$2" "$3"; do case "$x" in ""|*[!0-9]*) return 1 ;; esac; done
+ok_trio() { set -- $1; [ "$#" -eq 3 ] || return 1; for x in "$1" "$2" "$3"; do case "$x" in ""|*[!0-9]*|????*) return 1 ;; esac; done
+  set -- $(dec3 "$*")
   [ "$1" -ge 1 ] && [ "$1" -lt "$2" ] && [ "$2" -lt "$3" ] && [ "$3" -le 99 ]; }
 hset() { # $1 clé  $2 défaut -> trio valide (projet, puis profil, puis défaut)
   _hk="$1"; _hd="$2"
   for _s in "$PROJ/CLAUDE.md|Réglages du projet" "$BASE/profil.md|Réglages"; do
     _v=$(rg "${_s%%|*}" "${_s#*|}" "$_hk" | tr ',/' '  ')
     set -f; set -- $_v; set +f
-    if ok_trio "$*"; then echo "$*"; return 0; fi
+    if ok_trio "$*"; then dec3 "$*"; return 0; fi
   done
   echo "$_hd"
 }
@@ -66,7 +72,8 @@ to_epoch() {
   case "$1" in
     "") return 0 ;;
     *[!0-9]*) ;;
-    *) _e="$1"; [ "${#_e}" -ge 12 ] && _e=$(( _e / 1000 )); echo "$_e"; return 0 ;;
+    *) [ "${#1}" -le 15 ] || return 0   # plus de 15 chiffres : illisible
+       _e=$(dec "$1"); [ "${#_e}" -ge 12 ] && _e=$(( _e / 1000 )); echo "$_e"; return 0 ;;
   esac
   if [ "$(uname -s 2>/dev/null)" = Darwin ]; then
     _i=$(printf '%s' "$1" | sed -e 's/\.[0-9]*//' -e 's/Z$/+0000/' -e 's/\([+-][0-9][0-9]\):\([0-9][0-9]\)$/\1\2/')
@@ -119,13 +126,18 @@ hebdo_eval() {
 }
 # --- mode hebdo : chiffres donnés à la main --------------------------------------------------------------
 if [ "${1:-}" = hebdo ]; then
-  u=$(printf '%s' "${2:-}" | tr -d ' %,' )
-  case "$u" in
-    ""|.*|*[!0-9.]*|*.*.*) echo "usage : quota.sh hebdo <utilisé %> [<resetsAt ISO 8601 ou epoch>]"; exit 4 ;;
-  esac
-  case "$u" in *.*) fr=${u#*.}; u=${u%%.*}; case "$fr" in [5-9]*) u=$(( u + 1 )) ;; esac ;; esac
-  [ -n "$u" ] || u=0
-  [ "$u" -gt 100 ] && u=100
+  # « 12,5 » (virgule décimale française) vaut 12.5 ; format accepté : 1 à 3 chiffres, puis une partie décimale de 1 à 3 chiffres
+  u=$(printf '%s' "${2:-}" | tr -d ' %' | tr ',' '.')
+  if ! printf '%s' "$u" | grep -Eq '^[0-9]{1,3}([.][0-9]{1,3})?$'; then
+    echo "pourcentage illisible : « ${2:-} ». usage : quota.sh hebdo <utilisé %> [<resetsAt ISO 8601 ou epoch>]"; exit 4
+  fi
+  fr=""; case "$u" in *.*) fr=${u#*.}; u=${u%%.*} ;; esac
+  u=$(dec "$u")
+  # au-dessus de 100 (100,5 compris) : refusé, rien n'est calculé
+  if [ "$u" -gt 100 ] || { [ "$u" -eq 100 ] && [ -n "$fr" ] && [ -n "$(printf '%s' "$fr" | tr -d 0)" ]; }; then
+    echo "pourcentage illisible : « ${2:-} » (plus de 100). usage : quota.sh hebdo <utilisé %> [<resetsAt ISO 8601 ou epoch>]"; exit 4
+  fi
+  case "$fr" in [5-9]*) u=$(( u + 1 )) ;; esac
   now="${QUOTA_NOW:-$(date +%s 2>/dev/null)}"
   case "$now" in ""|*[!0-9]*) echo "quota inconnu : heure illisible"; exit 4 ;; esac
   rst=$(to_epoch "${3:-}"); case "$rst" in *[!0-9]*) rst="" ;; esac
@@ -139,14 +151,15 @@ if [ "$#" -eq 0 ]; then
   for _s in "$PROJ/CLAUDE.md|Réglages du projet" "$BASE/profil.md|Réglages"; do
     _v=$(rg "${_s%%|*}" "${_s#*|}" seuils | tr ',/' '  ')
     set -f; set -- $_v; set +f
-    if ok_seuils "$*"; then break; fi
+    if ok_seuils "$*"; then set -- $(dec3 "$*"); break; fi
     set -- 70 80 90
   done
 fi
 s1="${1:-70}"; s2="${2:-80}"; s3="${3:-90}"
 for n in "$s1" "$s2" "$s3"; do
-  case "$n" in ""|*[!0-9]*) echo "usage : quota.sh [seuil1 seuil2 seuil3] (entiers)" >&2; exit 2 ;; esac
+  case "$n" in ""|*[!0-9]*|????*) echo "usage : quota.sh [seuil1 seuil2 seuil3] (entiers)" >&2; exit 2 ;; esac
 done
+s1=$(dec "$s1"); s2=$(dec "$s2"); s3=$(dec "$s3")
 command -v jq >/dev/null 2>&1 || { echo "quota inconnu : jq est absent (installe jq)"; exit 2; }
 [ -f "$f" ] || { echo "quota inconnu : usage.json absent (la barre d'état ne l'a jamais écrit)"; exit 2; }
 now="${QUOTA_NOW:-$(date +%s 2>/dev/null)}"

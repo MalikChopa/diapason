@@ -84,7 +84,7 @@ reset2=$(( reset + 11 )); mkdir -p "$BASE/state/alerts/5h-$reset2-80"
 out=$(printf '%s\n' '{"session_id":"r1","cwd":"'"$T"'/p2","rate_limits":{"five_hour":{"used_percentage":85,"resets_at":'"$reset2"'}}}' | st 2>&1 >/dev/null | grep -c 'seuil')
 check "C10 5 h : seuil 80 verrouillé, 70 pas encore marqué : aucune alerte de plus" "$out" 0
 reset3=$(( $(date +%s) + 302400 )); mkdir -p "$BASE/state/alerts/7j-$reset3-p2"
-out=$(printf '%s\n' '{"session_id":"r2","cwd":"'"$T"'/p2","rate_limits":{"seven_day":{"used_percentage":90,"resets_at":'"$reset3"'}}}' | st 2>&1 >/dev/null | grep -c 'palier')
+out=$(printf '%s\n' '{"session_id":"r2","cwd":"'"$T"'/p2","rate_limits":{"seven_day":{"used_percentage":91,"resets_at":'"$reset3"'}}}' | st 2>&1 >/dev/null | grep -c 'palier')
 check "C10 7 j : palier 2 verrouillé, palier 1 pas encore marqué : aucune alerte de plus" "$out" 0
 printf '%s\n' '{"session_id":"c1","agent_id":"a1","agent_type":"general-purpose"}' | sh "$ROOT/hooks/agent-count.sh" start
 out=$(printf '%s\n' '{"session_id":"c1","cwd":"'"$T"'/p2"}' | st)
@@ -682,7 +682,10 @@ check "maj.sh : route « copie du skill » détectée hors dossier de plugins, a
 check "maj.sh : le cache est écrit (derniere=1.8.0)" "$(sed -n 's/^derniere=//p' "$H/.claude/diapason/maj.cache")" 1.8.0
 check "maj.sh : deuxième lancement le même jour -> silence (déjà annoncée)" "$(mj)" ""
 out=$(mj --force); check "maj.sh --force : affiche même si déjà annoncée" "$(printf '%s' "$out" | grep -c 'Version 1.8.0 disponible')" 1
-out=$(mj --reprise); check "maj.sh --reprise : première fois -> une ligne" "$(printf '%s' "$out" | grep -c 'Version 1.8.0 disponible')" 1
+check "maj.sh --reprise juste après le mode par défaut -> silence (v1.8.1 : une seule annonce par 24 h, tous modes confondus)" "$(mj --reprise)" ""
+# plus de 24 h après l'annonce : la reprise annonce de nouveau
+sed -i.bak "s/^annonce_t=.*/annonce_t=$(( $(date +%s) - 90000 ))/" "$H/.claude/diapason/maj.cache"; rm -f "$H/.claude/diapason/maj.cache.bak"
+out=$(mj --reprise); check "maj.sh --reprise : plus de 24 h après la dernière annonce -> une ligne" "$(printf '%s' "$out" | grep -c 'Version 1.8.0 disponible')" 1
 check "maj.sh --reprise : deuxième fois (moins de 24 h) -> silence" "$(mj --reprise)" ""
 # rappel au bout de 7 jours : on vieillit l'annonce dans le cache
 sed -i.bak "s/^annonce_t=.*/annonce_t=$(( $(date +%s) - 700000 ))/" "$H/.claude/diapason/maj.cache"; rm -f "$H/.claude/diapason/maj.cache.bak"
@@ -734,9 +737,313 @@ check "reinject.sh : deuxième appel dans les 24 h -> pas de nouvelle ligne" "$(
 check "reinject.sh : le rappel de HANDOFF est toujours là" "$(rj | grep -c 'Reprendre')" 1
 rm -f "$T/pr/docs/HANDOFF.md"; hm rp2 d - -
 check "reinject.sh : sans HANDOFF -> rien, pas d'appel réseau" "$(rj)|$([ -e "$H/.claude/diapason/maj.cache" ] && echo cache)" "|"
-check "maj.sh : l'URL par défaut est celle de l'identifiant du dépôt (pas du nom du compte) et REPO_API est bien utilisée" "$(grep -c 'DIAPASON_MAJ_URL:-\$REPO_API' "$ROOT/tools/maj.sh")|$(grep -c '^REPO_API="https://api.github.com/repositories/[0-9]*/releases/latest"' "$ROOT/tools/maj.sh")|$(grep -c 'api.github.com/repos/' "$ROOT/tools/maj.sh")" "1|1|0"
+check "maj.sh : l'URL par défaut est celle de l'identifiant du dépôt (pas du nom du compte) et REPO_API est bien utilisée" "$(grep -c '"\$REPO_API"' "$ROOT/tools/maj.sh")|$(grep -c '^REPO_API="https://api.github.com/repositories/[0-9]*/releases/latest"' "$ROOT/tools/maj.sh")|$(grep -c 'api.github.com/repos/' "$ROOT/tools/maj.sh")" "1|1|0"
 cmp -s "$ROOT/tools/maj.sh" "$ROOT/skills/diapason/hooks/maj.sh" && r=identiques || r=differentes
 check "maj.sh : la copie du skill et la source sont identiques" "$r" identiques
+
+# =====================================================================================================================
+# --- v1.8.1 : réglages écrits en parallèle (verrou, écriture atomique, sauvegarde) ------------------------------
+hm par d - -; P="$H/.claude/diapason/profil.md"
+PKV="git|aucun
+rapports|court
+seuils|60 75 85
+seuils-hebdo|15 30 45
+plafonds-hebdo|80 90 95
+budget-lot|15 %
+autonomie|techniques
+modeles|jamais-opus
+agents-paralleles|3
+notifications|tout
+barre|projet jalon"
+par_sets() { # $1 fichier de sortie ; lance les 11 « set » en même temps ; $2 = "projet" pour le CLAUDE.md du projet
+  _opt=""; [ "${2:-}" = projet ] && _opt="--projet"
+  while IFS='|' read -r _k _v; do
+    ( HOME="$H" DIAPASON_PROJECT_DIR="$T/pp" sh "$ROOT/tools/reglages.sh" set $_opt "$_k" $_v >/dev/null 2>&1 ) &
+  done <<EOL
+$PKV
+EOL
+  wait
+}
+mkdir -p "$T/pp"
+badr=0; r=1
+while [ "$r" -le 20 ]; do
+  printf '# P\n- x : y\n\n## Autre\n- nom : Fake Person\n\n## Réglages\n' > "$P"
+  par_sets
+  nl=$(grep -c '^- ' "$P"); keep=$(grep -c '^- x : y$' "$P")$(grep -c '^## Autre$' "$P")$(grep -c '^- nom : Fake Person$' "$P")
+  [ "$nl" -eq 13 ] && [ "$keep" = 111 ] || badr=$((badr + 1))
+  r=$((r + 1))
+done
+check "v1.8.1 reglages.sh : 11 « set » en parallèle, 20 tours -> toutes les lignes à chaque tour (13 lignes « - », reste du profil intact)" "$badr" 0
+check "v1.8.1 reglages.sh : profil.md.bak gardé, verrou retiré, aucun temporaire laissé" "$([ -s "$P.bak" ] && echo bak)|$([ -e "$P.lock" ] && echo verrou || echo libre)|$(ls "$H/.claude/diapason" | grep -c 'tmp')" "bak|libre|0"
+badr=0; r=1
+while [ "$r" -le 8 ]; do
+  printf '# Projet\n- x : y\n\n## Autre\ntexte\n' > "$T/pp/CLAUDE.md"
+  par_sets "$T/pp" projet
+  [ "$(grep -c '^- ' "$T/pp/CLAUDE.md")" -eq 12 ] && [ "$(grep -c '^texte$' "$T/pp/CLAUDE.md")" -eq 1 ] || badr=$((badr + 1))
+  r=$((r + 1))
+done
+check "v1.8.1 reglages.sh set --projet : 11 « set » en parallèle, 8 tours -> toutes les lignes (CLAUDE.md du projet)" "$badr" 0
+rm -rf "$T/pp"
+# preset + set en même temps : le fichier reste un profil complet
+printf '# P\n- x : y\n\n## Réglages\n' > "$P"
+( HOME="$H" sh "$ROOT/tools/reglages.sh" preset econome >/dev/null 2>&1 ) & ( HOME="$H" sh "$ROOT/tools/reglages.sh" set git aucun >/dev/null 2>&1 ) & ( HOME="$H" sh "$ROOT/tools/reglages.sh" set ton neutre >/dev/null 2>&1 ) & wait
+check "v1.8.1 reglages.sh : preset et set en parallèle -> profil complet (ligne hors rubrique intacte, une seule rubrique)" "$(grep -c '^- x : y$' "$P")|$(grep -c '^## Réglages$' "$P")" "1|1"
+# verrou abandonné (plus de 30 s) : retiré ; verrou frais : refus au bout de 5 s environ, rien changé
+printf '# P\n\n## Réglages\n' > "$P"; mkdir "$P.lock"; echo "$(( $(date +%s) - 120 ))" > "$P.lock/t"
+HOME="$H" sh "$ROOT/tools/reglages.sh" set git aucun >/dev/null 2>&1; rc=$?
+check "v1.8.1 reglages.sh : un verrou de plus de 30 s est retiré (l'écriture passe)" "$rc|$(grep -c '^- git : aucun$' "$P")" "0|1"
+mkdir "$P.lock"; echo "$(date +%s)" > "$P.lock/t"; t0=$(date +%s)
+out=$(HOME="$H" DIAPASON_LOCK_WAIT=2 sh "$ROOT/tools/reglages.sh" set ton neutre 2>&1); rc=$?; t1=$(date +%s)
+check "v1.8.1 reglages.sh : verrou frais tenu ailleurs -> refus (code 3) après quelques secondes, rien changé, verrou de l'autre intact" "$rc|$(grep -c '^- ton' "$P")|$([ -d "$P.lock" ] && echo present)|$([ $((t1 - t0)) -ge 1 ] && echo attente)|$(printf '%s' "$out" | grep -c 'verrou occupé')" "3|0|present|attente|1"
+rm -rf "$P.lock"
+# la sauvegarde garde l'état d'avant la dernière commande
+printf '# P\n\n## Réglages\n- git : aucun\n' > "$P"; HOME="$H" sh "$ROOT/tools/reglages.sh" set git push-branche >/dev/null
+check "v1.8.1 reglages.sh : profil.md.bak = contenu d'avant l'écriture" "$(grep -c '^- git : aucun$' "$P.bak")|$(grep -c 'push-branche' "$P.bak")" "1|0"
+
+# --- v1.8.1 : nombres décimaux (zéro de tête) et virgule décimale ----------------------------------------------------
+hm num d - -; P="$H/.claude/diapason/profil.md"; printf '# P\n\n## Réglages\n' > "$P"
+out=$(HOME="$H" sh "$ROOT/tools/reglages.sh" set seuils-hebdo 08 20 40); rc=$?
+check "v1.8.1 reglages.sh set seuils-hebdo 08 20 40 -> écrit 8 20 40 (zéro de tête retiré)" "$rc|$(grep -c '^- seuils-hebdo : 8 20 40$' "$P")" "0|1"
+HOME="$H" sh "$ROOT/tools/reglages.sh" set plafonds-hebdo 009 0010 011 >/dev/null; check "v1.8.1 reglages.sh set plafonds-hebdo 009 0010 011 -> 9 10 11" "$(grep -c '^- plafonds-hebdo : 9 10 11$' "$P")" 1
+HOME="$H" sh "$ROOT/tools/reglages.sh" set seuils 010 020 030 >/dev/null; check "v1.8.1 reglages.sh set seuils 010 020 030 -> 10 20 30" "$(grep -c '^- seuils : 10 20 30$' "$P")" 1
+HOME="$H" sh "$ROOT/tools/reglages.sh" set budget-lot 08 >/dev/null; HOME="$H" sh "$ROOT/tools/reglages.sh" set agents-paralleles 03 >/dev/null
+check "v1.8.1 reglages.sh : budget-lot 08 -> 8 %, agents-paralleles 03 -> 3" "$(grep -c '^- budget-lot : 8 %$' "$P")|$(grep -c '^- agents-paralleles : 3$' "$P")" "1|1"
+for bad_ in "0x 20 40" "8 20 100" "8 20 4a" "-1 20 40" "08 08 40" "1e1 20 40" "99999999999999999999 20 40"; do
+  HOME="$H" sh "$ROOT/tools/reglages.sh" set seuils-hebdo $bad_ >/dev/null 2>&1; check "v1.8.1 reglages.sh set seuils-hebdo [$bad_] : toujours refusé (code 1)" "$?" 1
+done
+check "v1.8.1 reglages.sh : les refus n'ont rien changé" "$(grep -c '^- seuils-hebdo : 8 20 40$' "$P")" 1
+# un profil écrit par l'ancienne version (08 20 40 tel quel) doit marcher
+printf '# P\n\n## Réglages\n- seuils : 010 020 040\n- seuils-hebdo : 08 09 20\n- plafonds-hebdo : 08 09 20\n' > "$P"
+now_=$(date +%s)
+printf '{"five_hour":{"used_percentage":50,"resets_at":%s,"measured_at":%s},"seven_day":{"used_percentage":50,"resets_at":%s,"measured_at":%s}}\n' "$(( now_ + 3600 ))" "$now_" "$(( now_ + 3 * 86400 ))" "$now_" > "$H/.claude/diapason/usage.json"
+out=$(HOME="$H" sh "$ROOT/tools/quota.sh" 2>&1); rc=$?
+check "v1.8.1 quota.sh : profil à l'ancienne « 08 09 20 » -> deux lignes, aucune erreur de base (sh)" "$(printf '%s' "$out" | grep -c 'palier')|$(printf '%s' "$out" | grep -c -i 'great\|illegal\|expected\|error')|$([ "$rc" -ge 3 ] && echo palier3)" "2|0|palier3"
+out=$(HOME="$H" dash "$ROOT/tools/quota.sh" 2>&1); rc=$?
+check "v1.8.1 quota.sh : même profil sous dash -> deux lignes, aucune erreur" "$(printf '%s' "$out" | grep -c 'palier')|$(printf '%s' "$out" | grep -c -i 'great\|illegal\|expected\|error')" "2|0"
+out=$(printf '{"cwd":"%s","rate_limits":{"seven_day":{"used_percentage":50,"resets_at":%s}}}' "$T" "$(( now_ + 3 * 86400 ))" | HOME="$H" sh "$ROOT/hooks/statusline.sh" 2>&1); rc=$?
+check "v1.8.1 statusline.sh : profil à l'ancienne « 08 09 20 » -> la barre s'affiche (7 j 50 %), code 0, rien sur stderr" "$(printf '%s' "$out" | grep -c '7 j 50 %')|$rc|$(printf '%s' "$out" | wc -l | tr -d ' ')" "1|0|1"
+out=$(printf '{"cwd":"%s","rate_limits":{"seven_day":{"used_percentage":50,"resets_at":%s}}}' "$T" "$(( now_ + 3 * 86400 ))" | HOME="$H" dash "$ROOT/hooks/statusline.sh" 2>&1); rc=$?
+check "v1.8.1 statusline.sh sous dash : même profil -> la barre s'affiche, code 0" "$(printf '%s' "$out" | grep -c '7 j 50 %')|$rc" "1|0"
+# quota.sh hebdo : virgule décimale, zéros de tête, valeurs illisibles
+ep_=$(( now_ + 300000 ))
+hb() { HOME="$H" QUOTA_NOW="$now_" sh "$ROOT/tools/quota.sh" hebdo "$@" 2>&1; }
+check "v1.8.1 quota.sh hebdo 12,5 = hebdo 12.5 (13 %, et non 100 %)" "$(hb "12,5" "$ep_" | sed 's/ reset [^ ]* [^ ]*//')" "$(hb 12.5 "$ep_" | sed 's/ reset [^ ]* [^ ]*//')"
+check "v1.8.1 quota.sh hebdo 12,5 : 13 %" "$(hb "12,5" "$ep_" | grep -c '^7j 13 %')" 1
+check "v1.8.1 quota.sh hebdo « 12,5 % » : espaces et signe % acceptés" "$(hb "12,5 %" "$ep_" | grep -c '^7j 13 %')" 1
+check "v1.8.1 quota.sh hebdo 08 : 8 %, pas d'erreur" "$(hb 08 "$ep_" | grep -c '^7j 8 %')|$(hb 08 "$ep_" | grep -c -i 'great\|illegal\|expected')" "1|0"
+for bad_ in 99999999999999999999 100,5 100.1 abc -5 "1,2,3" 1234 "" "12 5" "1e3" ".5" "5."; do
+  hb "$bad_" "$ep_" >/dev/null; rc=$?; check "v1.8.1 quota.sh hebdo [$bad_] : pourcentage illisible (code 4, rien de calculé)" "$rc" 4
+  out=$(hb "$bad_" "$ep_"); check "v1.8.1 quota.sh hebdo [$bad_] : pas de ligne « 7j »" "$(printf '%s' "$out" | grep -c '^7j ')" 0
+done
+hb 100 "$ep_" >/dev/null; check "v1.8.1 quota.sh hebdo 100 : accepté (palier 3)" "$?" 3
+hb 100,0 "$ep_" >/dev/null; check "v1.8.1 quota.sh hebdo 100,0 : accepté" "$?" 3
+hb 0 "$ep_" >/dev/null; check "v1.8.1 quota.sh hebdo 0 : palier 0" "$?" 0
+check "v1.8.1 quota.sh hebdo avec une remise géante (20 chiffres) : traitée comme illisible, pas d'erreur" "$(hb 50 99999999999999999999 | grep -c 'remise illisible')|$(hb 50 99999999999999999999 | grep -c -i 'expected\|illegal\|great')" "1|0"
+check "v1.8.1 quota.sh hebdo avec une remise à zéro de tête (00000001792000000) : pas d'erreur" "$(hb 50 0$(( now_ + 300000 )) | grep -c -i 'expected\|illegal\|great')" 0
+
+# --- v1.8.1 : statusline.sh, valeurs extrêmes du JSON ------------------------------------------------------------
+hm ext d - -
+exb() { printf '%s' "$1" | HOME="$H" sh "$ROOT/hooks/statusline.sh" 2>&1; }
+for j_ in '{"rate_limits":{"seven_day":{"used_percentage":1e300,"resets_at":%R%}}}' '{"rate_limits":{"five_hour":{"used_percentage":-50,"resets_at":99999999999999999999999}}}' '{"rate_limits":{"five_hour":{"used_percentage":250,"resets_at":%R%},"seven_day":{"used_percentage":1e-9,"resets_at":1e400}}}' '{"rate_limits":{"seven_day":{"used_percentage":"abc","resets_at":-5}}}'; do
+  j_=$(printf '%s' "$j_" | sed "s/%R%/$(( now_ + 100000 ))/g")
+  out=$(exb "$j_"); rc=$?
+  check "v1.8.1 statusline.sh valeur extrême $(printf '%s' "$j_" | cut -c1-70) : code 0, une ligne, rien de cassé" "$rc|$(printf '%s\n' "$out" | wc -l | tr -d ' ')|$(printf '%s' "$out" | grep -c '^🛎️ ')|$(printf '%s' "$out" | grep -c -i 'expected\|illegal\|great\|error')" "0|1|1|0"
+  out=$(printf '%s' "$j_" | HOME="$H" dash "$ROOT/hooks/statusline.sh" 2>&1); rc=$?
+  check "v1.8.1 statusline.sh (dash) même valeur extrême : code 0, une ligne" "$rc|$(printf '%s' "$out" | grep -c '^🛎️ ')|$(printf '%s' "$out" | grep -c -i 'expected\|illegal\|great\|error')" "0|1|0"
+done
+check "v1.8.1 statusline.sh : 1e300 -> traité comme absent (« quota ? »)" "$(exb '{"rate_limits":{"seven_day":{"used_percentage":1e300}}}' | grep -c 'quota ?')" 1
+check "v1.8.1 statusline.sh : un pourcentage normal s'affiche toujours" "$(exb '{"rate_limits":{"five_hour":{"used_percentage":42}}}' | grep -c '5 h 42 %')" 1
+
+# --- v1.8.1 : maj.sh, interrupteur « verif-maj » sous ses variantes d'écriture -------------------------------------
+printf '{\n  "tag_name": "v1.8.0",\n  "name": "Diapason 1.8.0"\n}\n' > "$T/rel.json"
+hm sw d - -; PD="$T/pd"; mkdir -p "$PD"; rm -f "$PD/CLAUDE.md"
+mjv() { env -u DIAPASON_VERIF_MAJ HOME="$H" DIAPASON_PROJECT_DIR="$PD" DIAPASON_MAJ_URL="file://$T/rel.json" sh "$T/sk/hooks/maj.sh" "$@" 2>&1; }
+mkdir -p "$T/sk/hooks"; cp "$ROOT/tools/maj.sh" "$T/sk/hooks/maj.sh"; printf '1.7.0\n' > "$T/sk/VERSION"
+sw_case() { # $1 libellé  $2 contenu du profil (printf)  $3 attendu : silence | annonce
+  rm -f "$H/.claude/diapason/maj.cache"; printf "$2" > "$H/.claude/diapason/profil.md"
+  _o=$(mjv); if [ -z "$_o" ]; then _r=silence; else _r=annonce; fi
+  check "v1.8.1 maj.sh interrupteur : $1" "$_r" "$3"
+}
+sw_case "« - verif-maj : non » (forme écrite par reglages.sh)" '# P\n\n## Réglages\n- verif-maj : non\n' silence
+sw_case "« - verif-maj: non » (sans espace avant les deux-points)" '# P\n\n## Réglages\n- verif-maj: non\n' silence
+sw_case "« * verif-maj : non » (puce *)" '# P\n\n## Réglages\n* verif-maj : non\n' silence
+sw_case "« + verif-maj : non » (puce +)" '# P\n\n## Réglages\n+ verif-maj : non\n' silence
+sw_case "« - **verif-maj** : non » (gras)" '# P\n\n## Réglages\n- **verif-maj** : non\n' silence
+sw_case "ligne indentée" '# P\n\n## Réglages\n  - verif-maj : non\n' silence
+sw_case "« Non » en majuscule" '# P\n\n## Réglages\n- verif-maj : Non\n' silence
+sw_case "« NON »" '# P\n\n## Réglages\n- VERIF-MAJ : NON\n' silence
+sw_case "« off »" '# P\n\n## Réglages\n- verif-maj : off\n' silence
+sw_case "« false »" '# P\n\n## Réglages\n- verif-maj : false\n' silence
+sw_case "« 0 »" '# P\n\n## Réglages\n- verif-maj : 0\n' silence
+sw_case "sans puce" '# P\n\n## Réglages\nverif-maj : non\n' silence
+sw_case "« non » avec un commentaire entre parenthèses" '# P\n\n## Réglages\n- verif-maj : non (vie privée)\n' silence
+sw_case "« oui » -> le contrôle tourne" '# P\n\n## Réglages\n- verif-maj : oui\n' annonce
+sw_case "aucune ligne -> le contrôle tourne" '# P\n\n## Réglages\n- git : aucun\n' annonce
+sw_case "la même ligne sous une autre rubrique (## Autre) ne coupe pas" '# P\n\n## Autre\n- verif-maj : non\n\n## Réglages\n- git : aucun\n' annonce
+sw_case "profil sans rubrique « Réglages » : la ligne est lue quand même" '# P\n- verif-maj : non\n' silence
+for v_ in Non NON 0 off OFF false no; do
+  rm -f "$H/.claude/diapason/maj.cache"; printf '# P\n' > "$H/.claude/diapason/profil.md"
+  _o=$(env HOME="$H" DIAPASON_PROJECT_DIR="$PD" DIAPASON_VERIF_MAJ="$v_" DIAPASON_MAJ_URL="file://$T/rel.json" sh "$T/sk/hooks/maj.sh" 2>&1)
+  check "v1.8.1 maj.sh : DIAPASON_VERIF_MAJ=$v_ -> silence" "$_o" ""
+done
+# réglage du projet : le dernier mot
+rm -f "$H/.claude/diapason/maj.cache"; printf '# P\n\n## Réglages\n- verif-maj : oui\n' > "$H/.claude/diapason/profil.md"; printf '# Proj\n\n## Réglages du projet\n- verif-maj : non\n' > "$PD/CLAUDE.md"
+check "v1.8.1 maj.sh : le CLAUDE.md du projet coupe (profil « oui »)" "$(mjv)" ""
+rm -f "$H/.claude/diapason/maj.cache"; printf '# P\n\n## Réglages\n- verif-maj : non\n' > "$H/.claude/diapason/profil.md"; printf '# Proj\n\n## Réglages du projet\n- verif-maj : oui\n' > "$PD/CLAUDE.md"
+check "v1.8.1 maj.sh : le CLAUDE.md du projet rallume (« oui » malgré « non » dans le profil)" "$(mjv | grep -c 'Version 1.8.0 disponible')" 1
+rm -f "$H/.claude/diapason/maj.cache"; printf '# Proj\n\n## Autre\n- verif-maj : oui\n' > "$PD/CLAUDE.md"
+check "v1.8.1 maj.sh : une ligne « oui » hors de la rubrique « Réglages du projet » ne rallume pas" "$(mjv)" ""
+rm -f "$H/.claude/diapason/maj.cache"; printf '# Proj\n\n## Réglages du projet\n- verif-maj : oui\n' > "$PD/CLAUDE.md"
+check "v1.8.1 maj.sh : --force marche même coupé" "$(printf '# P\n\n## Réglages\n- verif-maj : non\n' > "$H/.claude/diapason/profil.md"; rm -f "$PD/CLAUDE.md"; mjv --force | grep -c 'Version 1.8.0 disponible')" 1
+rm -f "$PD/CLAUDE.md"; printf '# P\n' > "$H/.claude/diapason/profil.md"
+
+# --- v1.8.1 : maj.sh, machine d'états, verrou, cache douteux, réseau ----------------------------------------------------
+st_reset() { rm -rf "$H/.claude/diapason/maj.cache" "$H/.claude/diapason/maj.cache.lock"; }
+st_reset
+check "v1.8.1 maj.sh : défaut puis --reprise -> une seule annonce" "$(mjv | grep -c 'Version 1.8.0 disponible')|$(mjv --reprise | grep -c 'Version 1.8.0 disponible')" "1|0"
+st_reset
+check "v1.8.1 maj.sh : --reprise puis défaut -> une seule annonce" "$(mjv --reprise | grep -c 'Version 1.8.0 disponible')|$(mjv | grep -c 'Version 1.8.0 disponible')" "1|0"
+# la version change : annonce de nouveau, même moins de 24 h après
+printf '{"tag_name":"v1.9.0"}\n' > "$T/rel.json"; rm -f "$H/.claude/diapason/maj.cache.tmp"; sed -i.bak "s/^prochain=.*/prochain=0/" "$H/.claude/diapason/maj.cache"; rm -f "$H/.claude/diapason/maj.cache.bak"
+check "v1.8.1 maj.sh : une nouvelle version est annoncée même moins de 24 h après la précédente" "$(mjv | grep -c 'Version 1.9.0 disponible')" 1
+printf '{"tag_name":"v1.8.0"}\n' > "$T/rel.json"
+# 6 lancements simultanés : une seule annonce
+st_reset; : > "$T/par6.out"
+i_=0; while [ "$i_" -lt 6 ]; do ( mjv | grep -c 'Version 1.8.0 disponible' >> "$T/par6.out" ) & i_=$((i_ + 1)); done; wait
+check "v1.8.1 maj.sh : 6 lancements simultanés -> une seule annonce" "$(awk '{ s += $1 } END { print s }' "$T/par6.out")|$([ -e "$H/.claude/diapason/maj.cache.lock" ] && echo verrou || echo libre)" "1|libre"
+# horloge qui a reculé : le cache du futur est jugé corrompu, le contrôle est refait
+st_reset; far_=$(( $(date +%s) + 58 * 86400 ))
+printf 'derniere=1.8.0\nprochain=%s\nannonce_v=1.8.0\nannonce_t=%s\n' "$far_" "$far_" > "$H/.claude/diapason/maj.cache"
+check "v1.8.1 maj.sh : cache daté de 58 jours dans le futur (horloge reculée) -> contrôle refait et annonce" "$(mjv | grep -c 'Version 1.8.0 disponible')" 1
+check "v1.8.1 maj.sh : ... et les horodatages sont remis à l'heure (prochain à moins d'un jour et demi)" "$([ "$(sed -n 's/^prochain=//p' "$H/.claude/diapason/maj.cache")" -le $(( $(date +%s) + 130000 )) ] && echo ok)" ok
+st_reset; printf 'derniere=1.8.0\nprochain=%s\nannonce_v=1.8.0\nannonce_t=%s\n' "$(( $(date +%s) + 80000 ))" "$far_" > "$H/.claude/diapason/maj.cache"
+check "v1.8.1 maj.sh : seule l'annonce est dans le futur -> cache corrompu, annonce" "$(mjv | grep -c 'Version 1.8.0 disponible')" 1
+st_reset; printf 'derniere=1.8.0\nprochain=%s\nannonce_v=1.8.0\nannonce_t=%s\n' "$far_" "$far_" > "$H/.claude/diapason/maj.cache"
+mjv --force >/dev/null
+check "v1.8.1 maj.sh --force réécrit un cache du futur" "$([ "$(sed -n 's/^annonce_t=//p' "$H/.claude/diapason/maj.cache")" -le "$(date +%s)" ] && echo ok)" ok
+# cache de plus de 2 Ko ou illisible : ignoré, sans bruit
+st_reset; { printf 'derniere=1.8.0\nprochain=%s\nannonce_v=1.8.0\nannonce_t=%s\n' "$(( $(date +%s) + 80000 ))" "$(date +%s)"; i_=0; while [ "$i_" -lt 120 ]; do echo "bourrage=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; i_=$((i_ + 1)); done; } > "$H/.claude/diapason/maj.cache"
+check "v1.8.1 maj.sh : cache de plus de 2 Ko -> ignoré (annonce), puis réécrit petit" "$(mjv | grep -c 'Version 1.8.0 disponible')|$([ "$(wc -c < "$H/.claude/diapason/maj.cache")" -lt 2048 ] && echo petit)" "1|petit"
+for c_ in 'prochain=abc' 'prochain=99999999999999999999999999' 'annonce_t=12x' 'annonce_t=99999999999999999999'; do
+  st_reset; printf 'derniere=1.8.0\nprochain=0\nannonce_v=1.8.0\nannonce_t=1\n' | sed "s/^${c_%%=*}=.*/$c_/" > "$H/.claude/diapason/maj.cache"
+  _o=$(mjv)
+  check "v1.8.1 maj.sh : cache avec « $c_ » -> ignoré, annonce, aucun message d'erreur" "$(printf '%s' "$_o" | grep -c 'Version 1.8.0 disponible')|$(printf '%s' "$_o" | grep -c -i 'expected\|illegal\|great\|error')" "1|0"
+  _o=$(env -u DIAPASON_VERIF_MAJ HOME="$H" DIAPASON_PROJECT_DIR="$PD" DIAPASON_MAJ_URL="file://$T/rel.json" dash "$T/sk/hooks/maj.sh" --reprise 2>&1)
+  check "v1.8.1 maj.sh sous dash : cache avec « $c_ » -> aucun message d'erreur" "$(printf '%s' "$_o" | grep -c -i 'expected\|illegal\|great\|error')" 0
+done
+# dossier non inscriptible : ni requête, ni annonce, ni message sur stderr (sauf --force, qui répond)
+if [ "$(id -u)" != 0 ]; then
+  st_reset; chmod 555 "$H/.claude/diapason"
+  _o=$(mjv); _f=$(mjv --force)
+  chmod 755 "$H/.claude/diapason"
+  check "v1.8.1 maj.sh : dossier en lecture seule -> silence complet (pas d'annonce répétée, pas de « Permission denied »)" "$_o" ""
+  check "v1.8.1 maj.sh --force : dossier en lecture seule -> répond, sans message d'erreur de redirection" "$(printf '%s' "$_f" | grep -c 'Version 1.8.0 disponible')|$(printf '%s' "$_f" | grep -c -i 'denied\|permission')" "1|0"
+else echo "avert v1.8.1 maj.sh : test du dossier en lecture seule sauté (exécution en root)"; fi
+# réseau : options de curl (un faux curl note ses arguments), sans fonctionnalité réseau réelle
+mkdir -p "$T/fakebin"; printf '#!/bin/sh\nprintf "%%s\\n" "$*" > "%s/curl.args"\nprintf "{\\"tag_name\\":\\"v1.8.0\\"}\\n"\n' "$T" > "$T/fakebin/curl"; chmod +x "$T/fakebin/curl"
+st_reset
+env -u DIAPASON_VERIF_MAJ -u DIAPASON_MAJ_URL PATH="$T/fakebin:$PATH" HOME="$H" DIAPASON_PROJECT_DIR="$PD" sh "$T/sk/hooks/maj.sh" --force >/dev/null 2>&1
+check "v1.8.1 maj.sh : URL par défaut -> curl limité à https (--proto, --proto-redir) et à 200 000 octets, sur l'identifiant du dépôt" "$(grep -c -e "--proto =https" "$T/curl.args")|$(grep -c -e "--proto-redir =https" "$T/curl.args")|$(grep -c -e "--max-filesize 200000" "$T/curl.args")|$(grep -c 'https://api.github.com/repositories/' "$T/curl.args")" "1|1|1|1"
+rm -f "$T/curl.args"; st_reset
+env -u DIAPASON_VERIF_MAJ PATH="$T/fakebin:$PATH" HOME="$H" DIAPASON_PROJECT_DIR="$PD" DIAPASON_MAJ_URL="file://$T/rel.json" sh "$T/sk/hooks/maj.sh" --force >/dev/null 2>&1
+check "v1.8.1 maj.sh : URL de test (file://) -> pas de restriction https imposée à curl" "$(grep -c -e "--proto" "$T/curl.args")|$(grep -c 'file://' "$T/curl.args")" "0|1"
+# extraction du numéro : le premier « tag_name » en début de ligne seulement
+st_reset; printf '{"tag_name":"v1.8.0","x":{"tag_name":"v7.7.7"}}\n' > "$T/rel.json"
+check "v1.8.1 maj.sh : deux « tag_name » sur une ligne -> le premier (1.8.0), pas le dernier" "$(mjv --force | grep -c 'Version 1.8.0 disponible')" 1
+st_reset; printf '{\n  "tag_name": "v1.8.0",\n  "assets": [ {\n    "tag_name": "v7.7.7"\n  } ]\n}\n' > "$T/rel.json"
+check "v1.8.1 maj.sh : JSON mis en forme avec un second « tag_name » plus bas -> le premier" "$(mjv --force | grep -c 'Version 1.8.0 disponible')|$(mjv --force | grep -c '7.7.7')" "1|0"
+st_reset; printf '<html>"tag_name":"9.9.9" garbage\n' > "$T/rel.json"
+check "v1.8.1 maj.sh : « tag_name » au milieu d'une ligne de HTML -> ignoré" "$(mjv --force | grep -c '9.9.9')" 0
+st_reset; printf '{"id":1,"tag_name":"v9.9.9"}\n' > "$T/rel.json"
+check "v1.8.1 maj.sh : « tag_name » pas en début de ligne -> ignoré" "$(mjv --force | grep -c '9.9.9')" 0
+st_reset; printf '{\n  "tag_name": "99999999999999999999.0.0"\n}\n' > "$T/rel.json"
+_o=$(mjv --force); check "v1.8.1 maj.sh : numéro géant -> rejeté, aucune erreur" "$(printf '%s' "$_o" | grep -c 'disponible')|$(printf '%s' "$_o" | grep -c -i 'expected\|illegal\|great\|error')" "0|0"
+st_reset; printf '{\n  "tag_name": "v1.8.0"\n}\n' > "$T/rel.json"
+check "v1.8.1 maj.sh : l'en-tête annonce « au plus une requête par jour, une de plus toutes les 6 h après un échec »" "$(grep -c 'au plus une requête par jour, une de plus toutes les 6 h après un échec' "$ROOT/tools/maj.sh")" 1
+cmp -s "$ROOT/tools/maj.sh" "$ROOT/skills/diapason/hooks/maj.sh" && r=identiques || r=differentes
+check "v1.8.1 maj.sh : la copie du skill et la source sont identiques" "$r" identiques
+
+# --- v1.8.1 : diagnostic.sh ligne 2, migrer.sh, agent-count.sh, copies ---------------------------------------------------
+hm dg d - -; mkdir -p "$H/.claude/diapason"; printf '#!/bin/sh\n' > "$H/.claude/diapason/statusline.sh"; chmod +x "$H/.claude/diapason/statusline.sh"
+dg2() { printf '{"statusLine":{"type":"command","command":%s}}\n' "$(printf '%s' "$1" | jq -Rs .)" > "$H/.claude/settings.json"; HOME="$H" sh "$ROOT/hooks/diagnostic.sh" 2>/dev/null | grep '^2 |' | awk -F' [|] ' '{print $3}'; }
+for c_ in '~/.claude/diapason/statusline.sh' 'sh ~/.claude/diapason/statusline.sh' '$HOME/.claude/diapason/statusline.sh' '"$HOME/.claude/diapason/statusline.sh"' "'~/.claude/diapason/statusline.sh'" 'bash $HOME/.claude/diapason/statusline.sh' '${HOME}/.claude/diapason/statusline.sh'; do
+  check "v1.8.1 diagnostic.sh ligne 2 : commande [$c_] -> OK (pas de faux KO)" "$(dg2 "$c_")" OK
+done
+check "v1.8.1 diagnostic.sh ligne 2 : script introuvable -> KO" "$(dg2 'sh ~/.claude/diapason/absent.sh')" KO
+check "v1.8.1 diagnostic.sh ligne 2 : chemin nu non exécutable -> KO" "$(chmod -x "$H/.claude/diapason/statusline.sh"; dg2 '~/.claude/diapason/statusline.sh')" KO
+check "v1.8.1 diagnostic.sh ligne 2 : « sh <script> » non exécutable mais présent -> OK (l'interpréteur le lit)" "$(dg2 'sh ~/.claude/diapason/statusline.sh')" OK
+# migrer.sh : temporaire par mktemp, affichage littéral
+mkdir -p "$T/fakebin2"; real_mktemp=$(command -v mktemp)
+printf '#!/bin/sh\necho appele >> "%s/mktemp.log"\nexec "%s" "$@"\n' "$T" "$real_mktemp" > "$T/fakebin2/mktemp"; chmod +x "$T/fakebin2/mktemp"; rm -f "$T/mktemp.log"
+hm mg - m -; printf '# Ancien\n' > "$H/.claude/majordome/profil.md"; mkdir -p "$T/tmpm"
+printf '{"statusLine":{"command":"~/.claude/majordome/a\\tb\\nc.sh"}}\n' > "$H/.claude/settings.json"
+out=$(PATH="$T/fakebin2:$PATH" TMPDIR="$T/tmpm" HOME="$H" sh "$ROOT/tools/migrer.sh" 2>&1); rc=$?
+check "v1.8.1 migrer.sh : fichier temporaire par mktemp (nom imprévisible), supprimé à la fin" "$rc|$(grep -c appele "$T/mktemp.log" 2>/dev/null)|$(ls "$T/tmpm" | wc -l | tr -d ' ')" "0|1|0"
+check "v1.8.1 migrer.sh : le changement proposé montre le texte du settings.json tel quel (barre oblique + t, pas de tabulation)" "$(printf '%s' "$out" | grep -c 'a\\tb\\nc.sh')|$(printf '%s' "$out" | LC_ALL=C grep -c "$(printf '\t')")" "2|0"
+check "v1.8.1 migrer.sh : plus de nom de temporaire prévisible (PID) dans le script" "$(grep -c 'diapason-migrer\.\$\$' "$ROOT/tools/migrer.sh")" 0
+# agent-count.sh : un agent_id très long ne fait rien sortir sur stderr
+long_=$(printf 'a%.0s' $(seq 1 400))
+out=$(printf '{"session_id":"s1","agent_id":"%s"}' "$long_" | HOME="$H" sh "$ROOT/hooks/agent-count.sh" start 2>&1); rc=$?
+check "v1.8.1 agent-count.sh : agent_id de 400 caractères -> code 0 et rien sur stderr (« File name too long » étouffé)" "$rc|$out" "0|"
+out=$(printf '{"session_id":"s1","agent_id":"%s"}' "$long_" | HOME="$H" dash "$ROOT/hooks/agent-count.sh" stop 2>&1); rc=$?
+check "v1.8.1 agent-count.sh stop (dash) : même chose" "$rc|$out" "0|"
+# copies du skill identiques aux sources pour tous les scripts touchés
+for f_ in tools/reglages.sh tools/quota.sh tools/maj.sh tools/migrer.sh hooks/statusline.sh hooks/diagnostic.sh hooks/agent-count.sh hooks/notify.sh; do
+  cmp -s "$ROOT/$f_" "$ROOT/skills/diapason/hooks/$(basename "$f_")" && r=identiques || r=differentes
+  check "v1.8.1 $f_ : la copie du skill et la source sont identiques" "$r" identiques
+done
+
+# --- v1.8.1 : fabrication de la release, sur un petit dépôt factice (aucun fichier de travail ne part dans les zips) ----
+if command -v zip >/dev/null 2>&1 && command -v unzip >/dev/null 2>&1 && command -v git >/dev/null 2>&1; then
+  RL="$T/rel"; rm -rf "$RL"; mkdir -p "$RL/tools" "$RL/.claude-plugin" "$RL/skills/diapason" "$RL/docs/briefs" "$RL/docs/journal" "$RL/docs/research" "$RL/.claude"
+  cp "$ROOT/tools/build-release.sh" "$RL/tools/"
+  printf '{"name":"diapason","version":"9.9.9"}\n' > "$RL/.claude-plugin/plugin.json"
+  printf '9.9.9\n' > "$RL/skills/diapason/VERSION"; printf '# skill\n' > "$RL/skills/diapason/SKILL.md"; : > "$RL/skills/.DS_Store"
+  printf 'x\n' > "$RL/docs/V99_AUDIT_1.md"; printf 'x\n' > "$RL/docs/briefs/1-fake.md"; printf 'x\n' > "$RL/docs/journal/j.md"; printf 'x\n' > "$RL/docs/research/r.md"
+  printf 'x\n' > "$RL/docs/HANDOFF.md"; printf 'x\n' > "$RL/docs/fabrication.md"; printf 'x\n' > "$RL/CLAUDE.md"; printf 'x\n' > "$RL/README.md"; printf 'x\n' > "$RL/.claude/settings.local.json"
+  ( cd "$RL" && git init -q . && git add -A -f && git -c user.name=t -c user.email=t@example.invalid commit -q -m t && printf 'secret\n' > "$RL/.env" ) >/dev/null 2>&1
+  out=$(cd "$RL" && sh tools/build-release.sh 2>&1); rc=$?
+  PZ="$RL/dist/diapason-plugin-v9.9.9.zip"; SZ="$RL/dist/diapason-skill-v9.9.9.zip"
+  lst=$(unzip -Z1 "$PZ" 2>/dev/null); slst=$(unzip -Z1 "$SZ" 2>/dev/null)
+  check "v1.8.1 build-release.sh : construit les deux zips (code 0)" "$rc|$([ -s "$PZ" ] && [ -s "$SZ" ] && echo zips)" "0|zips"
+  check "v1.8.1 build-release.sh : aucun docs/V*_, docs/briefs/, docs/journal/, docs/research/, HANDOFF, CLAUDE.md, .claude/ dans le zip du plugin" "$(printf '%s\n' "$lst" | grep -c -E '^(docs/V[0-9]+_|docs/briefs/|docs/journal/|docs/research/|docs/HANDOFF\.md|CLAUDE\.md|\.claude/)')" 0
+  check "v1.8.1 build-release.sh : le zip du plugin garde docs/fabrication.md, README.md et le skill" "$(printf '%s\n' "$lst" | grep -c -E '^(docs/fabrication\.md|README\.md|skills/diapason/SKILL\.md)$')" 3
+  check "v1.8.1 build-release.sh : ni .DS_Store ni fichier non suivi (.env) dans les zips" "$(printf '%s\n%s\n' "$lst" "$slst" | grep -c -E '\.DS_Store|\.env')" 0
+  check "v1.8.1 build-release.sh : le zip « skill seul » contient diapason/VERSION" "$(printf '%s\n' "$slst" | grep -c '^diapason/VERSION$')" 1
+else echo "avert v1.8.1 build-release.sh : test sauté (zip, unzip ou git absent)"; fi
+
+# --- v1.8.1 (re-audit) : reprise atomique d'un verrou abandonné, verrou daté du futur, code 3, migrer.sh et SIGTERM ---
+hm lk d - -; P="$H/.claude/diapason/profil.md"; lkok=0; lkperte=0
+for essai in 1 2 3 4 5 6; do
+  printf '# P\n\n## Réglages\n- autonomie : accompagnant\n' > "$P"; rm -rf "$P.lock" "$H/rc"; mkdir -p "$H/rc"; mkdir "$P.lock"; echo "$(( $(date +%s) - 60 ))" > "$P.lock/t"
+  j=0
+  for kv in "budget-lot 20 %" "agents-paralleles 3" "rapports court" "git aucun" "notifications tout" "langue fr" "ton neutre" "seuils 60 70 80"; do
+    j=$((j + 1))
+    # shellcheck disable=SC2086
+    ( HOME="$H" sh "$ROOT/tools/reglages.sh" set $kv >/dev/null 2>&1; echo $? > "$H/rc/$j" ) &
+  done
+  wait
+  okn=$(grep -l '^0$' "$H"/rc/* 2>/dev/null | wc -l | tr -d ' ')
+  # invariant : jamais de perte SILENCIEUSE (une écriture réussie est dans le profil ; une qui n'a pas pu l'obtenir sort avec 3 et le dit)
+  [ "$(grep -c '^- ' "$P")" = $((1 + okn)) ] || lkperte=$((lkperte + 1))
+  [ "$okn" -ge 6 ] && lkok=$((lkok + 1))
+done
+check "v1.8.1 reglages.sh : 8 set en parallèle sur un verrou abandonné de 60 s -> aucune perte silencieuse (lignes = 1 + écritures réussies), 6 essais ; l'ancienne reprise en perdait 24 fois sur 30" "$lkperte" 0
+check "v1.8.1 reglages.sh : ... et au moins 6 des 8 écritures passent chaque fois (un refus « verrou occupé », code 3, est toléré sous forte charge)" "$lkok" 6
+printf '# P\n\n## Réglages\n' > "$P"; rm -rf "$P.lock"; mkdir "$P.lock"; echo "$(( $(date +%s) + 3600 ))" > "$P.lock/t"
+HOME="$H" sh "$ROOT/tools/reglages.sh" set git aucun >/dev/null 2>&1; rc=$?
+check "v1.8.1 reglages.sh : un verrou daté du futur est jugé abandonné (l'écriture passe)" "$rc|$(grep -c '^- git : aucun$' "$P")" "0|1"
+rm -rf "$P.lock"; chmod 555 "$H/.claude/diapason" 2>/dev/null
+out=$(HOME="$H" sh "$ROOT/tools/reglages.sh" set ton neutre 2>&1); rc=$?
+chmod 755 "$H/.claude/diapason"
+check "v1.8.1 reglages.sh : dossier en lecture seule -> code 3 (pas 2 : ce n'est pas un profil absent)" "$([ "$(id -u)" = 0 ] && echo 3 || echo "$rc")" 3
+hm lk2 - - -; printf '# P\n\n## Réglages\n' > "$H/p.md"
+HOME="$H" DIAPASON_PROFIL="$H/absent.md" sh "$ROOT/tools/reglages.sh" set ton neutre >/dev/null 2>&1
+check "v1.8.1 reglages.sh : profil absent -> code 2 (seul cas du code 2)" "$?" 2
+# migrer.sh : SIGTERM arrête le script (le piège ne doit pas laisser continuer)
+hm mg - m -; mkdir -p "$H/.claude/majordome"; i=0; while [ $i -lt 400 ]; do echo x > "$H/.claude/majordome/f$i.txt"; i=$((i+1)); done; printf '# P\n' > "$H/.claude/majordome/profil.md"
+HOME="$H" sh "$ROOT/tools/migrer.sh" >/dev/null 2>&1 & mpid=$!; kill -TERM $mpid 2>/dev/null; wait $mpid 2>/dev/null; mrc=$?
+check "v1.8.1 migrer.sh : un SIGTERM le termine (code ≠ 0 ou migration déjà finie), jamais un script qui continue après le piège" "$([ "$mrc" -eq 0 ] || [ "$mrc" -eq 1 ] || [ "$mrc" -ge 128 ] && echo ok)" ok
 
 echo "RÉSULTAT : $n vérifications, $bad échec(s)"
 [ "$bad" -eq 0 ]

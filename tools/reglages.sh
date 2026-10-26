@@ -9,8 +9,13 @@
 #   reglages.sh set [--projet] <clé> <valeur…>   vérifie, écrit la ligne, montre « avant » et « après »
 #   reglages.sh preset econome|normal|intensif   écrit le préréglage dans le profil
 #   reglages.sh reset                    retire la rubrique « ## Réglages » du profil (retour aux défauts)
-# Sortie : 0 fait ; 1 clé ou valeur invalide (rien n'est écrit) ; 2 fichier à modifier absent (rien n'est écrit).
-# Écrit seulement le profil (ou le CLAUDE.md avec --projet), jamais ailleurs. Aucun appel réseau.
+# Sortie : 0 fait ; 1 clé ou valeur invalide (rien n'est écrit) ; 2 fichier à modifier absent (rien n'est écrit) ;
+# 3 verrou occupé ou écriture impossible (rien n'est écrit : réessayer, ne PAS relancer le premier usage).
+# Écrit seulement le profil (ou le CLAUDE.md avec --projet), plus la copie « .bak » et le verrou « .lock » à côté du fichier modifié (donc dans le dossier du projet avec --projet). Aucun appel réseau.
+# Écritures sûres (v1.8.1) : set, preset et reset prennent un verrou exclusif (dossier « <fichier>.lock » créé par mkdir, attente de 10 s au plus (DIAPASON_LOCK_WAIT),
+# verrou de plus de 30 s jugé abandonné), écrivent dans un fichier temporaire du même
+# dossier puis le renomment (atomique), et gardent le contenu d'avant dans « <fichier>.bak » (une copie par commande).
+# Les entiers sont rangés en décimal : « 08 20 40 » est écrit « 8 20 40 ».
 # Dossier des données : ~/.claude/diapason s'il existe, sinon l'ancien ~/.claude/majordome (v1.4), sinon ~/.claude/maitre-agent (v1.3 et avant), sinon ~/.claude/diapason
 if [ -d "$HOME/.claude/diapason" ]; then BASE="$HOME/.claude/diapason"
 elif [ -d "$HOME/.claude/majordome" ]; then BASE="$HOME/.claude/majordome"
@@ -84,6 +89,10 @@ preset_val() { # $1 préréglage  $2 clé
   esac
 }
 is_int() { case "$1" in ""|*[!0-9]*) return 1 ;; esac; return 0; }
+# dec <entier> : retire les zéros de tête (« 08 » -> « 8 », « 000 » -> « 0 ») ; en POSIX sh $(( 08 )) serait de l'octal
+dec() { _d="$1"; while :; do case "$_d" in 0?*) _d="${_d#0}" ;; *) break ;; esac; done; printf '%s\n' "$_d"; }
+# num3 <texte> : écrit l'entier décimal (3 chiffres au plus une fois les zéros de tête retirés), sinon sort avec 1
+num3() { is_int "$1" || return 1; _v3=$(dec "$1"); [ "${#_v3}" -le 3 ] || return 1; printf '%s\n' "$_v3"; }
 # norm <clé> <valeur…> : écrit la valeur normalisée, sort avec 1 si elle est invalide
 norm() {
   _k="$1"; shift
@@ -91,21 +100,21 @@ norm() {
     seuils)
       set -f; set -- $(printf '%s' "$*" | tr ',/' '  '); set +f
       [ "$#" -eq 3 ] || return 1
-      for _x in "$1" "$2" "$3"; do is_int "$_x" || return 1; done
-      [ "$1" -ge 10 ] && [ "$1" -lt "$2" ] && [ "$2" -lt "$3" ] && [ "$3" -le 99 ] || return 1
-      echo "$1 $2 $3" ;;
+      _a=$(num3 "$1") && _b=$(num3 "$2") && _c=$(num3 "$3") || return 1
+      [ "$_a" -ge 10 ] && [ "$_a" -lt "$_b" ] && [ "$_b" -lt "$_c" ] && [ "$_c" -le 99 ] || return 1
+      echo "$_a $_b $_c" ;;
     seuils-hebdo|plafonds-hebdo)
       set -f; set -- $(printf '%s' "$*" | tr ',/' '  '); set +f
       [ "$#" -eq 3 ] || return 1
-      for _x in "$1" "$2" "$3"; do is_int "$_x" || return 1; done
-      [ "$1" -ge 1 ] && [ "$1" -lt "$2" ] && [ "$2" -lt "$3" ] && [ "$3" -le 99 ] || return 1
-      echo "$1 $2 $3" ;;
+      _a=$(num3 "$1") && _b=$(num3 "$2") && _c=$(num3 "$3") || return 1
+      [ "$_a" -ge 1 ] && [ "$_a" -lt "$_b" ] && [ "$_b" -lt "$_c" ] && [ "$_c" -le 99 ] || return 1
+      echo "$_a $_b $_c" ;;
     budget-lot)
-      _n=$(printf '%s' "$*" | tr -d ' %'); is_int "$_n" || return 1
+      _n=$(printf '%s' "$*" | tr -d ' %'); _n=$(num3 "$_n") || return 1
       [ "$_n" -ge 5 ] && [ "$_n" -le 100 ] || return 1
       echo "$_n %" ;;
     agents-paralleles)
-      _n=$(printf '%s' "$*" | tr -d ' '); is_int "$_n" || return 1
+      _n=$(printf '%s' "$*" | tr -d ' '); _n=$(num3 "$_n") || return 1
       [ "$_n" -ge 1 ] && [ "$_n" -le 5 ] || return 1
       echo "$_n" ;;
     barre)
@@ -169,10 +178,68 @@ effective() {
   if [ -n "$_raw$_raw2" ]; then echo "$_d|défaut (valeur invalide ignorée)"; else echo "$_d|défaut"; fi
 }
 
+# --- Écriture sûre : verrou, temporaire du même dossier + mv, sauvegarde ------------------------------------------
+LOCK=""   # dossier de verrou tenu par ce processus (vide si aucun)
+lock_release() { [ -n "$LOCK" ] && rm -rf "$LOCK" 2>/dev/null; LOCK=""; }
+# lock_steal <dossier> : retire un verrou jugé abandonné. Un seul « voleur » à la fois (verrou « .steal » par mkdir) et il RELIT
+# l'âge du verrou une fois seul : un verrou neuf pris entre-temps par un autre n'est jamais emporté
+lock_steal() {
+  [ -n "$(find "$1.steal" -prune -mmin +1 2>/dev/null)" ] && rm -rf "$1.steal" 2>/dev/null
+  mkdir "$1.steal" 2>/dev/null || return 0
+  _ts=$(cat "$1/t" 2>/dev/null); case "$_ts" in ""|*[!0-9]*) _ts="" ;; esac
+  _nw=$(date +%s)
+  if [ -n "$_ts" ]; then
+    { [ $((_nw - _ts)) -gt 30 ] || [ $((_ts - _nw)) -gt 5 ]; } && rm -rf "$1" 2>/dev/null
+  else
+    [ -n "$(find "$1" -prune -mmin +1 2>/dev/null)" ] && rm -rf "$1" 2>/dev/null
+  fi
+  rm -rf "$1.steal" 2>/dev/null
+  return 0
+}
+# lock_take <fichier> : verrou exclusif par mkdir « <fichier>.lock » ; réessaie 10 s (DIAPASON_LOCK_WAIT, utile aux tests), retire un verrou de plus de 30 s ; sort avec 1 si pris ailleurs
+lock_take() {
+  _l="$1.lock"; _t0=$(date +%s); _lw=0
+  while ! mkdir "$_l" 2>/dev/null; do
+    [ -d "$_l" ] || return 1   # mkdir impossible pour une autre raison (dossier absent, lecture seule)
+    _ts=$(cat "$_l/t" 2>/dev/null)
+    case "$_ts" in ""|*[!0-9]*) _ts="" ;; esac
+    _nw=$(date +%s)
+    if [ -n "$_ts" ]; then { [ $((_nw - _ts)) -gt 30 ] || [ $((_ts - _nw)) -gt 5 ]; } && { lock_steal "$_l"; continue; }   # trop vieux, ou daté du futur
+    else # verrou sans date (créé à l'instant, ou mort avant de l'écrire) : abandonné s'il a plus d'une minute
+      [ -n "$(find "$_l" -prune -mmin +1 2>/dev/null)" ] && { lock_steal "$_l"; continue; }
+    fi
+    [ $((_nw - _t0)) -ge "${DIAPASON_LOCK_WAIT:-10}" ] && return 1
+    sleep 0.05 2>/dev/null || sleep 1
+  done
+  date +%s > "$_l/t" 2>/dev/null
+  LOCK="$_l"
+  return 0
+}
+# tmp_for <fichier> : crée un temporaire dans le même dossier, avec les droits du fichier ; écrit son nom
+tmp_for() {
+  _tf=$(mktemp "$1.tmp.XXXXXX" 2>/dev/null) || return 1
+  cp -p "$1" "$_tf" 2>/dev/null
+  printf '%s\n' "$_tf"
+}
+# publish <temporaire> <fichier> : remplace le fichier d'un coup (mv) ; refuse un temporaire vide
+publish() {
+  if [ -s "$1" ] && mv -f "$1" "$2" 2>/dev/null; then return 0; fi
+  rm -f "$1" 2>/dev/null
+  return 1
+}
+# begin_write <fichier> : prend le verrou et garde le contenu actuel dans <fichier>.bak
+begin_write() {
+  lock_take "$1" || { echo "verrou occupé ($1.lock) : une autre écriture est en cours, rien changé. Réessaie dans un instant."; exit 3; }
+  trap lock_release EXIT
+  trap 'lock_release; exit 1' HUP INT TERM
+  cp -p "$1" "$1.bak" 2>/dev/null
+  return 0
+}
+
 # put <fichier> <titre> <clé> <ligne> : remplace la ligne de la clé dans la rubrique, ou l'ajoute à sa fin
 # (rubrique créée à la fin du fichier si elle manque). Réécrit via un fichier temporaire.
 put() {
-  _tmp="$1.tmp.$$"
+  _tmp=$(tmp_for "$1") || return 1
   awk -v t="$2" -v k="$3" -v nl="$4" '
     function release(   i) { for (i = 0; i < nb; i++) print ""; nb = 0 }
     function close_sec() { if (sec) { if (!done) { print nl; done = 1 } release() } sec = 0 }
@@ -188,21 +255,17 @@ put() {
         if (tolower(n) == k) { release(); print nl; done = 1; next } } }
     { if (sec) release(); print }
     END { close_sec(); if (!seen) { print ""; print "## " t; print nl } }' "$1" > "$_tmp" 2>/dev/null
-  if [ -s "$_tmp" ]; then cat "$_tmp" > "$1" 2>/dev/null; _rc=$?; else _rc=1; fi
-  rm -f "$_tmp"
-  return "$_rc"
+  publish "$_tmp" "$1"
 }
 # drop <fichier> <titre> : retire toute la rubrique
 drop() {
-  _tmp="$1.tmp.$$"
+  _tmp=$(tmp_for "$1") || return 1
   awk -v t="$2" '
     function release(   i) { for (i = 0; i < nb; i++) print ""; nb = 0 }
     /^#+[ \t]/ { if ($0 ~ /^##[ \t]/) { s = $0; sub(/^##[ \t]+/, "", s); sub(/[ \t\r]+$/, "", s); skip = (s == t) } else if ($0 ~ /^#[ \t]/) skip = 0 }
     /^[ \t\r]*$/ { if (!skip) nb++; next }
     !skip { release(); print }' "$1" > "$_tmp" 2>/dev/null
-  if [ -s "$_tmp" ]; then cat "$_tmp" > "$1" 2>/dev/null; _rc=$?; else _rc=1; fi
-  rm -f "$_tmp"
-  return "$_rc"
+  publish "$_tmp" "$1"
 }
 need_profil() { [ -f "$PROFIL" ] && [ -w "$PROFIL" ] || { echo "profil absent ou illisible ($PROFIL) : crée-le d'abord (première utilisation du skill)"; exit 2; }; }
 show_section() { _l=$(section_lines "$1" "$2"); if [ -n "$_l" ]; then printf '%s\n' "$_l" | sed 's/^/  /'; else echo "  (rubrique absente)"; fi; }
@@ -233,9 +296,10 @@ case "$cmd" in
     val=$(norm "$key" "$*") || { echo "valeur invalide pour $key : « $* ». Attendu : $(expect_of "$key")"; exit 1; }
     [ -f "$file" ] && [ -w "$file" ] || { echo "$label absent ou illisible ($file) : rien écrit"; exit 2; }
     written="$val"
+    begin_write "$file"
     [ "$key" = git ] && [ "$val" = push-branche ] && written="push-branche (accordé le $(date +%F))"
     before=$(section_lines "$file" "$title" | awk -v k="$key" '{ l = $0; sub(/^[ \t]*[-*][ \t]+/, "", l); i = index(l, ":"); n = substr(l, 1, i - 1); gsub(/[ \t*`]+/, "", n); if (tolower(n) == k) { print; exit } }')
-    put "$file" "$title" "$key" "- $key : $written" || { echo "écriture impossible dans $file : rien changé"; exit 2; }
+    put "$file" "$title" "$key" "- $key : $written" || { echo "écriture impossible dans $file : rien changé"; exit 3; }
     echo "$label : $file"
     echo "avant : ${before:-(ligne absente)}"
     echo "après : - $key : $written"
@@ -275,21 +339,26 @@ seuils-hebdo|30 50 70
 plafonds-hebdo|90 95 98" ;;
       *) echo "préréglage inconnu : « ${1:-} ». Attendu : econome | normal | intensif"; exit 1 ;;
     esac
+    begin_write "$PROFIL"
     echo "avant :"; show_section "$PROFIL" "$T_PROFIL"
     # le choix d'autonomie n'est pas un réglage de quota : un préréglage ne l'efface pas
     keep=$(rg "$PROFIL" "$T_PROFIL" autonomie); keep=$(norm autonomie "$keep" 2>/dev/null)
-    drop "$PROFIL" "$T_PROFIL" || { echo "écriture impossible : rien changé"; exit 2; }
-    put "$PROFIL" "$T_PROFIL" prereglage "- prereglage : $p" || { echo "écriture impossible"; exit 2; }
-    printf '%s\n' "$lines" | while IFS='|' read -r k v; do
+    drop "$PROFIL" "$T_PROFIL" || { echo "écriture impossible : rien changé"; exit 3; }
+    put "$PROFIL" "$T_PROFIL" prereglage "- prereglage : $p" || { echo "écriture impossible"; exit 3; }
+    # here-document et non un tube : la boucle reste dans ce shell (qui tient le verrou)
+    while IFS='|' read -r k v; do
       [ -n "$k" ] && put "$PROFIL" "$T_PROFIL" "$k" "- $k : $v"
-    done
+    done <<EOL
+$lines
+EOL
     [ -n "$keep" ] && put "$PROFIL" "$T_PROFIL" autonomie "- autonomie : $keep"
     echo "après :"; show_section "$PROFIL" "$T_PROFIL"
     exit 0 ;;
   reset)
     need_profil
+    begin_write "$PROFIL"
     echo "avant :"; show_section "$PROFIL" "$T_PROFIL"
-    drop "$PROFIL" "$T_PROFIL" || { echo "écriture impossible : rien changé"; exit 2; }
+    drop "$PROFIL" "$T_PROFIL" || { echo "écriture impossible : rien changé"; exit 3; }
     echo "après : rubrique « $T_PROFIL » retirée (défauts)"
     exit 0 ;;
   *)

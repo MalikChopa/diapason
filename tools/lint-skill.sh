@@ -154,6 +154,11 @@ for h in "$S"/hooks/*.sh; do
   cmp -s "$h" "$src" && ok "${src#"$ROOT"/} identique au skill" || ko "${src#"$ROOT"/} différent du skill"
 done
 
+# 7a. « Pas de sous-agents d'agents » (SKILL.md §3) : chaque agent interdit l'outil Agent dans sa définition
+for a in "$S"/agents/*.md; do
+  grep -q '^disallowedTools: .*Agent' "$a" && ok "$(basename "$a") interdit l'outil Agent" || ko "$(basename "$a") n'interdit pas l'outil Agent (disallowedTools)"
+done
+
 # 7b. VERSION du skill (lue par maj.sh, seule trace de version d'un « skill seul ») = version de plugin.json
 if [ "$S" = "$ROOT/skills/diapason" ]; then
   pv=$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$ROOT/.claude-plugin/plugin.json" | head -n 1)

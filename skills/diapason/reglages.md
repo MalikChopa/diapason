@@ -7,7 +7,7 @@
 - Project: section `## Réglages du projet` of the project's `CLAUDE.md`, same format. It **overrides the profile** for this project, key by key. Read it on resume (`reprise.md`) and at start (`phases.md`): that is what `reglages.sh actifs` does.
 - Missing, unreadable or invalid (unknown key, value outside the list): the value below it (profile, then default). Nothing changes for whoever sets nothing.
 - **The scripts do the work, not you**: `hooks/reglages.sh` (in `SKILL_DIR`) checks, writes and displays; the status bar, `quota.sh` and `notify.sh` read `seuils`, `seuils-hebdo`, `plafonds-hebdo`, `notifications` and `barre` themselves; the desktop mod reads `seuils` and `notifications`. You apply the other keys from the table.
-- Read: `sh SKILL_DIR/hooks/reglages.sh` (table key, value in force, default, source). Write: `sh SKILL_DIR/hooks/reglages.sh set [--projet] <key> <value>`, `preset econome|normal|intensif`, `reset`. It shows "before" and "after". No profile (code 2): create it first (`profil-modele.md`).
+- Read: `sh SKILL_DIR/hooks/reglages.sh` (table key, value in force, default, source). Write: `sh SKILL_DIR/hooks/reglages.sh set [--projet] <key> <value>`, `preset econome|normal|intensif`, `reset`. It shows "before" and "after". No profile (code 2): create it first (`profil-modele.md`). Lock busy or write impossible (code 3): nothing written, retry; this is NOT a missing profile. Writers are serialized with a lock and the write is atomic; the previous profile is kept as `profil.md.bak`. An integer with a leading zero (`08`) is normalized (`8`).
 
 ## The keys
 | Key | Values | Default | Effect |
@@ -25,7 +25,7 @@
 | `langue` | `profil` or a code (`fr`, `en`, `pt-BR`…) | `profil` | language of everything you write |
 | `ton` | `profil`, `tutoiement`, `vouvoiement`, `neutre` | `profil` | how to address the user |
 | `rapports` | `court`, `detaille` | `detaille` | `court`: agent report of 5 lines at most (write it in the brief in place of "10 lines"), your reports and decision answers of 8 lines at most. `detaille`: the skill's rules (10 lines, 15 for a decision) |
-| `verif-maj` | `oui`, `non` | `oui` | `oui`: `maj.sh` asks GitHub once a day whether a newer release exists (one GET to api.github.com, nothing sent) and tells the user in one line; installs nothing. `non`: no network call. Not part of the presets |
+| `verif-maj` | `oui`, `non` | `oui` | `oui`: `maj.sh` asks GitHub at most once a day (6 h later after a failure) whether a newer release exists (one GET to api.github.com, none of the user's data sent; GitHub sees the IP address) and tells the user in one line, at most once per 24 h whatever the mode; installs nothing. `non`: no network call; `no`, `off`, `false` and `0` are read the same, in any case, and so are they in the env variable `DIAPASON_VERIF_MAJ`. A project's `## Réglages du projet` overrides the profile for this key too. Not part of the presets |
 | `prereglage` | `econome`, `normal`, `intensif`, `personnalise` | none | written by `reglages.sh preset`; a starting point, a key written beside it overrides it. When a key is set by hand to a value different from the preset's, the script writes `personnalise`: the preset's extra rules (below) then stop applying, only the written keys count. Each preset also adds rules (below). The v1.3 spec calls the middle preset "standard": its name stays `normal` |
 
 ## Presets
@@ -56,7 +56,7 @@ Rules of `econome`, in addition:
 - earlier alerts (60 / 75 / 85% for 5 h; weekly gaps 15 / 30 / 45 points, ceilings 80 / 90 / 95%) and approval asked from 15% of the window per batch;
 - checkpoints stay complete (they are what prevents coding the wrong thing, hence paying twice).
 
-**Order of magnitude: non mesuré.** Each agent avoided removes a cost that the skill's benchmarks (SKILL §6, not measured by this version) put at 100 to 500 k tokens; the project's only measure is "3 researches ≈ 36% of a 5 h window" (`phases.md`, a single measure). A project's real count is read in the end-of-project recap (`phases.md`, Delivery).
+**Order of magnitude: non mesuré.** Each agent avoided removes a cost that the benchmarks of `quota.md` ("Batch cost", not measured by this version) put at 100 to 500 k tokens; the project's only measure is "3 researches ≈ 36% of a 5 h window" (`phases.md`, a single measure). A project's real count is read in the end-of-project recap (`phases.md`, Delivery).
 
 ## Plan and preset (Forfait et préréglage)
 At first launch, then at each launch where the profile has no `prereglage` line, read the plan from the usage tool (`get_usage`, may be deferred: ToolSearch), field `plan.plan`:

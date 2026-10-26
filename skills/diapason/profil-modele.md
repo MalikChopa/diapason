@@ -85,7 +85,7 @@ Created: <YYYY-MM-DD> · Updated: <YYYY-MM-DD> · Automatic updates: <yes / no; 
 
 ## Cost benchmarks, measured (Repères de coût)
 - <YYYY-MM-DD>: <agent type, model> ≈ <k tokens>, <duration>, <% of which window>
-- Example (measured 2026-10-20, Pro plan, a single measure): one sonnet agent of ≈ 150 k tokens ≈ 10 points of the 5 h window and ≈ 2 points of the weekly window. A ratio like this one is what lets Diapason announce a batch in % (SKILL §6); without it, tokens only.
+- Example (measured 2026-10-20, Pro plan, a single measure; later whole test sessions cost only 3 to 5 points, so this ratio overestimates by a factor 3 to 5 for that kind of session): one sonnet agent of ≈ 150 k tokens ≈ 10 points of the 5 h window and ≈ 2 points of the weekly window. A ratio like this one is what lets Diapason announce a batch in % (SKILL §6); without it, tokens only.
 
 ## Observed habits (Habitudes observées)
 - <YYYY-MM-DD>: <user correction or request, to apply from now on>

@@ -1,6 +1,6 @@
 # Évaluations du skill
 
-**Statut : écrites, non lancées à ce jour.** Aucun résultat n'est annoncé ici : tant qu'un scénario n'a pas été joué, il ne prouve rien.
+**Statut : onze scénarios écrits ; 03 et 06 jouées le 2026-10-21 sur la v1.6 (03 réussie, 06 couverture partielle), les neuf autres non jouées ; aucun passage sur la v1.8.** Rien d'autre n'est annoncé ici : tant qu'un scénario n'a pas été joué, il ne prouve rien (les résultats de la v1.6 ne valent pas pour la v1.8).
 
 **Langue (v1.3) :** le texte interne du skill est en anglais ; tout ce que voit l'utilisateur (messages, boutons, fiche, points d'étape) suit la langue du profil. Les critères de ces scénarios, écrits avec un profil français, attendent donc toujours du français côté utilisateur ; seul le message de refus du hook `garde-fiche.sh`, lu par le modèle, est en anglais.
 

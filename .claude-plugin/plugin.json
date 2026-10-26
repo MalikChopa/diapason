@@ -1,7 +1,7 @@
 {
   "name": "diapason",
   "displayName": "Diapason",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "description": "Méthode Diapason : la session pilote, délègue à des sous-agents, vérifie elle-même et garde une passation reprenable.",
   "author": { "name": "Chopa" },
   "homepage": "https://github.com/MalikChopa/diapason",

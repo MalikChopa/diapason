@@ -32,9 +32,9 @@ The name: a *diapason* is the tuning fork that gives the A to an orchestra. Here
 | 🧭 **You decide the product** | Shape, audience, features, technologies, style: always yours, asked as button questions with a recommendation. It only decides execution, and tells you. |
 | 📝 **Nothing built before your "approve"** | A one-page sheet to approve, then a mock-up if there is an interface. A safeguard (hook) refuses code until the sheet is approved. |
 | ✅ **It checks, not just reports** | "The tests pass" means a command run just now, not an agent's word. |
-| 📊 **Quota-aware** | Reads your plan (Pro, Max), suggests a preset, follows the week's pace and stops cleanly before the wall. |
+| 📊 **Quota-aware** | Reads your plan where Claude Code exposes it (seen for Pro; otherwise it asks once), suggests a preset, follows the week's pace and stops cleanly before the wall. |
 | 🔁 **Resumable** | A `HANDOFF.md` lets you pick up after a cut, in a new session or from another account. |
-| 🆕 **Tells you about updates** | At most one request a day to this repository's GitHub releases, nothing sent; if a newer version exists it says so in one line and installs nothing. Off with one setting. |
+| 🆕 **Tells you about updates** | At most one request a day to this repository's GitHub releases (a retry 6 h later if the network fails), none of your data sent (GitHub sees your IP address, as with any request); if a newer version exists it says so in one line and installs nothing. Off with one setting. |
 
 ### How it works
 
@@ -91,11 +91,11 @@ flowchart LR
    ```
 3. **Answer the questions.** They come as buttons; nothing is built before you approve.
 
-Requirements: macOS or Linux, [`jq`](https://jqlang.org/), Claude Code. Other install routes (skill copy, release zip): [GUIDE.en.md](GUIDE.en.md).
+Requirements: macOS or Linux (the scripts are not supported on Windows), [`jq`](https://jqlang.org/), Claude Code. Other install routes (skill copy, release zip): [GUIDE.en.md](GUIDE.en.md).
 
 ### What it looks like
 
-A real excerpt from a trial, resuming a project that had been built without a sheet (questions come in your profile's language; translated here):
+An excerpt, adapted to the current wording, from a trial on v1.4 (not re-run on the current version), resuming a project that had been built without a sheet (questions come in your profile's language; translated here):
 
 ```text
 Question: how do we resume this project?
@@ -107,7 +107,8 @@ Question: how do we resume this project?
 ### Learn more
 
 - 📘 [GUIDE.en.md](GUIDE.en.md): sub-commands, settings, safeguards, FAQ, honest limits, credits, and migration from the former names `maitre-agent` and `majordome`.
-- 📜 [CHANGELOG.md](CHANGELOG.md) (in French) · 🤝 [CONTRIBUTING.md](CONTRIBUTING.md) · ⚖️ [MIT](LICENSE) © 2026 Chopa.
+- 🏗️ [ARCHITECTURE.en.md](ARCHITECTURE.en.md): how the skill works under the hood: components, request lifecycle, every concept, every script and hook, the quality system.
+- 📜 [CHANGELOG.md](CHANGELOG.md) (in French) · 🤝 [CONTRIBUTING.en.md](CONTRIBUTING.en.md) · ⚖️ [MIT](LICENSE) © 2026 Chopa.
 
 <div align="right"><a href="#francais">🇫🇷 Version française ↓</a></div>
 
@@ -130,9 +131,9 @@ Le nom : un *diapason* est le petit instrument qui donne le la à un orchestre. 
 | 🧭 **Tu décides le produit** | Forme, public, fonctions, technos, style : toujours à toi, en questions à boutons avec une recommandation. Il ne tranche que l'exécution, et te le dit. |
 | 📝 **Rien n'est construit avant ton « Valider »** | Une fiche d'une page à valider, puis une maquette s'il y a une interface. Un garde-fou (hook) refuse le code tant que la fiche n'est pas validée. |
 | ✅ **Il vérifie, il ne fait pas que rapporter** | « Les tests passent » veut dire une commande lancée à l'instant, pas la parole d'un agent. |
-| 📊 **Attentif à ton quota** | Il lit ton forfait (Pro, Max), propose un préréglage, suit le rythme de la semaine et s'arrête proprement avant le mur. |
+| 📊 **Attentif à ton quota** | Il lit ton forfait là où Claude Code le donne (vu pour Pro ; sinon il te le demande une fois), propose un préréglage, suit le rythme de la semaine et s'arrête proprement avant le mur. |
 | 🔁 **Tout se reprend** | Un `HANDOFF.md` permet de reprendre après une coupure, dans une nouvelle session ou depuis un autre compte. |
-| 🆕 **Te prévient des mises à jour** | Au plus une requête par jour vers les releases GitHub de ce dépôt, rien d'envoyé ; s'il existe une version plus récente, il te le dit en une ligne et n'installe rien. Se coupe avec un réglage. |
+| 🆕 **Te prévient des mises à jour** | Au plus une requête par jour vers les releases GitHub de ce dépôt (un nouvel essai 6 h plus tard si le réseau échoue), aucune donnée de toi envoyée (GitHub voit ton adresse IP, comme pour toute requête) ; s'il existe une version plus récente, il te le dit en une ligne et n'installe rien. Se coupe avec un réglage. |
 
 ### Comment ça marche
 
@@ -189,11 +190,11 @@ flowchart LR
    ```
 3. **Répondre aux questions.** Elles arrivent en boutons ; rien n'est construit avant ton « Valider ».
 
-Prérequis : macOS ou Linux, [`jq`](https://jqlang.org/), Claude Code. Autres voies d'installation (copie du skill, zip de release) : [GUIDE.md](GUIDE.md).
+Prérequis : macOS ou Linux (les scripts ne sont pas pris en charge sous Windows), [`jq`](https://jqlang.org/), Claude Code. Autres voies d'installation (copie du skill, zip de release) : [GUIDE.md](GUIDE.md).
 
 ### À quoi ça ressemble
 
-Extrait réel d'un essai, à la reprise d'un projet construit sans fiche :
+Extrait, adapté à la formulation actuelle, d'un essai sur la v1.4 (non rejoué sur la version actuelle), à la reprise d'un projet construit sans fiche :
 
 ```text
 Question : comment on reprend ce projet ?
@@ -205,6 +206,7 @@ Question : comment on reprend ce projet ?
 ### Pour aller plus loin
 
 - 📘 [GUIDE.md](GUIDE.md) : sous-commandes, réglages, garde-fous, FAQ, limites honnêtes, crédits, et migration depuis les anciens noms `maitre-agent` et `majordome`.
+- 🏗️ [ARCHITECTURE.md](ARCHITECTURE.md) : le fonctionnement en détail : composants, vie d'une demande, chaque concept, chaque script et hook, le système qualité.
 - 📜 [CHANGELOG.md](CHANGELOG.md) · 🤝 [CONTRIBUTING.md](CONTRIBUTING.md) · ⚖️ [MIT](LICENSE) © 2026 Chopa.
 
 <div align="right"><a href="#english">🇬🇧 English version ↑</a></div>

@@ -21,8 +21,9 @@ if [ -f "$NEW/profil.md" ]; then
   exit 0
 fi
 mkdir -p "$NEW" || { echo "Échec : impossible de créer ~/.claude/diapason." >&2; exit 1; }
-LIST="${TMPDIR:-/tmp}/diapason-migrer.$$"
-trap 'rm -f "$LIST"' EXIT HUP INT TERM
+LIST=$(mktemp "${TMPDIR:-/tmp}/diapason-migrer.XXXXXX") || { echo "Échec : fichier temporaire impossible à créer." >&2; exit 1; }
+trap 'rm -f "$LIST"' EXIT
+trap 'rm -f "$LIST"; exit 1' HUP INT TERM
 # find + cp -p (POSIX) : « cp -n » n'est pas dans POSIX ; un fichier déjà présent dans le nouveau dossier est gardé tel quel
 (cd "$OLD" && find . -path './sauvegarde-skill-*' -prune -o -type f -print) > "$LIST" || { echo "Échec : lecture de ~/.claude/$SRC impossible." >&2; exit 1; }
 n=0; fail=0
@@ -38,9 +39,9 @@ if [ -f "$S" ] && grep -q "\.claude/$SRC/" "$S"; then
   echo "settings.json n'est PAS modifié. Changement proposé (à appliquer toi-même, ou à faire valider) :"
   grep -n "\.claude/$SRC/" "$S" | while IFS= read -r l; do
     num=${l%%:*}; txt=${l#*:}
-    echo "  ligne $num"
-    echo "  - $txt"
-    echo "  + $(printf '%s' "$txt" | sed "s#\\.claude/$SRC/#.claude/diapason/#g")"
+    printf '  ligne %s\n' "$num"
+    printf '  - %s\n' "$txt"
+    printf '  + %s\n' "$(printf '%s' "$txt" | sed "s#\\.claude/$SRC/#.claude/diapason/#g")"
   done
 fi
 exit 0

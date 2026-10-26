@@ -34,8 +34,14 @@ S="$HOME/.claude/settings.json"
 if [ "$HAS_JQ" -eq 0 ]; then row 2 "barre d'état" "non vérifié" "jq absent"
 elif [ -f "$S" ] && jq -e .statusLine "$S" >/dev/null 2>&1; then
   cmd=$(jq -r '.statusLine.command // ""' "$S" 2>/dev/null)
-  sc=$(printf '%s' "$cmd" | awk '{print $1}'); case "$sc" in "~"*) sc="$HOME${sc#\~}" ;; esac
-  if [ -n "$sc" ] && [ -x "$sc" ]; then
+  # la commande n'est pas toujours un chemin nu : « sh <chemin> », chemin entre guillemets, $HOME ou ~ devant
+  set -f; set -- $cmd; set +f
+  sc="${1:-}"; interp=0
+  case "$sc" in sh|bash|dash|zsh) sc="${2:-}"; interp=1 ;; esac
+  sc=$(printf '%s' "$sc" | tr -d "\"'")
+  case "$sc" in "~"*) sc="$HOME${sc#\~}" ;; '$HOME'*) sc="$HOME${sc#\$HOME}" ;; '${HOME}'*) sc="$HOME${sc#\$\{HOME\}}" ;; esac
+  # lancé par un interpréteur, le script n'a pas besoin d'être exécutable ; sinon il le doit
+  if [ -n "$sc" ] && { [ -x "$sc" ] || { [ "$interp" -eq 1 ] && [ -f "$sc" ]; }; }; then
     case "$sc" in
       */.claude/majordome/*|*/.claude/maitre-agent/*) row 2 "barre d'état ($sc) : copie d'un ancien dossier (majordome ou maitre-agent), qui écrit usage.json là-bas" info "cp ~/.claude/skills/diapason/hooks/statusline.sh ~/.claude/diapason/ puis change le chemin du bloc statusLine (installation.md §4)" ;;
       *) row 2 "barre d'état ($sc)" OK ;;

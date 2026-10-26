@@ -1,6 +1,6 @@
 # Brief: independent audit (middle model), read-only
 
-For a document that guides what follows (spec, architecture, figures summary, final content) or for an asset batch. 2 rounds at most (1 in `econome`): audit → fix (`briefs/conception.md`) → audit; then the maître decides and notes the remaining risks. In the header, "You write ONLY" = `docs/<X>_AUDIT_<N>.md`.
+For a document that guides what follows (spec, architecture, figures summary, final content) or for an asset batch. 2 rounds at most (1 in `econome`): audit → fix (`briefs/conception.md`) → audit; then you decide and notes the remaining risks. In the header, "You write ONLY" = `docs/<X>_AUDIT_<N>.md`.
 
 ```
 <header: fields A of _entete.md>
