@@ -200,7 +200,15 @@ lock_steal() {
 lock_take() {
   _l="$1.lock"; _t0=$(date +%s); _lw=0
   while ! mkdir "$_l" 2>/dev/null; do
-    [ -d "$_l" ] || return 1   # mkdir impossible pour une autre raison (dossier absent, lecture seule)
+    if [ ! -d "$_l" ]; then
+      # le verrou vient d'être relâché entre notre mkdir raté et ce test : on réessaie ; seul un dossier parent absent ou non
+      # inscriptible (ou un délai dépassé) est une vraie impossibilité
+      _pd=$(dirname "$_l")
+      { [ -d "$_pd" ] && [ -w "$_pd" ]; } || return 1
+      [ $(( $(date +%s) - _t0 )) -ge "${DIAPASON_LOCK_WAIT:-10}" ] && return 1
+      sleep 0.05 2>/dev/null
+      continue
+    fi
     _ts=$(cat "$_l/t" 2>/dev/null)
     case "$_ts" in ""|*[!0-9]*) _ts="" ;; esac
     _nw=$(date +%s)

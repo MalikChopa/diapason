@@ -5,6 +5,16 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ## [Non publié]
 
+## [1.8.4] - 2026-10-27
+
+Répare un refus inutile « verrou occupé » trouvé par le lint de `main` de la 1.8.3.
+
+### Corrigé
+- **Refus « verrou occupé » parasites de `reglages.sh` et de `maj.sh`** (trouvés par le lint de `main` de la 1.8.3, passé rouge une fois sur le runner Linux) : quand le verrou était relâché juste entre un `mkdir` raté et le test « le dossier de verrou existe-t-il encore ? », le script concluait « impossible de verrouiller » et sortait avec le code 3 sans rien écrire, alors qu'il n'y avait aucun blocage. Mesuré avec dash comme `sh`, 4 processus gourmands, 60 tours de 11 écritures : 3 tours avec au moins un refus (4 refus) avant, 0 après. Le script réessaie maintenant ; seul un dossier parent absent ou non inscriptible, ou le délai dépassé, reste une vraie impossibilité. Nouveau test : aucun refus parasite sur 20 tours.
+
+### Examiné, sans changement
+- Revue de parcimonie du 2026-10-27 (tirage `awk` à graine 20261029, en écartant les 20 règles déjà revues ; trace : fiche 32) : 5 règles gardées, aucune retirée. §4 « deux agents se contredisent : source primaire » : évals 02 et 03 (couverture partielle). §7 HANDOFF sous 8 Ko : origine v1.3, éval 03. §6 « 3e palier : arrêt propre » : origine v1.x, l'éval 05 ne joue que le 2e palier : **éval à écrire**. §3 « modèle toujours explicite » : déjà revue le 2026-10-21, **aucune éval**. §5 « ne jamais modifier les originaux » : origine v1.1, éval 11.
+
 ## [1.8.3] - 2026-10-27
 
 Répare le contrôle de version, muet avec la vraie réponse de GitHub depuis la 1.8.1.

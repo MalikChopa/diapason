@@ -769,15 +769,17 @@ EOL
   PAR_OK=$(grep -l '^0$' "$T"/prc/* 2>/dev/null | wc -l | tr -d ' ')
 }
 mkdir -p "$T/pp"
-badr=0; r=1
+badr=0; r=1; refus=0
 while [ "$r" -le 20 ]; do
   printf '# P\n- x : y\n\n## Autre\n- nom : Fake Person\n\n## Réglages\n' > "$P"
   par_sets
   nl=$(grep -c '^- ' "$P"); keep=$(grep -c '^- x : y$' "$P")$(grep -c '^## Autre$' "$P")$(grep -c '^- nom : Fake Person$' "$P")
   [ "$nl" -eq $((2 + PAR_OK)) ] && [ "$keep" = 111 ] && [ "$PAR_OK" -ge 9 ] || badr=$((badr + 1))
+  refus=$((refus + 11 - PAR_OK))
   r=$((r + 1))
 done
 check "v1.8.1 reglages.sh : 11 « set » en parallèle, 20 tours -> aucune perte silencieuse (lignes = 2 + écritures réussies, au moins 9 sur 11, reste du profil intact)" "$badr" 0
+check "v1.8.3 reglages.sh : aucun refus « verrou occupé » parasite sur 20 tours de 11 écritures (le verrou relâché entre un mkdir raté et son test était pris pour une impossibilité : 4 refus sur 60 tours mesurés sous charge)" "$refus" 0
 check "v1.8.1 reglages.sh : profil.md.bak gardé, verrou retiré, aucun temporaire laissé" "$([ -s "$P.bak" ] && echo bak)|$([ -e "$P.lock" ] && echo verrou || echo libre)|$(ls "$H/.claude/diapason" | grep -c 'tmp')" "bak|libre|0"
 badr=0; r=1
 while [ "$r" -le 8 ]; do

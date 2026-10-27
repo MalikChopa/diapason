@@ -146,10 +146,10 @@ Sur la [page des releases](https://github.com/MalikChopa/diapason/releases), deu
 
 ```sh
 # le skill seul (comme la voie B) : le zip contient le dossier diapason/
-unzip diapason-skill-v1.8.3.zip -d ~/.claude/skills/
+unzip diapason-skill-v1.8.4.zip -d ~/.claude/skills/
 
 # le plugin complet (fichiers à la racine du zip), pour l'essayer
-unzip diapason-plugin-v1.8.3.zip -d diapason-plugin
+unzip diapason-plugin-v1.8.4.zip -d diapason-plugin
 claude --plugin-dir diapason-plugin
 ```
 
@@ -374,6 +374,7 @@ Le récit, court, drôle et vérifiable :
 - **La v1.8.1** vient d'un audit du skill par lui-même (deux auditeurs indépendants, 43 points, aucun bloquant), puis d'un re-audit des correctifs : écritures de réglages sûres en parallèle (verrou, écriture atomique, copie `.bak`), nombres à zéro initial et virgule décimale, interrupteur du contrôle de version plus tolérant, textes qui se contredisaient, plus `ARCHITECTURE.md` et un CONTRIBUTING complet en anglais.
 - **La v1.8.2** corrige un défaut que la CI de GitHub a vu juste après la v1.8.1 (un hook sortait avec le code 2 sous Linux avec un identifiant d'agent de 400 caractères) et ajoute `tools/test-dash.sh` : tester « sous dash » exige que dash soit le `sh` des scripts testés, pas seulement l'interpréteur de la suite.
 - **La v1.8.3** répare le contrôle de version, qui ne lisait rien de la vraie réponse de GitHub depuis la v1.8.1 (l'API répond sur une seule ligne, les tests n'utilisaient que du JSON mis en forme) : il est maintenant testé avec la forme réelle de la réponse et essayé contre le vrai service.
+- **La v1.8.4** supprime un refus inutile « verrou occupé » : quand le verrou d'écriture était relâché au mauvais instant, `reglages.sh` et `maj.sh` renonçaient sans rien écrire alors qu'il n'y avait aucun blocage. Trouvé parce que le lint de GitHub a échoué une fois, puis mesuré avec dash sous charge (3 tours sur 60 avant, 0 après).
 - **Pas encore fait :** les neuf autres évaluations (`evals/`), et l'observation d'un vrai résumé automatique après la découpe de `SKILL.md`.
 
 L'histoire complète, avec les agents, leurs modèles, leurs coûts mesurés, les décisions et les erreurs : [`docs/fabrication.md`](docs/fabrication.md).

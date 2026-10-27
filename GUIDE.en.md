@@ -148,10 +148,10 @@ On the [releases page](https://github.com/MalikChopa/diapason/releases), two zip
 
 ```sh
 # the skill alone (same as route B): the zip contains the diapason/ folder
-unzip diapason-skill-v1.8.3.zip -d ~/.claude/skills/
+unzip diapason-skill-v1.8.4.zip -d ~/.claude/skills/
 
 # the full plugin (files at the zip root), to try it out
-unzip diapason-plugin-v1.8.3.zip -d diapason-plugin
+unzip diapason-plugin-v1.8.4.zip -d diapason-plugin
 claude --plugin-dir diapason-plugin
 ```
 
@@ -376,6 +376,7 @@ The story, short, funny and checkable:
 - **v1.8.1** comes from an audit of the skill by itself (two independent auditors, 43 points, none blocking), then a re-audit of the fixes: safe parallel settings writes (lock, atomic write, `.bak` copy), numbers with a leading zero and decimal commas, a more tolerant version-check switch, texts that contradicted each other, plus `ARCHITECTURE.en.md` and a full English CONTRIBUTING.
 - **v1.8.2** fixes a defect the GitHub CI saw right after v1.8.1 (a hook exited with code 2 on Linux with a 400-character agent identifier) and adds `tools/test-dash.sh`: testing "under dash" requires dash to be the `sh` of the scripts under test, not only the interpreter of the suite.
 - **v1.8.3** repairs the version check, which read nothing from GitHub's real answer since v1.8.1 (the API answers on a single line, the tests used only pretty-printed JSON): it is now tested with the real shape of the answer and tried against the real service.
+- **v1.8.4** removes a useless "lock busy" refusal: when the write lock was released at the wrong instant, `reglages.sh` and `maj.sh` gave up without writing although nothing was blocking. Found because GitHub's lint failed once, then measured with dash under load (3 rounds out of 60 before, 0 after).
 - **Not done yet:** the other nine evaluations (`evals/`), and watching a real automatic summary after the `SKILL.md` split.
 
 The full story, with the agents, their models, measured costs, decisions and mistakes: [`docs/fabrication.md`](docs/fabrication.md) (in French).
