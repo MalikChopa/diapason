@@ -5,6 +5,16 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ## [Non publié]
 
+## [1.8.3] - 2026-10-27
+
+Répare le contrôle de version, muet avec la vraie réponse de GitHub depuis la 1.8.1.
+
+### Corrigé
+- **Le contrôle de version ne lisait rien de la vraie réponse de GitHub (1.8.1 et 1.8.2)** : l'API répond par un objet JSON sur UNE seule ligne (`{"url":…,"tag_name":"v1.8.2",…}`), et l'extraction de la 1.8.1 exigeait « tag_name » en début de ligne. Le script se taisait donc, sans erreur, avec la vraie réponse (la 1.8.0, non ancrée, la lisait). Les tests n'avaient attrapé ni l'un ni l'autre : ils utilisaient du JSON mis en forme et une URL de test, et l'un d'eux exigeait même que `{"id":1,"tag_name":"v9.9.9"}` soit **ignoré**. L'extraction coupe maintenant la réponse aux virgules et aux accolades avant d'ancrer ; un « tag_name » dans le texte de la release (précédé d'un antislash en JSON) ne peut toujours pas être pris. Deux tests ajoutés avec un faux `curl` qui renvoie l'objet compact dans la branche de l'URL par défaut (forme réelle, puis tag hostile), le test faux est inversé ; essai réel contre l'API le 2026-10-26.
+
+### Examiné, sans changement
+- Revue de parcimonie du 2026-10-27 (tirage `awk` à graine 20261028, en écartant les 15 règles déjà revues ; trace : fiche 31) : 5 règles gardées, aucune retirée. §7 « chaque rapport dit ce qui est fait, ce qui reste hypothèse, ce que l'utilisateur doit décider » : origine v1.x, éval 08 (couverture partielle). §2 « pas de code avant la fiche validée » : origine v1.3, évals 06 et 07, contrôlé par `garde-fiche.sh` (tests). §3 « le fichier de l'agent est la vérité, rapport de 10 lignes, premier mot = statut » : origine v1.3, **aucune éval**. §5 « ne pas contourner une protection » : éval 04. §5 « ne pas toucher un serveur ou un port en service, ne tuer aucun processus » : origine v1.x, **aucune éval**. Le contrôle de lint des agents (`disallowedTools: Agent`, 1.8.1) et les tests de la forme réelle de l'API (1.8.3) comblent deux trous trouvés par l'audit, pas les évals manquantes.
+
 ## [1.8.2] - 2026-10-26
 
 Corrige un défaut que la CI de GitHub a trouvé juste après la publication de la v1.8.1 (le lint de `main` et du tag était resté rouge à cause d'un seul test sous Linux).

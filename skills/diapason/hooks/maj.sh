@@ -162,9 +162,11 @@ if [ "$mode" = --force ] || [ "$now" -ge "$next" ]; then
     else
       body=$(curl -fsSL -m 3 --proto '=https' --proto-redir '=https' --max-filesize 200000 -A diapason-maj -H 'Accept: application/vnd.github+json' "$REPO_API" 2>/dev/null) || body=""
     fi
-    # le PREMIER « tag_name », en début de ligne (JSON mis en forme, ou objet sur une ligne)
-    tag=$(printf '%s\n' "$body" | sed -n '/^[[:space:]{]*"tag_name"/{p;q;}' \
-      | sed -n 's/^[[:space:]{]*"tag_name"[[:space:]]*:[[:space:]]*"v\{0,1\}\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)".*/\1/p')
+    # le PREMIER « tag_name » : l'API répond sur UNE seule ligne (objet compact) ; on coupe donc aux virgules et aux accolades pour
+    # que chaque clé tienne sur sa ligne, puis on ancre. Un « "tag_name" » dans un texte de la release est précédé d'un
+    # antislash (JSON) : il ne commence jamais un fragment.
+    tag=$(printf '%s\n' "$body" | tr ',{' '\n\n' | sed -n '/^[[:space:]]*"tag_name"/{p;q;}' \
+      | sed -n 's/^[[:space:]]*"tag_name"[[:space:]]*:[[:space:]]*"v\{0,1\}\([0-9][0-9]*\.[0-9][0-9]*\.[0-9][0-9]*\)".*/\1/p')
   fi
   if isver "$tag"; then last="$tag"; next=$((now + 86400)); else next=$((now + 21600)); fi
   save
