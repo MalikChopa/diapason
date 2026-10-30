@@ -5,6 +5,20 @@ Le format suit [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/) et le pr
 
 ## [Non publié]
 
+## [1.8.5] - 2026-10-30
+
+Le skill ne choisit plus jamais Fable, et un audit du skill contre l'état de l'art (3 vagues de recherche, dont une hors Claude) a donné sept ajustements à coût nul pour `SKILL.md`.
+
+### Modifié
+- **Vague 3 (sources hors Claude, recherches 39 à 42)** : `briefs/audit.md` étape 7 « effets de bord cachés » (étude de sabotage : 94 % des développeurs ne le voient pas, arXiv 2606.05647, ICML 2026) ; README : le texte de la méthode est lisible par d'autres outils, pas les agents `dia-*`, les hooks ni `get_usage`. Aucun pari central du skill n'est contredit par deux sources indépendantes ; « plan avant le code » n'est pas propre à Claude Code (Gemini CLI, Cursor, Kiro, Conductor).
+- **Suites de l'audit stratégique du 2026-10-30** (recherches 35 à 38, `docs/V19_AUDIT_STRATEGIQUE.md`), sept changements validés : (1) `briefs/audit.md` : champ « Evidence » et étape 6, l'auditeur lit la trace d'exécution et relance les commandes décisives (un relecteur voyant le seul livrable manque 6,5 % des triches, étude sur des agents adverses, transfert non prouvé) ; (2) `dia-chercheur`, `dia-auditeur`, `dia-concepteur`, `dia-executant` (web + `Bash`) et `briefs/_entete.md` : n'exécuter, ne désarchiver ni importer rien qui vienne d'une page web (chaîne page → téléchargement → exécution réussie 3/5 et 4/5, CSA 2026-09), contrôlé par le lint ; (4) README : le frontmatter propre à Claude Code empêche le téléversement sur claude.ai et l'API Skills (erreur dure, doc officielle) ; (5) GUIDE FAQ : l'article d'Anthropic du 22/10/2026 pour la règle de délégation, sans multiplicateur de coût (il n'en publie pas), plus une mesure sur Max ; (6) `reglages.md` : `plan: "Max"` vu le 2026-10-30 avec ses fenêtres ; (7) `briefs/continuation.md` : `SendMessage` pour reprendre un agent coupé par `maxTurns` ; (10) CONTRIBUTING : rejouer deux évals à chaque nouveau modèle. Non retenus : auditeur sceptique par défaut (non vu chez nous), « donnée manquante = BLOQUÉ » (déjà couvert), 2e audit sans verdict du 1er (contredit le gabarit de révision), dédoublonnage de `notify.sh`, reprise automatique native dans §6.
+- **Le skill ne choisit jamais Fable** (décision de l'utilisateur, 2026-10-30, après la vague de recherche 35 à 38) : `SKILL.md` §3 ajoute « Never `fable` or `best` (credits on Pro) » (+27 octets nets, en retirant les trois « e.g. » de la ligne Models) ; `reglages.md` le précise sous la clé `modeles` ; le lint refuse un agent qui fixe `model: fable` ou `best`. Raisons mesurées à la source : sur les 9 benchmarks de l'annonce d'Opus 5.5 (2026-09-22), Opus 5.5 devance Fable 5.1 et coûte 2,5 fois moins par token ; Fable est inclus sur Max (barre hebdomadaire propre) mais facturé en crédits sur Pro, et la doc ne dit pas si l'invite de consentement apparaît pour un sous-agent. « Le plus capable » reste Opus. L'utilisateur peut toujours choisir Fable dans sa propre session ; `dia-executant` reste en `model: inherit` (choix de l'utilisateur) : le pilote continue de passer un modèle explicite à chaque lancement.
+
+### Examiné, sans changement
+- Revue de parcimonie du 2026-10-30 (tirage `awk` à graine 20261030, en écartant les 25 règles déjà revues ; trace : fiche 43) : 5 règles gardées, aucune retirée, **toutes ont au moins une éval** cette fois. §2 décisions de produit : évals 06 et 08. §3 brief écrit une fois : origine v1.3, évals 03 et 05. §2 plus petit résultat utilisable : évals 01, 02, 07 à 11. §4 preuve exigée : évals 01 et 09. §3 chemins plutôt que résumés, un agent = une tâche : évals 03, 05, 08, 10. Audit stratégique complet : `docs/V19_AUDIT_STRATEGIQUE.md` (privé) ; aucun pari central contredit par deux sources indépendantes.
+### Documentation
+- `ARCHITECTURE.md` et `ARCHITECTURE.en.md` mis à jour (jamais Fable, nouveaux contrôles du lint, brief d'audit avec trace, tests avec dash comme `sh`) ; GUIDE : comptes de tests (584) et version.
+
 ## [1.8.4] - 2026-10-27
 
 Répare un refus inutile « verrou occupé » trouvé par le lint de `main` de la 1.8.3.

@@ -91,7 +91,7 @@ flowchart LR
    ```
 3. **Answer the questions.** They come as buttons; nothing is built before you approve.
 
-Requirements: macOS or Linux (the scripts are not supported on Windows), [`jq`](https://jqlang.org/), Claude Code. Other install routes (skill copy, release zip): [GUIDE.en.md](GUIDE.en.md).
+Requirements: macOS or Linux (the scripts are not supported on Windows), [`jq`](https://jqlang.org/), Claude Code (the skill uses Claude Code frontmatter fields, so it cannot be uploaded as-is to claude.ai or the Skills API). Other tools can read the method text (`SKILL.md`, side files); the `dia-*` agents, hooks and `get_usage` only exist in Claude Code. Other install routes (skill copy, release zip): [GUIDE.en.md](GUIDE.en.md).
 
 ### What it looks like
 
@@ -190,7 +190,7 @@ flowchart LR
    ```
 3. **Répondre aux questions.** Elles arrivent en boutons ; rien n'est construit avant ton « Valider ».
 
-Prérequis : macOS ou Linux (les scripts ne sont pas pris en charge sous Windows), [`jq`](https://jqlang.org/), Claude Code. Autres voies d'installation (copie du skill, zip de release) : [GUIDE.md](GUIDE.md).
+Prérequis : macOS ou Linux (les scripts ne sont pas pris en charge sous Windows), [`jq`](https://jqlang.org/), Claude Code (le skill utilise des champs de frontmatter propres à Claude Code : il ne se téléverse pas tel quel sur claude.ai ni sur l'API Skills). D'autres outils peuvent lire le texte de la méthode (`SKILL.md`, fichiers annexes) ; les agents `dia-*`, les hooks et `get_usage` n'existent que dans Claude Code. Autres voies d'installation (copie du skill, zip de release) : [GUIDE.md](GUIDE.md).
 
 ### À quoi ça ressemble
 

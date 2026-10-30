@@ -1,5 +1,7 @@
 # Brief: continuation of interrupted work (same model as the original agent)
 
+An agent cut by `maxTurns` can be resumed as it is with `SendMessage` (its partial output and context are kept: no new brief needed). Use the brief below when it was cut otherwise, or lost (quota window, session closed): a fresh agent reads the file, which is the truth.
+
 ```
 <header: fields A of _entete.md>
 Role: you resume work interrupted by a cut. The file <path> already exists: READ IT ENTIRELY FIRST.

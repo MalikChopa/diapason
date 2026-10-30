@@ -57,7 +57,7 @@ Read `~/.claude/diapason/profil.md`, only the sections the task needs (sub-comma
 5. **No argument**: `docs/HANDOFF.md` present → `reprise.md`; else ask in one sentence which project to start or resume.
 
 ## 3. Delegation
-**Models**: lightest (e.g. haiku) mechanical work, inventories, formatting, translation, derived docs; middle (e.g. sonnet) research, audit, tests, routine implementation, fixes; most capable (e.g. opus) design, architecture, specification, product core.
+**Models**: lightest (haiku) mechanical work, inventories, formatting, translation, derived docs; middle (sonnet) research, audit, tests, routine implementation, fixes; most capable (opus) design, architecture, specification, product core. Never `fable` or `best` (credits on Pro).
 
 - **Delegate only** a big-context task, real parallelism or an independent check: an agent costs several times more tokens. Never read a big file whole; delegate repeated visual checking (an agent or the user).
 - **No sub-agents of agents** (cost hidden from quota tracking): `dia-*` agents lack the Agent tool.

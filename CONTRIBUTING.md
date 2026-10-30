@@ -48,7 +48,8 @@ Des consignes en plus ont un coût (tokens, attention) et ne valent que si elles
 1. Tire 5 règles du corps de `skills/diapason/SKILL.md`, de préférence dans les sections les plus lourdes en octets (note la graine ou la méthode du tirage).
 2. Pour chacune, retrouve son origine (ligne du CHANGELOG, incident, recherche) et son évaluation (`evals/`).
 3. Sans origine ni évaluation, propose de la retirer ou de la fusionner dans une règle voisine ; sinon garde-la.
-4. Note dans le CHANGELOG les 5 règles examinées et la décision pour chacune. Retirer une règle utile est le vrai risque : en cas de doute, garde et écris l'éval manquante.
+4. Rejoue aussi deux évals (3 passages chacune) à chaque nouveau modèle de la famille Claude, pas seulement à chaque version du skill : chaque règle suppose une limite du modèle (Anthropic, 22/10/2026), et cette limite bouge.
+5. Note dans le CHANGELOG les 5 règles examinées et la décision pour chacune. Retirer une règle utile est le vrai risque : en cas de doute, garde et écris l'éval manquante.
 
 ## Règle absolue : aucune donnée personnelle
 Aucun nom, email, identifiant, chemin absolu vers un dossier personnel (sous macOS, Linux ou Windows), nom de projet privé, capture ou journal de session réel dans le dépôt. Pour les chemins, utilise `~`, `$HOME` ou `${CLAUDE_PLUGIN_ROOT}` ; pour les tests et exemples, des données factices. Le lint refuse les chemins personnels, mais c'est à toi de relire ton diff.

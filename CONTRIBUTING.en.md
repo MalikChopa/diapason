@@ -48,7 +48,8 @@ Extra instructions have a cost (tokens, attention) and are worth it only if they
 1. Draw 5 rules from the body of `skills/diapason/SKILL.md`, preferably in the heaviest sections in bytes (write down the seed or the drawing method).
 2. For each one, find its origin (CHANGELOG line, incident, research) and its evaluation (`evals/`).
 3. With neither origin nor evaluation, propose to remove it or merge it into a neighbouring rule; otherwise keep it.
-4. Record the 5 rules examined and the decision for each in the CHANGELOG. Removing a useful rule is the real risk: when in doubt, keep it and write the missing eval.
+4. Also replay two evals (3 passes each) whenever a new Claude model ships, not only at each skill version: every rule assumes a model limitation (Anthropic, 2026-10-22), and that limitation moves.
+5. Record the 5 rules examined and the decision for each in the CHANGELOG. Removing a useful rule is the real risk: when in doubt, keep it and write the missing eval.
 
 ## Absolute rule: no personal data
 No name, email, identifier, absolute path to a personal folder (on macOS, Linux or Windows), private project name, screenshot or real session log in the repository. For paths use `~`, `$HOME` or `${CLAUDE_PLUGIN_ROOT}`; for tests and examples, dummy data. The lint refuses personal paths, but reading your own diff is up to you.
